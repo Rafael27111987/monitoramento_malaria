@@ -105,40 +105,40 @@
                 <form id="health-form" class="mt-4 space-y-4 text-left overflow-y-auto max-h-[60vh] p-2">
                     <div>
                         <label for="rg" class="block text-sm font-medium text-gray-700">RG</label>
-                        <input type="text" id="rg" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-50>
+                        <input type="text" id="rg" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100>
                     </div>
                     <div>
                         <label for="cpf" class="block text-sm font-medium text-gray-700">CPF</label>
-                        <input type="text" id="cpf" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-50">
+                        <input type="text" id="cpf" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
                     </div>
                     <div>
                         <label for="endereco" class="block text-sm font-medium text-gray-700">Endereço Completo</label>
-                        <input type="text" id="endereco" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-50">
+                        <input type="text" id="endereco" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
                     </div>
                     <div>
                         <label for="cidade" class="block text-sm font-medium text-gray-700">Cidade</label>
-                        <input type="text" id="cidade" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-50">
+                        <input type="text" id="cidade" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
                     </div>
                     <div>
                         <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
-                        <input type="text" id="estado" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-50">
+                        <input type="text" id="estado" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
                     </div>
                     <h4 class="text-base text-center font-semibold text-gray-800 mt-6 pt-4 border-t">Histórico de Saúde</h4>
                     <div>
                         <label for="tipoMalaria" class="block text-sm font-medium text-gray-700">Tipo de Malária</label>
-                        <input type="text" id="tipoMalaria" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-50">
+                        <input type="text" id="tipoMalaria" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
                     </div>
                     <div>
                         <label for="inicioSintomas" class="block text-sm font-medium text-gray-700">Início dos Sintomas</label>
-                        <input type="date" id="inicioSintomas" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50">
+                        <input type="date" id="inicioSintomas" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-100">
                     </div>
                     <div>
                         <label for="dataAtendimento" class="block text-sm font-medium text-gray-700">Data do Atendimento</label>
-                        <input type="date" id="dataAtendimento" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50">
+                        <input type="date" id="dataAtendimento" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-100">
                     </div>
                     <div>
                         <label for="unidadeAtendimento" class="block text-sm font-medium text-gray-700">Unidade de Atendimento</label>
-                        <input type="text" id="unidadeAtendimento" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-50">
+                        <input type="text" id="unidadeAtendimento" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
                     </div>
                     <div class="flex items-center">
                         <input id="medicacaoDistribuida" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
@@ -595,7 +595,7 @@ ${Object.keys(userResponses).map(key => `* **Pergunta ${parseInt(key) + 1}: ${da
     });
     
     // Adiciona a pergunta de encerramento
-    const finalQuestion = "Agradecemos sua participação! Espero que seu estado clínico evolua rapidamente e sua saúde seja restabelecida. Estamos trabalhando fortemente para erradicar a Malária em Porto Velho e sua participação é de fundamental importância, conte conosco! Estaremos sempre à disposição.";
+    const finalQuestion = "Agradecemos sua participação! Espero que seu estado clínico evolua rapidamente e sua saúde seja restabelecida. Estamos trabalhando fortemente para erradicar a Malária em Porto Velho e sua participação é de fundamental importância, conte conosco! Estaremos sempre à disposição. Fique a vontade para tirar dúvidas com a nossa Inteligência Artificial.";
     await addDoc(chatCollectionRef, {
         text: finalQuestion,
         isUser: false,
@@ -674,7 +674,7 @@ async function startInitialConversation(user) {
             await addDoc(chatCollectionRef, { text: summaryMessage, isUser: false, timestamp: serverTimestamp() });
             await addDoc(chatCollectionRef, { text: dailyQuestions[0], isUser: false, timestamp: serverTimestamp() });
         } else {
-            const welcomeMessage = `Olá, ${user.displayName}! 👋 Que bom te ver de volta. Vamos começar o seu primeiro check-in diário.`;
+            const welcomeMessage = `Olá, ${user.displayName}! 👋 Que bom que você chegou até aqui. Vamos começar o seu primeiro check-in diário.`;
             await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
             await addDoc(chatCollectionRef, { text: dailyQuestions[0], isUser: false, timestamp: serverTimestamp() });
         }
