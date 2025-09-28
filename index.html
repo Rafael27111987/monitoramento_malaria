@@ -105,7 +105,7 @@
                 <form id="health-form" class="mt-4 space-y-4 text-left overflow-y-auto max-h-[60vh] p-2">
                     <div>
                         <label for="rg" class="block text-sm font-medium text-gray-700">RG</label>
-                        <input type="text" id="rg" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100>
+                        <input type="text" id="rg" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
                     </div>
                     <div>
                         <label for="cpf" class="block text-sm font-medium text-gray-700">CPF</label>
@@ -479,7 +479,7 @@ async function sendMessage() {
         const isMalariaQuestion = conversationStep >= dailyQuestions.length && malariaKeywords.some(keyword => message.toLowerCase().includes(keyword));
 
         if (isMalariaQuestion) {
-            const prompt = `Com base nas informações do Ministério da Saúde sobre malária em https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/m/malaria, gere uma resposta detalhada e amigável sobre a pergunta: "${message}".`;
+            const prompt = `Com base nas informações do Ministério da Saúde sobre malária em https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/m/malaria ou outra autoridade internacional no assunto, gere uma resposta detalhada e amigável sobre a pergunta: "${message}".`;
             const botResponse = await getGeminiResponse(prompt);
             await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
         } else if (conversationStep < dailyQuestions.length) {
@@ -636,7 +636,7 @@ async function startInitialConversation(user) {
     const userProfileSnap = await getDoc(userProfileRef);
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
 
-    chatContainer.innerHTML = '';
+    // **NOTA: O chatContainer.innerHTML = '' está sendo movido para startFreshSession para evitar flashes na tela.**
     conversationStep = 0;
     userResponses = {};
     isSessionActive = true; // Ativa a sessão
@@ -680,6 +680,35 @@ async function startInitialConversation(user) {
         }
     }
 }
+
+// ==========================================================
+// 🚨 NOVO MÉTODO PARA FORÇAR O REINÍCIO DA SESSÃO NO REFRESH
+// ==========================================================
+async function startFreshSession(user) {
+    loadingIndicator.classList.remove('hidden');
+    try {
+        // 1. Limpa o estado da aplicação
+        chatContainer.innerHTML = ''; // Limpa a interface do chat imediatamente
+        conversationStep = 0;
+        userResponses = {};
+        isSessionActive = false; // Começa inativa até a primeira pergunta
+
+        // 2. Limpa o histórico de chat no Firestore
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+        const docsToDelete = await getDocs(chatCollectionRef);
+        const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
+        await Promise.all(deletePromises);
+        
+        // 3. Inicia a conversa (mostrando modals ou a primeira pergunta)
+        await startInitialConversation(user); 
+    } catch (error) {
+        console.error("Erro ao iniciar sessão limpa:", error);
+        showError("Não foi possível reiniciar a sessão. Tente novamente mais tarde.");
+    } finally {
+        loadingIndicator.classList.add('hidden');
+    }
+}
+// ==========================================================
 
 async function handleFormSubmission() {
     if (!currentUser) {
@@ -783,6 +812,9 @@ googleSigninBtn.onclick = async () => {
     }
 };
 
+// ==========================================================
+// 💥 ALTERAÇÃO AQUI: Chama startFreshSession para forçar o reinício
+// ==========================================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
@@ -792,8 +824,11 @@ onAuthStateChanged(auth, (user) => {
             loginScreen.classList.add('hidden');
             chatScreen.classList.remove('hidden');
             chatScreen.classList.add('opacity-100');
-            startInitialConversation(user);
-            listenForMessages(user);
+            
+            // Força o reinício da sessão (apaga o histórico e inicia a 1ª pergunta/modal)
+            startFreshSession(user); 
+            
+            listenForMessages(user); // Começa a ouvir o novo chat vazio
         }, 500);
     } else {
         currentUser = null;
@@ -806,6 +841,7 @@ onAuthStateChanged(auth, (user) => {
         clearTimeout(inactivityTimer);
     }
 });
+// ==========================================================
 
 // Função para ouvir mensagens do chat em tempo real
 function listenForMessages(user) {
@@ -817,17 +853,13 @@ function listenForMessages(user) {
         // Reinicia o timer em qualquer atividade do chat (inclusive as do bot)
         resetInactivityTimer();
         
-        const isInitialLoad = chatContainer.children.length === 0;
-
+        // Remove a lógica de isInitialLoad e atualização de conversationStep
+        // porque startFreshSession e startInitialConversation já definem o estado.
+        
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
                 const data = change.doc.data();
                 displayMessage(data.text, data.isUser, data.timestamp);
-                
-                // Lógica de atualização do conversationStep na carga inicial ou em mensagens do bot
-                if (isInitialLoad && !data.isUser && dailyQuestions.includes(data.text.split('\n')[0])) {
-                    conversationStep = dailyQuestions.findIndex(q => q === data.text.split('\n')[0]);
-                }
             }
         });
     });
