@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projeto de Mestrado - Malária</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f9;
+        }
+        .chat-container {
+            max-width: 700px;
+        }
+        .gemini-message {
+            background-color: #e2e8f0;
+            border-radius: 1.25rem 1.25rem 1.25rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: #1a202c;
+        }
+        .user-message {
+            background-color: #5a67d8;
+            border-radius: 1.25rem 1.25rem 0 1.25rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: #ffffff;
+        }
+        .loading-dots span {
+            animation: bounce 0.6s infinite alternate;
+        }
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center min-h-screen">
+
+    <div id="login-screen" class="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg text-center transition-opacity duration-500 ease-in-out opacity-100">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Bem-vindo(a) ao Projeto de Mestrado referente ao Monitoramento da Malária na cidade de Porto Velho/RO</h1>
+        <p class="text-gray-600 mb-8">Para acessar o sistema, realize o login com sua conta Google!</p>
+        <button id="google-signin-btn" class="w-full flex items-center justify-center bg-indigo-600 text-white font-medium py-3 px-6 rounded-xl hover:bg-indigo-700 transition-colors duration-200">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M22.062 12.001c0-.776-.07-1.524-.199-2.247h-9.863v4.22h5.532c-.237 1.266-1.112 2.348-2.617 3.238v2.793h3.582c2.094-1.928 3.32-4.757 3.32-8.004z" fill="#4285F4"/>
+                <path d="M12.001 22.062c3.27 0 6.012-1.077 8.01-2.92l-3.582-2.793c-1.011.681-2.298 1.139-4.428 1.139-3.411 0-6.307-2.294-7.351-5.385h-3.69v2.859c2.071 4.102 6.551 6.899 11.041 6.899z" fill="#34A853"/>
+                <path d="M4.65 14.397c-.244-.68-.38-1.408-.38-2.196s.136-1.516.38-2.196v-2.859h-3.69c-.663 1.34-.997 2.822-.997 4.055 0 1.233.334 2.715.997 4.055l3.69-2.859z" fill="#FBBC05"/>
+                <path d="M12.001 4.397c2.199 0 4.093.757 5.613 2.113l3.058-3.058c-2.19-2.072-5.084-3.352-8.671-3.352-4.49 0-8.97 2.797-11.041 6.899l3.69 2.859c1.044-3.091 3.94-5.385 7.351-5.385z" fill="#EA4335"/>
+            </svg>
+            Entrar com Google
+        </button>
+    </div>
+
+    <div id="chat-screen" class="hidden flex flex-col items-center w-full min-h-screen transition-opacity duration-500 ease-in-out opacity-0 relative">
+    
+        <h1 class="text-2xl font-bold text-indigo-700 mb-2 text-center mt-6">
+            Projeto de Mestrado - Monitoramento da Malária em Porto Velho
+        </h1>
+        <h2 id="user-name" class="text-xl font-semibold text-gray-800 mb-4 text-center"></h2>
+        
+        <div class="chat-container w-full mx-auto flex flex-col p-4 overflow-y-auto h-[calc(100vh-220px)] pb-16">
+        </div>
+
+        <div id="loading-indicator" class="hidden my-4">
+            <span class="loading-dots inline-flex space-x-1">
+                <span class="block w-2 h-2 bg-indigo-600 rounded-full"></span>
+                <span class="block w-2 h-2 bg-indigo-600 rounded-full"></span>
+                <span class="block w-2 h-2 bg-indigo-600 rounded-full"></span>
+            </span>
+        </div>
+        
+        <div class="fixed bottom-0 w-full md:w-6/12 p-4 bg-white rounded-t-2xl shadow-lg flex items-center">
+            <input id="message-input" type="text" placeholder="Escreva uma mensagem..." class="flex-grow bg-gray-100 py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button id="send-btn" class="ml-4 p-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </button>
+        </div>
+
+        <div id="new-session-container" class="mt-4 hidden w-full md:w-5/12 p-4">
+            <button id="new-session-btn" class="w-full bg-green-500 text-white font-medium py-3 px-6 rounded-xl hover:bg-green-600 transition-colors duration-200">
+                Começar Nova Sessão ✨
+            </button>
+        </div>
+        <div id="reminder-container" class="mt-2 hidden w-full md:w-5/12 p-4 text-center">
+            <button id="enable-reminders-btn" class="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-xl hover:bg-blue-600 transition-colors duration-200">
+                Ativar Lembretes Diários 🔔
+            </button>
+            <p id="reminder-status" class="mt-2 text-sm text-gray-500 hidden"></p>
+        </div>
+    </div>
+    
+    <div id="form-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-2xl bg-white max-h-[90vh]">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Antes de começar a responder ao questionário, precisamos coletar alguns dados que serão necessários para o desenvolvimento do projeto.</h3>
+                <p class="text-sm text-gray-500 mt-2">Por favor, preencha todos os campos abaixo!</p>
+                <form id="health-form" class="mt-4 space-y-4 text-left overflow-y-auto max-h-[60vh] p-2">
+                    <div>
+                        <label for="rg" class="block text-sm font-medium text-gray-700">RG</label>
+                        <input type="text" id="rg" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase">
+                    </div>
+                    <div>
+                        <label for="cpf" class="block text-sm font-medium text-gray-700">CPF</label>
+                        <input type="text" id="cpf" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase">
+                    </div>
+                    <div>
+                        <label for="endereco" class="block text-sm font-medium text-gray-700">Endereço Completo</label>
+                        <input type="text" id="endereco" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase">
+                    </div>
+                    <div>
+                        <label for="cidade" class="block text-sm font-medium text-gray-700">Cidade</label>
+                        <input type="text" id="cidade" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase">
+                    </div>
+                    <div>
+                        <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
+                        <input type="text" id="estado" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase">
+                    </div>
+                    <h4 class="text-base text-center font-semibold text-gray-800 mt-6 pt-4 border-t">Histórico de Saúde</h4>
+                    <div>
+                        <label for="tipoMalaria" class="block text-sm font-medium text-gray-700">Tipo de Malária</label>
+                        <input type="text" id="tipoMalaria" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase">
+                    </div>
+                    <div>
+                        <label for="inicioSintomas" class="block text-sm font-medium text-gray-700">Início dos Sintomas</label>
+                        <input type="date" id="inicioSintomas" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="dataAtendimento" class="block text-sm font-medium text-gray-700">Data do Atendimento</label>
+                        <input type="date" id="dataAtendimento" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="unidadeAtendimento" class="block text-sm font-medium text-gray-700">Unidade de Atendimento</label>
+                        <input type="text" id="unidadeAtendimento" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase">
+                    </div>
+                    <div class="flex items-center">
+                        <input id="medicacaoDistribuida" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="medicacaoDistribuida" class="ml-2 block text-sm text-gray-900">Foi distribuída a Tafenoquina?</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="teveFebre" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="teveFebre" class="ml-2 block text-sm text-gray-900">Teve febre?</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="hipertenso" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="hipertenso" class="ml-2 block text-sm text-gray-900">É hipertenso?</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="diabetes" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="diabetes" class="ml-2 block text-sm text-gray-900">Tem diabetes?</label>
+                    </div>
+                </form>
+                <div class="items-center px-4 py-3">
+                    <button id="save-form-btn" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-xl w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        Salvar e Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="tcle-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/5 xl:w-2/5 shadow-lg rounded-2xl bg-white max-h-[90vh]">
+            <div class="mt-3 text-center flex flex-col h-full">
+                <h3 class="text-xl leading-6 font-bold text-gray-900 mb-4">Termo de Consentimento Livre e Esclarecido (TCLE)</h3>
+                
+                <div class="flex-grow overflow-y-auto p-4 border rounded-lg bg-gray-50 text-left text-sm text-gray-700 max-h-[60vh]">
+                    <p class="font-semibold mb-2">Prezado(a) Participante,</p>
+                    <p class="mb-3">Você está sendo convidado(a) a participar do **Projeto de Mestrado - Monitoramento da Malária em Porto Velho**, desenvolvido no âmbito do seu Programa de Pós-Graduação.</p>
+
+                    <h4 class="font-bold mt-4 mb-1">Objetivo do Estudo:</h4>
+                    <p class="mb-3">O objetivo principal deste estudo é realizar o monitoramento diário da sua condição de saúde após o tratamento da malária, coletando dados essenciais para melhorar as estratégias de vigilância e combate à doença em Porto Velho/RO. Os dados fornecidos serão estritamente confidenciais e utilizados apenas para fins de pesquisa e desenvolvimento de políticas públicas de saúde.</p>
+                    
+                    <h4 class="font-bold mt-4 mb-1">Riscos e Benefícios:</h4>
+                    <p class="mb-3">Não há riscos diretos associados à sua participação. Os benefícios incluem o acompanhamento contínuo da sua saúde e a contribuição para um projeto científico de grande relevância social.</p>
+
+                    <h4 class="font-bold mt-4 mb-1">Confidencialidade:</h4>
+                    <p class="mb-3">Seus dados pessoais e de saúde serão tratados com a mais absoluta **confidencialidade**, sendo armazenados em um ambiente seguro (Firebase) e acessíveis apenas pela equipe de pesquisa.</p>
+                    
+                    <h4 class="font-bold mt-4 mb-1 text-red-600">Direito de Retirada:</h4>
+                    <p class="mb-3 font-semibold text-red-600">**Sua participação neste estudo é voluntária e não remunerada. Você tem o direito de recusar-se a participar ou de retirar o seu consentimento e interromper sua participação a qualquer momento, sem qualquer prejuízo à sua assistência ou tratamento.**</p>
+                    
+                    <p class="mt-4">Ao marcar a caixa abaixo e clicar em "Desejo Participar", você declara que leu e entendeu os termos deste consentimento e concorda em participar voluntariamente do estudo.</p>
+                </div>
+                <div class="mt-4 flex flex-col space-y-3">
+                    <div class="flex items-center justify-center">
+                        <input id="tcle-consent-checkbox" type="checkbox" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="tcle-consent-checkbox" class="ml-3 block text-base font-medium text-gray-900">
+                            **Consentindo** com os termos acima.
+                        </label>
+                    </div>
+                    <button id="tcle-participar-btn" disabled class="px-4 py-3 bg-gray-400 text-white text-base font-medium rounded-xl w-full shadow-sm cursor-not-allowed">
+                        Desejo Participar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="error-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-2xl bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Erro</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p id="error-message" class="text-sm text-gray-500"></p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="close-error-modal" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-xl w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
+const firebaseConfig = {
+    apiKey: "AIzaSyCEW-C1FavyFqjabMjmS-JVo2fLXHNt5Yg",
+    authDomain: "meuaplicativosaude.firebaseapp.com",
+    projectId: "meuaplicativosaude",
+    storageBucket: "meuaplicativosaude.firebasestorage.app",
+    messagingSenderId: "547845597696",
+    appId: "1:547845597696:web:7942056f2d48601fa086e5",
+    measurementId: "G-MYE47X3LNH"
+};
+
+// Chave de API do Gemini, nunca a exponha.
+const geminiApiKey = "AIzaSyBeLGZcfbhn9lYFzsy6YWDI8PNquvZ9aE0";
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Variável para armazenar o estado do usuário
+let currentUser = null;
+
+// Elementos do DOM
+const loginScreen = document.getElementById('login-screen');
+const chatScreen = document.getElementById('chat-screen');
+const googleSigninBtn = document.getElementById('google-signin-btn');
+const chatContainer = document.querySelector('.chat-container');
+const messageInput = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
+const loadingIndicator = document.getElementById('loading-indicator');
+const errorModal = document.getElementById('error-modal');
+const errorMessageElem = document.getElementById('error-message');
+const closeErrorModalBtn = document.getElementById('close-error-modal');
+const newSessionBtn = document.getElementById('new-session-btn');
+const newSessionContainer = document.getElementById('new-session-container');
+const reminderContainer = document.getElementById('reminder-container');
+const enableRemindersBtn = document.getElementById('enable-reminders-btn');
+const formModal = document.getElementById('form-modal');
+const saveFormBtn = document.getElementById('save-form-btn');
+const userNameElem = document.getElementById('user-name');
+// NOVAS VARIÁVEIS PARA O TCLE
+const tcleModal = document.getElementById('tcle-modal');
+const tcleConsentCheckbox = document.getElementById('tcle-consent-checkbox');
+const tcleParticiparBtn = document.getElementById('tcle-participar-btn');
+
+// Perguntas aprimoradas
+let dailyQuestions = [
+    "1. Como você está se sentindo hoje? (Responda: Em uma escala de 1 a 5, sendo 1-Ruim e 5-Excelente)",
+    "2. Você faz uso de alguma medicação de uso contínuo? (Responda: Informe o nome da medicação ou Não)",
+    "3. Você apresentou sinais de febre, vômito, diarréia, cefeléia ou algum outro sintoma?",
+    "4. Fez uso de alguma medicação que não seja a Tafenoquina indicada para o tratamento da malária e que não seja a de uso contínuo? (Informe o nome ou Não)",
+    "5. Teve necessidade de procurar ajuda em alguma Unidade Básica de Saúde?",
+];
+
+// Variável para rastrear o estado da conversa e dados do usuário
+let conversationStep = 0;
+let userResponses = {};
+let isWaitingForSummary = false;
+let userProfileData = null;
+
+// VARIÁVEIS PARA O TEMPORIZADOR DE INATIVIDADE
+let inactivityTimer;
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutos em milissegundos
+let isSessionActive = false; // Começa como inativa até o login e início do questionário
+
+// Função para mostrar o modal de erro
+function showError(message) {
+    errorMessageElem.textContent = message;
+    errorModal.classList.remove('hidden');
+}
+
+closeErrorModalBtn.onclick = () => {
+    errorModal.classList.add('hidden');
+};
+
+// Função para rolar para o final do chat
+function scrollToBottom() {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// 💥 FUNÇÃO CORRIGIDA: Usa toLocaleDateString e toLocaleTimeString separadamente para garantir a exibição completa
+function formatTimestamp(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate();
+    
+    // Opções de Data
+    const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    // Opções de Hora
+    const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+
+    const formattedDate = date.toLocaleDateString('pt-BR', dateOptions);
+    const formattedTime = date.toLocaleTimeString('pt-BR', timeOptions);
+
+    // Concatena explicitamente a data e a hora
+    return `${formattedDate} ${formattedTime}`;
+}
+
+// Função para formatar a data apenas
+function getFormattedDate() {
+    const today = new Date();
+    const options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    };
+    return today.toLocaleDateString('pt-BR', options);
+}
+
+// 💥 FUNÇÃO CORRIGIDA: Utiliza a nova lógica de formatação de fallback
+function displayMessage(message, isUser, timestamp) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `my-2 p-2 rounded max-w-sm whitespace-pre-wrap ${isUser ? 'user-message self-end' : 'gemini-message self-start'}`;
+
+    const textNode = document.createElement('p');
+    textNode.textContent = message;
+    messageDiv.appendChild(textNode);
+
+    const timestampNode = document.createElement('span');
+    timestampNode.className = `text-xs mt-1 block ${isUser ? 'text-gray-400' : 'text-gray-500'}`;
+    
+    // Lógica para o fallback de timestamp, garantindo data e hora
+    const dateOptionsFallback = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    const timeOptionsFallback = { hour: '2-digit', minute: '2-digit', hour12: false };
+    const now = new Date();
+
+    const fallbackDisplay = `${now.toLocaleDateString('pt-BR', dateOptionsFallback)} ${now.toLocaleTimeString('pt-BR', timeOptionsFallback)}`;
+
+    // Chama formatTimestamp para mensagens do DB ou usa o fallback explícito
+    timestampNode.textContent = timestamp 
+        ? formatTimestamp(timestamp) 
+        : fallbackDisplay; 
+
+    messageDiv.appendChild(timestampNode);
+
+    chatContainer.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+// FUNÇÕES DO TEMPORIZADOR
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    if (currentUser && isSessionActive) {
+        inactivityTimer = setTimeout(endSession, INACTIVITY_TIMEOUT);
+    }
+}
+
+async function endSession() {
+    if (!currentUser || !isSessionActive) return;
+
+    isSessionActive = false;
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+    const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, atualize a página!";
+
+    // O timestamp será adicionado pela função displayMessage
+    await addDoc(chatCollectionRef, { text: endMessage, isUser: false, timestamp: serverTimestamp() });
+    conversationStep = -1; // Estado que indica sessão encerrada
+}
+
+// Função para gerar uma resposta do chatbot usando a API Gemini
+async function getGeminiResponse(prompt) {
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
+    const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+    };
+
+    let retries = 0;
+    const maxRetries = 3;
+    let success = false;
+    let responseData;
+
+    while (!success && retries < maxRetries) {
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                throw new Error(`Erro HTTP! status: ${response.status}`);
+            }
+            responseData = await response.json();
+            success = true;
+        } catch (e) {
+            console.error("Erro na chamada da API:", e);
+            retries++;
+            if (retries < maxRetries) {
+                const delay = Math.pow(2, retries) * 1000;
+                await new Promise(res => setTimeout(res, delay));
+            } else {
+                throw e;
+            }
+        }
+    }
+    if (!success) {
+        throw new Error('Falha na conexão com a API após várias tentativas.');
+    }
+    const candidate = responseData.candidates?.[0];
+    const text = candidate?.content?.parts?.[0]?.text;
+    return text || "Não foi possível gerar uma resposta. Tente novamente.";
+}
+
+// Função para gerar uma resposta de reconhecimento com a API Gemini
+async function getGeminiAcknowledgement(userResponse, question) {
+    const prompt = `Gere uma pequena e amigável resposta de reconhecimento, com cerca de 20 palavras, para a seguinte resposta do usuário: "${userResponse}" à pergunta: "${question}".`;
+    return await getGeminiResponse(prompt);
+}
+
+// Função para lidar com o envio de mensagens
+async function sendMessage() {
+    if (!currentUser) {
+        showError("Você precisa estar logado para enviar mensagens.");
+        return;
+    }
+
+    const message = messageInput.value.trim();
+    if (message === '' || isWaitingForSummary) return;
+
+    // Lógica para reiniciar o questionário após inatividade
+    if (conversationStep === -1) {
+        messageInput.value = '';
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        loadingIndicator.classList.remove('hidden');
+
+        // Adiciona a mensagem do usuário antes de reiniciar
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
+        
+        await startNewSession(); // Reinicia o questionário (apaga o chat e começa do 0)
+        loadingIndicator.classList.add('hidden');
+        resetInactivityTimer();
+        return; 
+    }
+
+    resetInactivityTimer(); // Reseta o timer a cada interação
+
+    messageInput.value = '';
+    loadingIndicator.classList.remove('hidden');
+
+    try {
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
+
+        // Lógica para responder a perguntas sobre malária
+        const malariaKeywords = ["malária", "malaria", "sintomas", "tratamento", "diagnóstico", "prevenção", "dúvida"];
+        // Verifica se é uma pergunta sobre malária E se o questionário já foi concluído
+        const isMalariaQuestion = conversationStep >= dailyQuestions.length && malariaKeywords.some(keyword => message.toLowerCase().includes(keyword));
+
+        if (isMalariaQuestion) {
+            const prompt = `Com base nas informações do Ministério da Saúde sobre malária em https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/m/malaria, gere uma resposta detalhada e amigável sobre a pergunta: "${message}".`;
+            const botResponse = await getGeminiResponse(prompt);
+            await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
+        } else if (conversationStep < dailyQuestions.length) {
+            userResponses[conversationStep] = message;
+
+            let botResponseText = '';
+            if (conversationStep === 0) {
+                const sentiment = parseInt(message);
+                if (sentiment < 3) {
+                    botResponseText = "Entendido. Acompanharemos de perto sua evolução clínica.";
+                } else {
+                    botResponseText = "Que bom! Ficamos felizes em saber que seu estado clínico está bem .";
+                }
+            } else if (conversationStep === 3) {
+                const hasSymptoms = message.toLowerCase().includes("sim");
+                if (hasSymptoms) {
+                    botResponseText = "É muito importante monitorar esses sintomas. Continuamos no monitoramento.";
+                } else {
+                    botResponseText = "Excelente! Continuamos no monitoramento.";
+                }
+            } else {
+                botResponseText = await getGeminiAcknowledgement(message, dailyQuestions[conversationStep]);
+            }
+
+            await addDoc(chatCollectionRef, { text: botResponseText, isUser: false, timestamp: serverTimestamp() });
+
+            conversationStep++;
+            let nextQuestionText = dailyQuestions[conversationStep];
+
+            if (userProfileData && (userProfileData.hipertenso || userProfileData.diabetes) && conversationStep === 1) {
+                const hasDiabetes = userProfileData.diabetes;
+                const hasHypertension = userProfileData.hipertenso;
+                let comorbidade = '';
+
+                if (hasHypertension && hasDiabetes) {
+                    comorbidade = ' para hipertensão e diabetes';
+                } else if (hasHypertension) {
+                    comorbidade = ' para hipertensão';
+                } else if (hasDiabetes) {
+                    comorbidade = ' para diabetes';
+                }
+
+                nextQuestionText = `2. Você faz uso de alguma medicação de uso contínuo${comorbidade}?`;
+            }
+
+            if (nextQuestionText) {
+                await addDoc(chatCollectionRef, { text: nextQuestionText, isUser: false, timestamp: serverTimestamp() });
+            } else {
+                await generateSummary(currentUser);
+            }
+        } else {
+            // Se o questionário já foi concluído (e não é uma pergunta de malária)
+            const prompt = `Responda de forma amigável e breve à seguinte mensagem do usuário, sem iniciar um novo questionário: "${message}".`;
+            const botResponse = await getGeminiResponse(prompt);
+            await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
+        }
+
+    } catch (error) {
+        console.error("Erro ao enviar mensagem ou obter resposta:", error);
+        showError("Não foi possível enviar a mensagem ou obter a resposta do chatbot. Tente novamente mais tarde.");
+    } finally {
+        loadingIndicator.classList.add('hidden');
+    }
+}
+
+async function generateSummary(user) {
+    isWaitingForSummary = true;
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    clearTimeout(inactivityTimer); // Pausa o timer enquanto gera o relatório
+
+    const formattedDate = getFormattedDate();
+
+    const summaryPrompt = `Gere um relatório detalhado com a seguinte estrutura e informações:
+**Data:** ${formattedDate}
+**Fonte das Informações:** Respostas a questionário de saúde.
+---
+### **1. Análise das Respostas Individuais:**
+${Object.keys(userResponses).map(key => `* **Pergunta ${parseInt(key) + 1}: ${dailyQuestions[key]} Resposta: ${userResponses[key]}**\n     * **Avaliação:** (Gere uma avaliação curta para esta resposta)`).join('\n')}
+---
+### **2. Avaliação Clínica Baseada em Expertise Médica:**
+(Gere um parágrafo que resume a situação clínica com base em todas as respostas.)
+---
+### **3. Sintomas Relatados e Avaliação da Gravidade:**
+(Gere um parágrafo que liste os sintomas relatados ou a ausência deles e avalie a gravidade.)
+---
+### **4. Conduta do Paciente:**
+(Gere um parágrafo que descreva as ações do paciente com base nas respostas.)
+---
+### **5. Conclusão e Recomendações:**
+(Gere uma conclusão forte. Se os sintomas (como febre alta, vômito, diarreia, calafrios) forem persistentes ou indicativos de gravidade, a conclusão deve ser uma forte recomendação para o paciente procurar a unidade de saúde mais próxima, com urgência. Se os sintomas não forem graves ou se o paciente estiver se sentindo bem, a conclusão deve indicar que não é necessário procurar uma unidade de saúde, mas sim continuar se hidratando e fazendo uso correto da medicação, se aplicável e indique se houve evolução clinica entre o monitoramento anterior e o atual, caso exista.)
+---
+### **6. Informe sobre o tratamento da malária:**
+(Gere um parágrafo que descreva o que é a malária, seu tratamento e caso necessite falar a respeito do tratamento, do diaginóstico e do estado clínico apresentado, pode ser feito por aqui, basta formular a sua pergunta!)
+
+`;
+
+    const botResponse = await getGeminiResponse(summaryPrompt);
+
+    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
+    await setDoc(checkinRef, {
+        lastCheckin: serverTimestamp(),
+        summary: botResponse,
+    });
+
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+    
+    // Adiciona o relatório detalhado
+    await addDoc(chatCollectionRef, {
+        text: "✨ Relatório Detalhado:\n" + botResponse,
+        isUser: false,
+        timestamp: serverTimestamp(),
+    });
+    
+    // Adiciona a pergunta de encerramento
+    const finalQuestion = "Agradecemos sua participação! Espero que seu estado clínico evolua rapidamente e sua saúde seja restabelecida. Estamos trabalhando fortemente para erradicar a Malária em Porto Velho e sua participação é de fundamental importância, conte conosco! Estaremos sempre à disposição.";
+    await addDoc(chatCollectionRef, {
+        text: finalQuestion,
+        isUser: false,
+        timestamp: serverTimestamp(),
+    });
+
+    isWaitingForSummary = false;
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    newSessionContainer.classList.remove('hidden');
+    conversationStep = dailyQuestions.length; // Indica que o questionário foi concluído
+    resetInactivityTimer(); // Inicia o timer de inatividade de 5 minutos
+}
+
+async function startNewSession() {
+    if (!currentUser) {
+        showError("Você precisa estar logado para iniciar uma nova sessão.");
+        return;
+    }
+    loadingIndicator.classList.remove('hidden');
+    try {
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        const docsToDelete = await getDocs(chatCollectionRef);
+        const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
+        await Promise.all(deletePromises);
+        await startInitialConversation(currentUser);
+        newSessionContainer.classList.add('hidden');
+    } catch (error) {
+        console.error("Erro ao iniciar nova sessão:", error);
+        showError("Não foi possível iniciar uma nova sessão. Tente novamente mais tarde.");
+    } finally {
+        loadingIndicator.classList.add('hidden');
+    }
+}
+
+async function startInitialConversation(user) {
+    const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+
+    chatContainer.innerHTML = '';
+    conversationStep = 0;
+    userResponses = {};
+    isSessionActive = true; // Ativa a sessão
+    resetInactivityTimer(); // Inicia o timer
+
+    if (!userProfileSnap.exists()) {
+        // Usuário novo: Exibe o formulário de cadastro
+        formModal.classList.remove('hidden');
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        isSessionActive = false;
+    } else {
+        userProfileData = userProfileSnap.data();
+
+        // Verifica se já deu o consentimento
+        if (!userProfileData.consentido) {
+            // Usuário cadastrado mas sem consentimento: Exibe o TCLE
+            tcleModal.classList.remove('hidden');
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            isSessionActive = false;
+            return; // Para o fluxo aqui e espera o consentimento
+        }
+
+        // Usuário cadastrado E consentiu: Inicia o chat
+        const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
+        const checkinSnap = await getDoc(checkinRef);
+
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+
+        if (checkinSnap.exists()) {
+            const lastSummary = checkinSnap.data().summary;
+            const summaryMessage = `Olá, ${user.displayName}! 👋 Que bom te ver de volta. Aqui está um resumo da sua última consulta: \n\n${lastSummary}`;
+            await addDoc(chatCollectionRef, { text: summaryMessage, isUser: false, timestamp: serverTimestamp() });
+            await addDoc(chatCollectionRef, { text: dailyQuestions[0], isUser: false, timestamp: serverTimestamp() });
+        } else {
+            const welcomeMessage = `Olá, ${user.displayName}! 👋 Que bom te ver de volta. Vamos começar o seu primeiro check-in diário.`;
+            await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
+            await addDoc(chatCollectionRef, { text: dailyQuestions[0], isUser: false, timestamp: serverTimestamp() });
+        }
+    }
+}
+
+async function handleFormSubmission() {
+    if (!currentUser) {
+        showError("Erro: Usuário não autenticado.");
+        return;
+    }
+
+    // Validação básica
+    const requiredFields = ['rg', 'cpf', 'endereco', 'cidade', 'estado', 'tipoMalaria', 'inicioSintomas', 'dataAtendimento', 'unidadeAtendimento'];
+    const isFormValid = requiredFields.every(id => document.getElementById(id).value.trim() !== '');
+
+    if (!isFormValid) {
+        showError("Por favor, preencha todos os campos do formulário para continuar.");
+        return;
+    }
+
+    const formData = {
+        rg: document.getElementById('rg').value,
+        cpf: document.getElementById('cpf').value,
+        endereco: document.getElementById('endereco').value,
+        cidade: document.getElementById('cidade').value,
+        estado: document.getElementById('estado').value,
+        tipoMalaria: document.getElementById('tipoMalaria').value,
+        inicioSintomas: document.getElementById('inicioSintomas').value,
+        dataAtendimento: document.getElementById('dataAtendimento').value,
+        unidadeAtendimento: document.getElementById('unidadeAtendimento').value,
+        medicacaoDistribuida: document.getElementById('medicacaoDistribuida').checked,
+        teveFebre: document.getElementById('teveFebre').checked,
+        hipertenso: document.getElementById('hipertenso').checked,
+        diabetes: document.getElementById('diabetes').checked,
+        consentido: false // Inicializa como NÃO consentido
+    };
+
+    try {
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        await setDoc(userProfileRef, {
+            uid: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentUser.displayName,
+            createdAt: serverTimestamp(),
+            ...formData
+        });
+        formModal.classList.add('hidden');
+
+        // Após salvar o formulário, exibe o modal do TCLE
+        tcleModal.classList.remove('hidden');
+
+        // Atualiza os dados do perfil localmente
+        const userProfileSnap = await getDoc(userProfileRef);
+        userProfileData = userProfileSnap.data();
+
+    } catch (error) {
+        console.error("Erro ao salvar dados do formulário:", error);
+        showError("Não foi possível salvar seus dados. Tente novamente.");
+    }
+}
+
+// Lógica do Modal de Termo de Consentimento (TCLE)
+tcleConsentCheckbox.addEventListener('change', () => {
+    if (tcleConsentCheckbox.checked) {
+        tcleParticiparBtn.disabled = false;
+        tcleParticiparBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        tcleParticiparBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'focus:ring-indigo-500');
+    } else {
+        tcleParticiparBtn.disabled = true;
+        tcleParticiparBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+        tcleParticiparBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'focus:ring-indigo-500');
+    }
+});
+
+tcleParticiparBtn.addEventListener('click', async () => {
+    if (!tcleConsentCheckbox.checked) {
+        showError("Você deve concordar com o Termo de Consentimento para participar.");
+        return;
+    }
+
+    try {
+        // Salva o status de consentimento no perfil do usuário
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
+
+        tcleModal.classList.add('hidden');
+
+        // FINALIZA A INICIALIZAÇÃO e inicia o questionário
+        await startInitialConversation(currentUser);
+
+    } catch (error) {
+        console.error("Erro ao registrar consentimento:", error);
+        showError("Não foi possível registrar seu consentimento. Tente novamente.");
+    }
+});
+
+// Funções de Autenticação e Listener
+googleSigninBtn.onclick = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+    } catch (error) {
+        console.error("Erro no login com Google:", error);
+        showError("Falha ao entrar com Google. Tente novamente.");
+    }
+};
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        userNameElem.textContent = `Olá, ${user.displayName || user.email}!`;
+        loginScreen.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+            loginScreen.classList.add('hidden');
+            chatScreen.classList.remove('hidden');
+            chatScreen.classList.add('opacity-100');
+            startInitialConversation(user);
+            listenForMessages(user);
+        }, 500);
+    } else {
+        currentUser = null;
+        chatScreen.classList.remove('opacity-100');
+        chatScreen.classList.add('opacity-0');
+        loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        isSessionActive = false;
+        clearTimeout(inactivityTimer);
+    }
+});
+
+// Função para ouvir mensagens do chat em tempo real
+function listenForMessages(user) {
+    if (!user) return;
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+    const q = query(chatCollectionRef, orderBy("timestamp", "asc"));
+
+    onSnapshot(q, (snapshot) => {
+        // Reinicia o timer em qualquer atividade do chat (inclusive as do bot)
+        resetInactivityTimer();
+        
+        const isInitialLoad = chatContainer.children.length === 0;
+
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                displayMessage(data.text, data.isUser, data.timestamp);
+                
+                // Lógica de atualização do conversationStep na carga inicial ou em mensagens do bot
+                if (isInitialLoad && !data.isUser && dailyQuestions.includes(data.text.split('\n')[0])) {
+                    conversationStep = dailyQuestions.findIndex(q => q === data.text.split('\n')[0]);
+                }
+            }
+        });
+    });
+}
+
+// Event listener para o botão Salvar do formulário
+saveFormBtn.addEventListener('click', handleFormSubmission);
+
+// Event listener para o botão de Envio (Send)
+sendBtn.addEventListener('click', sendMessage);
+
+// Event listener para o Enter no input
+messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+// Event listener para o botão Nova Sessão
+newSessionBtn.addEventListener('click', startNewSession);
+</script>
+</body>
+</html>
