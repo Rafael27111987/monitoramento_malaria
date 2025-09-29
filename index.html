@@ -583,13 +583,13 @@ function displayMessage(message, isUser, timestamp) {
 }
 
 // ==========================================================
-// 🚨 FUNÇÃO ADAPTADA PARA EXIBIR PERGUNTA E BOTÕES INLINE
+// FUNÇÃO ADAPTADA PARA EXIBIR PERGUNTA E BOTÕES INLINE
 // ==========================================================
 async function displayQuestionWithButtons(question) {
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
     let questionText = question.text;
     
-    // ⚠️ Lógica para a PERGUNTA DINÂMICA (Q17)
+    // Lógica para a PERGUNTA DINÂMICA (Q17)
     if (question.text.includes("[DATA CALCULADA]") && userProfileData && userProfileData.dataAtendimento) {
         const nextControlInfo = calculateNextControlDate(userProfileData.dataAtendimento);
         questionText = question.text.replace("[DATA CALCULADA]", nextControlInfo);
@@ -640,7 +640,7 @@ async function displayQuestionWithButtons(question) {
 // ==========================================================
 
 // ==========================================================
-// 🚨 FUNÇÃO PARA PROCESSAR RESPOSTAS DE BOTÃO (AGORA REMOVE O BOTÃO)
+// FUNÇÃO PARA PROCESSAR RESPOSTAS DE BOTÃO (AGORA REMOVE O BOTÃO)
 // ==========================================================
 async function processButtonResponse(response) {
     if (!currentUser || isWaitingForSummary) return;
@@ -716,12 +716,8 @@ async function getGeminiResponse(prompt) {
     return text || "Não foi possível gerar uma resposta. Tente novamente.";
 }
 
-// ######################################################################
-// TRECHO REMOVIDO: Função getGeminiAcknowledgement (Reconhecimento entre respostas)
-// ######################################################################
-
 // ==========================================================
-// FUNÇÃO SENDMESSAGE ADAPTADA COM REMOÇÃO DA MENSAGEM DE RECONHECIMENTO
+// FUNÇÃO SENDMESSAGE ADAPTADA SEM MENSAGEM DE RECONHECIMENTO ENTRE RESPOSTAS
 // ==========================================================
 async function sendMessage(manualMessage = null, isButtonResponse = false) {
     if (!currentUser) {
@@ -785,9 +781,7 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
                 }
             }
             
-            // ######################################################################
-            // 4. Mensagem de reconhecimento (Chamada de API) - TRECHO REMOVIDO!
-            // ######################################################################
+            // 4. MENSAGEM DE RECONHECIMENTO REMOVIDA AQUI!
 
             // 5. Avança o passo (SOMENTE APÓS O SUCESSO DO REGISTRO)
             conversationStep++;
@@ -865,7 +859,6 @@ ${Object.keys(userResponses).map(key => {
         questionText = questionText.replace("[DATA CALCULADA]", calculateNextControlDate(userProfileData.dataAtendimento));
     }
 
-    // REMOVIDO: O comentário que solicitava a avaliação curta individual para manter o código limpo
     return `* **Pergunta ${parseInt(key) + 1}: ${questionText} Resposta: ${responseText}**`
 }).join('\n')}
 ---
@@ -938,16 +931,18 @@ async function startNewSession() {
 }
 
 // ==========================================================
-// FUNÇÕES DE TCLE
+// FUNÇÕES DE TCLE (Com tratamento para primeiro acesso)
 // ==========================================================
 async function checkTcleStatus(user) {
     const tcleRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/consent/tcle`);
     try {
         const tcleDoc = await getDoc(tcleRef);
-        return tcleDoc.exists() && tcleDoc.data().accepted;
+        // Se o documento existe E o campo 'accepted' é true, retorna true.
+        // Caso contrário (documento não existe ou accepted é false/nulo), retorna false.
+        return tcleDoc.exists() && tcleDoc.data().accepted === true;
     } catch (e) {
         console.error("Erro ao verificar status do TCLE:", e);
-        return false;
+        return false; 
     }
 }
 
@@ -994,10 +989,14 @@ async function loadUserProfile(user) {
             userNameElem.textContent = userProfileData.nome || user.displayName;
             chatScreen.classList.remove('hidden');
             loginScreen.classList.add('hidden');
+            tcleModal.classList.add('hidden');
             // Próxima etapa: Verificar sessão diária
             await checkDailySession(user);
         } else {
             // Se o perfil não existe, mostra o formulário de cadastro
+            chatScreen.classList.add('hidden');
+            tcleModal.classList.add('hidden');
+            loginScreen.classList.add('hidden');
             showFormModal();
         }
     } catch (e) {
@@ -1087,7 +1086,7 @@ async function checkDailySession(user) {
                 const summary = checkinDoc.data().summary || "Relatório do último check-in não disponível.";
                 const finalMsg = "Você já concluiu o check-up de hoje. Fique à vontade para tirar dúvidas sobre a Malária com a nossa Inteligência Artificial ou inicie uma nova sessão amanhã. (O último relatório detalhado está acima)";
                 
-                // Garante que o chat está vazio antes de carregar o histórico ou mostrar as mensagens
+                // Garante que o chat está limpo e carrega o histórico
                 chatContainer.innerHTML = '';
                 await loadChatHistory(user); 
 
@@ -1132,8 +1131,8 @@ const provider = new GoogleAuthProvider();
 
 googleSigninBtn.onclick = async () => {
     try {
-        const result = await signInWithPopup(auth, provider);
-        // O onAuthStateChanged cuidará da próxima etapa (checkUserStatus)
+        // A autenticação chama onAuthStateChanged, que por sua vez chama checkUserStatus
+        await signInWithPopup(auth, provider);
     } catch (error) {
         console.error("Erro de login com Google:", error);
         showError("Falha ao fazer login com o Google. Tente novamente.");
@@ -1144,16 +1143,17 @@ googleSigninBtn.onclick = async () => {
 async function checkUserStatus(user) {
     currentUser = user;
     if (user) {
-        // 1. Verificar TCLE
+        // 1. Verificar TCLE (Primeira etapa obrigatória)
         const tcleAccepted = await checkTcleStatus(user);
         
         if (tcleAccepted) {
-            // 2. Carregar perfil e verificar formulário
+            // 2. Se o TCLE foi aceito, carrega o perfil (que verificará se o form está preenchido)
             await loadUserProfile(user); 
         } else {
-            // 2. Mostrar TCLE Modal
+            // 2. Se o TCLE NÃO foi aceito (incluindo o primeiro acesso), mostra o modal do TCLE.
             loginScreen.classList.add('hidden');
             chatScreen.classList.add('hidden'); 
+            formModal.classList.add('hidden'); 
             await showTcleModal();
         }
     } else {
