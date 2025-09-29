@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoramento de Malária - PVH</title>
+    <title>Monitoramento de Malária - Chatbot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -62,7 +62,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-600 mb-4" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12h-2v-4h-2V7h4v5h2z" />
         </svg>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Monitoramento da Malária</h1>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Monitoramento de Malária</h1>
         <p class="text-gray-600 mb-6 text-center">Entre para iniciar seu check-in diário e receber monitoramento personalizado.</p>
         <button id="google-signin-btn" class="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-300 shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 48 48" fill="currentColor">
@@ -80,7 +80,7 @@
         <!-- Cabeçalho do Chat - CENTRALIZADO -->
         <header class="p-4 bg-indigo-600 text-white rounded-t-none md:rounded-t-2xl shadow-md flex flex-col justify-center items-center">
             <!-- Título Centralizado -->
-            <h2 class="text-xl font-bold">Monitoramento da Malária PVH</h2>
+            <h2 class="text-xl font-bold">Monitoramento de Malária RO</h2>
             <!-- Nome do Usuário na Resposta/Abaixo do Título -->
             <span id="user-name" class="text-sm font-light opacity-80 mt-1"></span>
         </header>
@@ -219,9 +219,16 @@
                 <div class="p-4 bg-yellow-50 rounded-xl shadow-inner border border-yellow-200">
                     <h4 class="text-lg font-bold text-yellow-800 mb-4">2. Dados do Diagnóstico e Tratamento</h4>
 
+                    <!-- NOVO: Select para Tipo de Malária -->
                     <div>
-                        <label for="tipoMalaria" class="block text-xs font-semibold text-gray-700">Tipo de Malária Diagnóstico (Ex: *P. vivax*)</label>
-                        <input type="text" id="tipoMalaria" placeholder="Ex: P. vivax" class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm">
+                        <label for="tipoMalaria" class="block text-xs font-semibold text-gray-700">Tipo de Malária Diagnóstico</label>
+                        <select id="tipoMalaria" class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm bg-white">
+                            <option value="" disabled selected>Selecione o tipo de Malária</option>
+                            <option value="P. vivax">P. vivax</option>
+                            <option value="P. falciparum">P. falciparum</option>
+                            <option value="Mista">Mista (P. vivax e P. falciparum)</option>
+                            <option value="Outro/Desconhecido">Outro/Desconhecido</option>
+                        </select>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -286,27 +293,28 @@
     <!-- Script JavaScript -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
-const firebaseConfig = {
-    apiKey: "AIzaSyCEW-C1FavyFqjabMjmS-JVo2fLXHNt5Yg",
-    authDomain: "meuaplicativosaude.firebaseapp.com",
-    projectId: "meuaplicativosaude",
-    storageBucket: "meuaplicativosaude.firebasestorage.app",
-    messagingSenderId: "547845597696",
-    appId: "1:547845597696:web:7942056f2d48601fa086e5",
-    measurementId: "G-MYE47X3LNH"
-};
+// --- CONFIGURAÇÃO E INICIALIZAÇÃO OBRIGATÓRIA DO FIREBASE ---
+// As configurações são fornecidas pelo ambiente.
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-// Chave de API do Gemini, nunca a exponha.
-const geminiApiKey = "AIzaSyBeLGZcfbhn9lYFzsy6YWDI8PNquvZ9aE0";
+// Chave de API do Gemini (AGORA UTILIZA A CHAVE FORNECIDA PELO USUÁRIO)
+const geminiApiKey = "AIzaSyBeLGZcfbhn9lYFzsy6YWDI8PNquvZ9aE0"; 
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Adiciona o log para debug no console
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+setLogLevel('debug');
+// ----------------------------------------------------------------------
+
 
 // Variável para armazenar o estado do usuário
 let currentUser = null;
@@ -335,10 +343,10 @@ const tcleConsentCheckbox = document.getElementById('tcle-consent-checkbox');
 const tcleParticiparBtn = document.getElementById('tcle-participar-btn');
 
 // ==========================================================
-// ESTRUTURA DE PERGUNTAS COM OPÇÕES DE BOTÃO
+// ESTRUTURA DE PERGUNTAS COM OPÇÕES DE BOTÃO (ATUALIZADA)
 // ==========================================================
 const dailyQuestions = [
-    // I. Avaliação Geral e Sintomas Principais
+    // I. Avaliação Geral e Sintomas Principais (Q1 a Q3)
     { 
         text: "1. Como você se sente no geral hoje em comparação com ontem e com o início do tratamento?",
         type: "select",
@@ -356,7 +364,7 @@ const dailyQuestions = [
         options: ["Não tenho mais", "Estão muito mais leves/raros", "Estão iguais a antes", "Estão mais intensos/frequentes"]
     },
 
-    // II. Outros Sintomas Comuns e Nível de Energia
+    // II. Outros Sintomas Comuns e Nível de Energia (Q4 a Q6)
     {
         text: "4. As dores de cabeça e as dores no corpo (musculares ou nas articulações) estão mais leves ou continuam fortes?",
         type: "select",
@@ -374,7 +382,7 @@ const dailyQuestions = [
         options: ["Sinto-me com energia normal/melhor", "Ainda sinto fraqueza, mas consigo me mover", "Cansaço e fraqueza extremas, dificuldade para atividades simples"]
     },
 
-    // III. Sinais de Alerta para Buscar Ajuda Médica Imediata (Malária Grave)
+    // III. Sinais de Alerta para Buscar Ajuda Médica Imediata (Malária Grave) (Q7 a Q12)
     {
         text: "7. Você notou alguma coloração amarelada na pele ou nos olhos (icterícia)?",
         type: "select",
@@ -412,7 +420,7 @@ const dailyQuestions = [
         warning: (response) => response.includes("intensa e persistente") ? "**SINAL DE ALERTA GRAVE:** Procure atendimento médico IMEDIATO." : null
     },
 
-    // IV. Adesão ao Tratamento e Acompanhamento
+    // IV. Adesão ao Tratamento e Acompanhamento (Q13 e Q14)
     {
         text: "13. Você está tomando todos os medicamentos exatamente como o médico prescreveu, nos horários certos e sem esquecer nenhuma dose?",
         type: "select",
@@ -424,10 +432,27 @@ const dailyQuestions = [
         options: ["Não, os efeitos são leves/suportáveis", "Sim, os efeitos colaterais são intensos e insuportáveis"],
         warning: (response) => response.includes("insuportáveis") ? "Importante: Entre em contato com a Unidade de Saúde para avaliação e possível ajuste." : null
     },
+    
+    // V. BUSCA POR AJUDA E AUTOMEDICAÇÃO (NOVAS PERGUNTAS)
     {
-        text: "15. Você já realizou o exame de controle (Gota Espessa) no dia indicado ou quando será a próxima consulta de acompanhamento para confirmar a cura?",
-        type: "text" // Mantém como texto para o usuário digitar a data/info
+        text: "15. Desde o seu último check-in (ou atendimento), você precisou buscar atendimento em alguma Unidade Básica de Saúde (UBS), Unidade de Pronto Atendimento (UPA) ou Hospital?",
+        type: "select",
+        options: ["Não, não procurei ajuda", "Sim, procurei e fui reavaliado(a)", "Estou a caminho da unidade agora"],
+        warning: (response) => response.includes("a caminho") ? "Por favor, continue nos informando após a reavaliação médica. Tenha um atendimento seguro." : null
     },
+    {
+        text: "16. Você tomou algum medicamento para febre, dor ou outros sintomas que NÃO FOI receitado especificamente para o tratamento da malária?",
+        type: "select",
+        options: ["Não, apenas a medicação prescrita", "Sim, tomei (Ex: Paracetamol, Dipirona, vitaminas)", "Sim, tomei antibióticos ou outros remédios fortes por conta própria"],
+        warning: (response) => response.includes("por conta própria") ? "**Atenção!** A automedicação pode ser perigosa e interferir no tratamento da malária. Por favor, evite tomar remédios não prescritos." : null
+    },
+
+    // VI. CONTROLE DE CURA (DINÂMICA)
+    {
+        text: "17. A data recomendada para seu próximo exame de Gota Espessa de controle é: [DATA CALCULADA]. Você pretende comparecer ao seu retorno/exame conforme indicação médica?",
+        type: "select",
+        options: ["Sim, irei na data indicada", "Já realizei (e deu negativo)", "Já realizei (e deu positivo)", "Não poderei comparecer"]
+    }
 ];
 // ==========================================================
 
@@ -442,6 +467,28 @@ let userProfileData = null;
 let inactivityTimer;
 const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutos em milissegundos
 let isSessionActive = false; // Começa como inativa até o login e início do questionário
+
+// ======================================================================================
+// 🚨 INICIALIZAÇÃO OBRIGATÓRIA DO FIREBASE E AUTENTICAÇÃO ANÔNIMA/CUSTOMIZADA
+// ======================================================================================
+async function initializeAuth() {
+    try {
+        if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
+            console.log("Autenticação inicial: Usuário autenticado via token personalizado.");
+        } else {
+            await signInAnonymously(auth);
+            console.log("Autenticação inicial: Usuário autenticado anonimamente.");
+        }
+    } catch (error) {
+        console.error("Erro na autenticação inicial:", error);
+    }
+}
+
+// Inicia o processo de autenticação obrigatória ao carregar o script
+initializeAuth();
+// ======================================================================================
+
 
 // Função para mostrar o modal de erro
 function showError(message) {
@@ -475,6 +522,62 @@ function getFormattedDate() {
     return today.toLocaleDateString('pt-BR', options);
 }
 
+/**
+ * Calcula a próxima data de controle de Gota Espessa (Dia 3, 7, 14 ou 28)
+ * com base na data do primeiro atendimento e na data atual.
+ * @param {string} firstConsultationDateString - Data do primeiro atendimento (YYYY-MM-DD).
+ * @returns {string} Texto indicando o próximo controle necessário ou "Completo" se já passou o D28.
+ */
+function calculateNextControlDate(firstConsultationDateString) {
+    if (!firstConsultationDateString) return "Data não fornecida. Por favor, procure sua UBS.";
+
+    const initialDate = new Date(firstConsultationDateString + 'T00:00:00'); // Garante que é meia-noite
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const controls = [3, 7, 14, 28]; // Dias para o controle
+    
+    // Adiciona 1 dia porque o controle D+N ocorre N dias APÓS o D0 (dia do atendimento)
+    // O D1 é o dia seguinte ao D0.
+    const getControlDate = (day) => {
+        const controlDate = new Date(initialDate);
+        controlDate.setDate(initialDate.getDate() + day);
+        return controlDate;
+    };
+
+    let nextControl = null;
+
+    for (const day of controls) {
+        const controlDate = getControlDate(day);
+        
+        // Verifica se a data de controle é no futuro ou hoje (mas não no passado)
+        if (controlDate >= today) {
+            nextControl = { day: day, date: controlDate };
+            break; // Encontrou o próximo controle
+        }
+    }
+
+    if (nextControl) {
+        const controlDate = nextControl.date;
+        const formattedDate = controlDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        // Verifica se o controle é hoje
+        if (controlDate.getTime() === today.getTime()) {
+            return `HOJE (Dia ${nextControl.day}, ${formattedDate})`;
+        } else {
+            return `Dia ${nextControl.day} (${formattedDate})`;
+        }
+    }
+
+    // Se a data de controle D28 já passou
+    const d28Date = getControlDate(28);
+    if (d28Date < today) {
+        return "Controle D28 já realizado. Continue o monitoramento, mas o controle laboratorial primário está completo.";
+    }
+
+    return "Erro no cálculo. Procure a unidade de saúde para confirmar a data correta.";
+}
+
 // Função para exibir mensagem no chat
 function displayMessage(message, isUser, timestamp) {
     const messageDiv = document.createElement('div');
@@ -506,10 +609,17 @@ function displayMessage(message, isUser, timestamp) {
 // 🚨 FUNÇÃO ADAPTADA PARA EXIBIR PERGUNTA E BOTÕES INLINE
 // ==========================================================
 async function displayQuestionWithButtons(question) {
-    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
+    let questionText = question.text;
     
+    // ⚠️ Lógica para a PERGUNTA DINÂMICA (Q17)
+    if (question.text.includes("[DATA CALCULADA]") && userProfileData && userProfileData.dataAtendimento) {
+        const nextControlInfo = calculateNextControlDate(userProfileData.dataAtendimento);
+        questionText = question.text.replace("[DATA CALCULADA]", nextControlInfo);
+    }
+
     // 1. Adiciona a pergunta ao Firestore (e ao chat via onSnapshot)
-    await addDoc(chatCollectionRef, { text: question.text, isUser: false, timestamp: serverTimestamp() });
+    await addDoc(chatCollectionRef, { text: questionText, isUser: false, timestamp: serverTimestamp() });
     
     // 2. Desabilita o input enquanto espera a resposta de botão/texto
     messageInput.disabled = true;
@@ -589,7 +699,7 @@ async function endSession() {
     // Remove botões existentes ao encerrar
     chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
 
-    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
     const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, atualize a página!";
 
     await addDoc(chatCollectionRef, { text: endMessage, isUser: false, timestamp: serverTimestamp() });
@@ -657,7 +767,7 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
         sendBtn.disabled = true;
         loadingIndicator.classList.remove('hidden');
 
-        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
         await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
         
         await startNewSession(); 
@@ -678,7 +788,7 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
     let questionIndexBeforeAdvance = -1;
 
     try {
-        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
         
         // 1. Salva a mensagem do usuário
         await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
@@ -701,7 +811,13 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
             }
             
             // 4. Mensagem de reconhecimento (Chamada de API)
-            const botResponseText = await getGeminiAcknowledgement(message, currentQuestion.text);
+            // Se for a pergunta dinâmica 17, pega o texto real exibido no chat
+            let questionTextForAck = currentQuestion.text;
+             if (currentQuestionIndex === dailyQuestions.length - 1 && questionTextForAck.includes("[DATA CALCULADA]")) {
+                questionTextForAck = dailyQuestions[currentQuestionIndex].text.replace("[DATA CALCULADA]", calculateNextControlDate(userProfileData.dataAtendimento));
+            }
+
+            const botResponseText = await getGeminiAcknowledgement(message, questionTextForAck);
             await addDoc(chatCollectionRef, { text: botResponseText, isUser: false, timestamp: serverTimestamp() });
 
             // 5. Avança o passo (SOMENTE APÓS O SUCESSO DO REGISTRO E ACK)
@@ -772,8 +888,14 @@ async function generateSummary(user) {
 ---
 ### **1. Análise das Respostas Individuais:**
 ${Object.keys(userResponses).map(key => {
-    const questionText = dailyQuestions[key].text;
+    let questionText = dailyQuestions[key].text;
     const responseText = userResponses[key];
+
+    // Trata a pergunta dinâmica Q17
+    if (parseInt(key) === dailyQuestions.length - 1 && questionText.includes("[DATA CALCULADA]")) {
+        questionText = questionText.replace("[DATA CALCULADA]", calculateNextControlDate(userProfileData.dataAtendimento));
+    }
+
     return `* **Pergunta ${parseInt(key) + 1}: ${questionText} Resposta: ${responseText}**\n     * **Avaliação:** (Gere uma avaliação curta para esta resposta)`
 }).join('\n')}
 ---
@@ -784,7 +906,7 @@ ${Object.keys(userResponses).map(key => {
 (Gere um parágrafo que liste os sintomas relatados ou a ausência deles e avalie a gravidade. **DESTAQUE se a pergunta 7 a 12 (Sinais de Alerta) foi respondida com uma opção que indica gravidade.**)
 ---
 ### **4. Conduta do Paciente:**
-(Gere um parágrafo que descreva as ações do paciente com base nas respostas.)
+(Gere um parágrafo que descreva as ações do paciente com base nas respostas, **incluindo se houve automedicação e se buscou ajuda em UBS/UPA**.)
 ---
 ### **5. Conclusão e Recomendações:**
 (Gere uma conclusão forte. Se os sintomas (como febre alta, vômito, diarreia, calafrios) forem persistentes ou indicativos de gravidade, a conclusão deve ser uma forte recomendação para o paciente procurar a unidade de saúde mais próxima, com urgência. Se os sintomas não forem graves ou se o paciente estiver se sentindo bem, a conclusão deve indicar que não é necessário procurar uma unidade de saúde, mas sim continuar se hidratando e fazendo uso correto da medicação, se aplicável e indique se houve evolução clinica entre o monitoramento anterior e o atual, caso exista.)
@@ -796,10 +918,10 @@ ${Object.keys(userResponses).map(key => {
 
     const botResponse = await getGeminiResponse(summaryPrompt);
 
-    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
+    const checkinRef = doc(db, `artifacts/${appId}/users/${user.uid}/checkin_status/daily_status`);
     await setDoc(checkinRef, { lastCheckin: serverTimestamp(), summary: botResponse });
 
-    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/chat_messages`);
     
     await addDoc(chatCollectionRef, { text: "✨ Relatório Detalhado:\n" + botResponse, isUser: false, timestamp: serverTimestamp() });
     
@@ -821,7 +943,7 @@ async function startNewSession() {
     }
     loadingIndicator.classList.remove('hidden');
     try {
-        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
         const docsToDelete = await getDocs(chatCollectionRef);
         const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
         await Promise.all(deletePromises);
@@ -836,9 +958,9 @@ async function startNewSession() {
 }
 
 async function startInitialConversation(user) {
-    const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
+    const userProfileRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
     const userProfileSnap = await getDoc(userProfileRef);
-    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/chat_messages`);
 
     conversationStep = 0;
     userResponses = {};
@@ -865,7 +987,7 @@ async function startInitialConversation(user) {
             return;
         }
 
-        const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
+        const checkinRef = doc(db, `artifacts/${appId}/users/${user.uid}/checkin_status/daily_status`);
         const checkinSnap = await getDoc(checkinRef);
 
         const firstQuestion = dailyQuestions[0];
@@ -896,7 +1018,7 @@ async function startFreshSession(user) {
         isSessionActive = false; 
 
         // 2. Limpa o histórico de chat no Firestore
-        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/chat_messages`);
         const docsToDelete = await getDocs(chatCollectionRef);
         const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
         await Promise.all(deletePromises);
@@ -918,7 +1040,16 @@ async function handleFormSubmission() {
     }
 
     const requiredFields = ['rg', 'cpf', 'endereco', 'cidade', 'estado', 'tipoMalaria', 'inicioSintomas', 'dataAtendimento', 'unidadeAtendimento'];
-    const isFormValid = requiredFields.every(id => document.getElementById(id).value.trim() !== '');
+    
+    // Verifica se todos os campos estão preenchidos, incluindo o select
+    const isFormValid = requiredFields.every(id => {
+        const element = document.getElementById(id);
+        if (element.tagName === 'SELECT') {
+            return element.value !== ""; // Verifica se alguma opção foi selecionada
+        }
+        return element.value.trim() !== ''; // Verifica campos de texto/data
+    });
+
 
     if (!isFormValid) {
         showError("Por favor, preencha todos os campos do formulário para continuar.");
@@ -943,7 +1074,7 @@ async function handleFormSubmission() {
     };
 
     try {
-        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        const userProfileRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, {
             uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
             createdAt: serverTimestamp(), ...formData
@@ -979,7 +1110,7 @@ tcleParticiparBtn.addEventListener('click', async () => {
     }
 
     try {
-        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        const userProfileRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
 
         tcleModal.classList.add('hidden');
@@ -991,9 +1122,11 @@ tcleParticiparBtn.addEventListener('click', async () => {
     }
 });
 
+// 🚨 LÓGICA DO BOTÃO GOOGLE SIGN-IN
 googleSigninBtn.onclick = async () => {
     const provider = new GoogleAuthProvider();
     try {
+        // Usa o pop-up para o login do Google
         await signInWithPopup(auth, provider);
     } catch (error) {
         console.error("Erro no login com Google:", error);
@@ -1005,7 +1138,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         // Atualiza o nome do usuário no cabeçalho
-        userNameElem.textContent = `Olá, ${user.displayName || user.email}!`; 
+        userNameElem.textContent = `Olá, ${user.displayName || user.email}! ID: ${user.uid.substring(0, 8)}...`; 
 
         loginScreen.classList.add('opacity-0', 'pointer-events-none');
         setTimeout(() => {
@@ -1035,7 +1168,7 @@ onAuthStateChanged(auth, (user) => {
 
 function listenForMessages(user) {
     if (!user) return;
-    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/chat_messages`);
     const q = query(chatCollectionRef, orderBy("timestamp", "asc"));
 
     onSnapshot(q, (snapshot) => {
