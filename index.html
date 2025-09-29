@@ -3,225 +3,294 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeto de Mestrado - Malária</title>
+    <title>Monitoramento de Malária - Chatbot</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f9;
+            background-color: #f7f9fc;
         }
+        /* Ajuste crucial: removemos a altura fixa (80vh) e confiamos no flex-grow */
         .chat-container {
-            max-width: 700px;
-        }
-        .gemini-message {
-            background-color: #e2e8f0;
-            border-radius: 1.25rem 1.25rem 1.25rem 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            color: #1a202c;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
         }
         .user-message {
-            background-color: #5a67d8;
-            border-radius: 1.25rem 1.25rem 0 1.25rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            color: #ffffff;
+            background-color: #4f46e5; /* Indigo-600 */
+            color: white;
+            border-top-right-radius: 1rem;
+            border-bottom-left-radius: 1rem;
+            border-top-left-radius: 1rem;
+            margin-left: auto; /* Alinha à direita */
         }
-        .loading-dots span {
-            animation: bounce 0.6s infinite alternate;
+        .gemini-message {
+            background-color: #eef2ff; /* Indigo-50 */
+            color: #1e293b; /* Slate-800 */
+            border-top-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+            border-top-right-radius: 1rem;
+            margin-right: auto; /* Alinha à esquerda */
         }
-        .loading-dots span:nth-child(2) {
-            animation-delay: 0.2s;
+        .chat-container > div {
+            max-width: 80%;
         }
-        .loading-dots span:nth-child(3) {
-            animation-delay: 0.4s;
+        /* Estilos do Scrollbar Customizado para o formulário */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            border-radius: 10px;
         }
-        @keyframes bounce {
-            from { transform: translateY(0); }
-            to { transform: translateY(-5px); }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c3c3c3;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #888;
         }
     </style>
 </head>
-<body class="bg-gray-100 flex flex-col items-center min-h-screen">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <div id="login-screen" class="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg text-center transition-opacity duration-500 ease-in-out opacity-100">
-        <h1 class="text-3xl font-bold text-gray-800 mb-4">Bem-vindo(a) ao Projeto de Mestrado referente ao Monitoramento da Malária na cidade de Porto Velho/RO</h1>
-        <p class="text-gray-600 mb-8">Para acessar o sistema, realize o login com sua conta Google!</p>
-        <button id="google-signin-btn" class="w-full flex items-center justify-center bg-indigo-600 text-white font-medium py-3 px-6 rounded-xl hover:bg-indigo-700 transition-colors duration-200">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M22.062 12.001c0-.776-.07-1.524-.199-2.247h-9.863v4.22h5.532c-.237 1.266-1.112 2.348-2.617 3.238v2.793h3.582c2.094-1.928 3.32-4.757 3.32-8.004z" fill="#4285F4"/>
-                <path d="M12.001 22.062c3.27 0 6.012-1.077 8.01-2.92l-3.582-2.793c-1.011.681-2.298 1.139-4.428 1.139-3.411 0-6.307-2.294-7.351-5.385h-3.69v2.859c2.071 4.102 6.551 6.899 11.041 6.899z" fill="#34A853"/>
-                <path d="M4.65 14.397c-.244-.68-.38-1.408-.38-2.196s.136-1.516.38-2.196v-2.859h-3.69c-.663 1.34-.997 2.822-.997 4.055 0 1.233.334 2.715.997 4.055l3.69-2.859z" fill="#FBBC05"/>
-                <path d="M12.001 4.397c2.199 0 4.093.757 5.613 2.113l3.058-3.058c-2.19-2.072-5.084-3.352-8.671-3.352-4.49 0-8.97 2.797-11.041 6.899l3.69 2.859c1.044-3.091 3.94-5.385 7.351-5.385z" fill="#EA4335"/>
+    <!-- Tela de Login -->
+    <div id="login-screen" class="flex flex-col items-center justify-center p-8 bg-white shadow-2xl rounded-2xl w-full max-w-md transition-all duration-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-600 mb-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12h-2v-4h-2V7h4v5h2z" />
+        </svg>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Monitoramento de Malária</h1>
+        <p class="text-gray-600 mb-6 text-center">Entre para iniciar seu check-in diário e receber monitoramento personalizado.</p>
+        <button id="google-signin-btn" class="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-300 shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 48 48" fill="currentColor">
+                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.692-5.743 7.917-10.303 7.917-6.903 0-12.498-5.592-12.498-12.496s5.595-12.496 12.498-12.496c3.243 0 6.208 1.157 8.524 3.037l-4.243 3.491c-1.353-.98-3.044-1.579-4.281-1.579-4.881 0-8.86 3.988-8.86 8.873s3.979 8.873 8.86 8.873c5.32 0 8.544-4.438 8.95-6.736h-8.95v-6.004z"/>
+                <path fill="#FF3D00" d="M6.306 14.693l-4.405 3.486c-.991 1.932-1.501 3.992-1.501 6.321s.51 4.389 1.501 6.321l4.405 3.486c.942-2.228 1.487-4.498 1.487-7.238s-.545-5.01-1.487-7.238z"/>
+                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.4-5.195l-5.694-4.493c-2.091 1.585-4.707 2.488-7.706 2.488-5.32 0-9.858-3.342-11.666-8.23l-5.378 4.227c2.618 6.275 9.421 10.708 16.944 10.708z"/>
+                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.692-5.743 7.917-10.303 7.917-6.903 0-12.498-5.592-12.498-12.496s5.595-12.496 12.498-12.496c3.243 0 6.208 1.157 8.524 3.037l-4.243 3.491c-1.353-.98-3.044-1.579-4.281-1.579-4.881 0-8.86 3.988-8.86 8.873s3.979 8.873 8.86 8.873c5.32 0 8.544-4.438 8.95-6.736h-8.95v-6.004z"/>
             </svg>
             Entrar com Google
         </button>
     </div>
 
-    <div id="chat-screen" class="hidden flex flex-col items-center w-full min-h-screen transition-opacity duration-500 ease-in-out opacity-0 relative">
-    
-        <h1 class="text-2xl font-bold text-indigo-700 mb-2 text-center mt-6">
-            Projeto de Mestrado - Monitoramento da Malária em Porto Velho
-        </h1>
-        <h2 id="user-name" class="text-xl font-semibold text-gray-800 mb-4 text-center"></h2>
-        
-        <div class="chat-container w-full mx-auto flex flex-col p-4 overflow-y-auto h-[calc(100vh-220px)] pb-16">
+    <!-- Tela do Chat - Altura ajustada para 95% da tela e responsividade de bordas -->
+    <div id="chat-screen" class="hidden flex flex-col w-full max-w-2xl bg-white shadow-2xl rounded-none md:rounded-2xl h-[95vh] transition-opacity duration-500 opacity-0">
+        <!-- Cabeçalho do Chat - CENTRALIZADO -->
+        <header class="p-4 bg-indigo-600 text-white rounded-t-none md:rounded-t-2xl shadow-md flex flex-col justify-center items-center">
+            <!-- Título Centralizado -->
+            <h2 class="text-xl font-bold">Monitoramento de Malária PVH</h2>
+            <!-- Nome do Usuário na Resposta/Abaixo do Título -->
+            <span id="user-name" class="text-sm font-light opacity-80 mt-1"></span>
+        </header>
+
+        <!-- Container de Mensagens - Usa flex-grow para ocupar o espaço restante -->
+        <div class="chat-container flex-grow overflow-y-auto" id="chat-container">
+            <!-- Mensagens serão injetadas aqui -->
         </div>
 
-        <div id="loading-indicator" class="hidden my-4">
-            <span class="loading-dots inline-flex space-x-1">
-                <span class="block w-2 h-2 bg-indigo-600 rounded-full"></span>
-                <span class="block w-2 h-2 bg-indigo-600 rounded-full"></span>
-                <span class="block w-2 h-2 bg-indigo-600 rounded-full"></span>
-            </span>
-        </div>
-        
-        <div class="fixed bottom-0 w-full md:w-6/12 p-4 bg-white rounded-t-2xl shadow-lg flex items-center">
-            <input id="message-input" type="text" placeholder="Escreva uma mensagem..." class="flex-grow bg-gray-100 py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button id="send-btn" class="ml-4 p-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <!-- Indicador de Carregamento e Nova Sessão -->
+        <div class="p-4 border-t border-gray-200">
+            <div id="loading-indicator" class="hidden text-center text-indigo-500 font-medium my-2">
+                <svg class="animate-spin h-5 w-5 text-indigo-500 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-            </button>
-        </div>
-
-        <div id="new-session-container" class="mt-4 hidden w-full md:w-5/12 p-4">
-            <button id="new-session-btn" class="w-full bg-green-500 text-white font-medium py-3 px-6 rounded-xl hover:bg-green-600 transition-colors duration-200">
-                Começar Nova Sessão ✨
-            </button>
-        </div>
-        <div id="reminder-container" class="mt-2 hidden w-full md:w-5/12 p-4 text-center">
-            <button id="enable-reminders-btn" class="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-xl hover:bg-blue-600 transition-colors duration-200">
-                Ativar Lembretes Diários 🔔
-            </button>
-            <p id="reminder-status" class="mt-2 text-sm text-gray-500 hidden"></p>
-        </div>
-    </div>
-    
-    <div id="form-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-        <div class="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-2xl bg-white max-h-[90vh]">
-            <div class="mt-3 text-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Antes de começar a responder ao questionário, precisamos coletar alguns dados que serão necessários para o desenvolvimento do projeto.</h3>
-                <p class="text-sm text-gray-500 mt-2">Por favor, preencha todos os campos abaixo!</p>
-                <form id="health-form" class="mt-4 space-y-4 text-left overflow-y-auto max-h-[60vh] p-2">
-                    <div>
-                        <label for="rg" class="block text-sm font-medium text-gray-700">RG</label>
-                        <input type="text" id="rg" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
-                    </div>
-                    <div>
-                        <label for="cpf" class="block text-sm font-medium text-gray-700">CPF</label>
-                        <input type="text" id="cpf" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
-                    </div>
-                    <div>
-                        <label for="endereco" class="block text-sm font-medium text-gray-700">Endereço Completo</label>
-                        <input type="text" id="endereco" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
-                    </div>
-                    <div>
-                        <label for="cidade" class="block text-sm font-medium text-gray-700">Cidade</label>
-                        <input type="text" id="cidade" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
-                    </div>
-                    <div>
-                        <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
-                        <input type="text" id="estado" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
-                    </div>
-                    <h4 class="text-base text-center font-semibold text-gray-800 mt-6 pt-4 border-t">Histórico de Saúde</h4>
-                    <div>
-                        <label for="tipoMalaria" class="block text-sm font-medium text-gray-700">Tipo de Malária</label>
-                        <input type="text" id="tipoMalaria" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
-                    </div>
-                    <div>
-                        <label for="inicioSintomas" class="block text-sm font-medium text-gray-700">Início dos Sintomas</label>
-                        <input type="date" id="inicioSintomas" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-100">
-                    </div>
-                    <div>
-                        <label for="dataAtendimento" class="block text-sm font-medium text-gray-700">Data do Atendimento</label>
-                        <input type="date" id="dataAtendimento" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-100">
-                    </div>
-                    <div>
-                        <label for="unidadeAtendimento" class="block text-sm font-medium text-gray-700">Unidade de Atendimento</label>
-                        <input type="text" id="unidadeAtendimento" class="p-1 bg-gray-50 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase bg-gray-100">
-                    </div>
-                    <div class="flex items-center">
-                        <input id="medicacaoDistribuida" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        <label for="medicacaoDistribuida" class="ml-2 block text-sm text-gray-900">Foi distribuída a Tafenoquina?</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input id="teveFebre" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        <label for="teveFebre" class="ml-2 block text-sm text-gray-900">Teve febre?</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input id="hipertenso" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        <label for="hipertenso" class="ml-2 block text-sm text-gray-900">É hipertenso?</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input id="diabetes" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        <label for="diabetes" class="ml-2 block text-sm text-gray-900">Tem diabetes?</label>
-                    </div>
-                    <div class="items-center px-4 py-3">
-                    <button id="save-form-btn" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-xl w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        Salvar e Continuar
-                    </button>
-                </div>
-                </form>
+                Gerando resposta...
             </div>
-        </div>
-    </div>
-    
-    <div id="tcle-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-        <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/5 xl:w-2/5 shadow-lg rounded-2xl bg-white max-h-[90vh]">
-            <div class="mt-3 text-center flex flex-col h-full">
-                <h3 class="text-xl leading-6 font-bold text-gray-900 mb-4">Termo de Consentimento Livre e Esclarecido (TCLE)</h3>
-                
-                <div class="flex-grow overflow-y-auto p-4 border rounded-lg bg-gray-50 text-left text-sm text-gray-700 max-h-[60vh]">
-                    <p class="font-semibold mb-2">Prezado(a) Participante,</p>
-                    <p class="mb-3">Você está sendo convidado(a) a participar do **Projeto de Mestrado - Monitoramento da Malária em Porto Velho**, desenvolvido no âmbito do seu Programa de Pós-Graduação.</p>
-
-                    <h4 class="font-bold mt-4 mb-1">Objetivo do Estudo:</h4>
-                    <p class="mb-3">O objetivo principal deste estudo é realizar o monitoramento diário da sua condição de saúde após o tratamento da malária, coletando dados essenciais para melhorar as estratégias de vigilância e combate à doença em Porto Velho/RO. Os dados fornecidos serão estritamente confidenciais e utilizados apenas para fins de pesquisa e desenvolvimento de políticas públicas de saúde.</p>
-                    
-                    <h4 class="font-bold mt-4 mb-1">Riscos e Benefícios:</h4>
-                    <p class="mb-3">Não há riscos diretos associados à sua participação. Os benefícios incluem o acompanhamento contínuo da sua saúde e a contribuição para um projeto científico de grande relevância social.</p>
-
-                    <h4 class="font-bold mt-4 mb-1">Confidencialidade:</h4>
-                    <p class="mb-3">Seus dados pessoais e de saúde serão tratados com a mais absoluta **confidencialidade**, sendo armazenados em um ambiente seguro (Firebase) e acessíveis apenas pela equipe de pesquisa.</p>
-                    
-                    <h4 class="font-bold mt-4 mb-1 text-red-600">Direito de Retirada:</h4>
-                    <p class="mb-3 font-semibold text-red-600">**Sua participação neste estudo é voluntária e não remunerada. Você tem o direito de recusar-se a participar ou de retirar o seu consentimento e interromper sua participação a qualquer momento, sem qualquer prejuízo à sua assistência ou tratamento.**</p>
-                    
-                    <p class="mt-4">Ao marcar a caixa abaixo e clicar em "Desejo Participar", você declara que leu e entendeu os termos deste consentimento e concorda em participar voluntariamente do estudo.</p>
-                </div>
-                <div class="mt-4 flex flex-col space-y-3">
-                    <div class="flex items-center justify-center">
-                        <input id="tcle-consent-checkbox" type="checkbox" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        <label for="tcle-consent-checkbox" class="ml-3 block text-base font-medium text-gray-900">
-                            **Consentindo** com os termos acima.
-                        </label>
-                    </div>
-                    <button id="tcle-participar-btn" disabled class="px-4 py-3 bg-gray-400 text-white text-base font-medium rounded-xl w-full shadow-sm cursor-not-allowed">
-                        Desejo Participar
-                    </button>
-                </div>
+            
+            <div id="new-session-container" class="hidden text-center my-2">
+                <button id="new-session-btn" class="px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition duration-150 shadow-md">
+                    Iniciar Novo Check-in Diário
+                </button>
             </div>
-        </div>
-    </div>
-    <div id="error-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-2xl bg-white">
-            <div class="mt-3 text-center">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </div>
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Erro</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p id="error-message" class="text-sm text-gray-500"></p>
-                </div>
-                <div class="items-center px-4 py-3">
-                    <button id="close-error-modal" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-xl w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
-                        Fechar
-                    </button>
-                </div>
+
+            <!-- Input de Mensagem -->
+            <div class="flex space-x-3">
+                <input type="text" id="message-input" placeholder="Digite sua resposta ou uma dúvida sobre malária..." class="flex-grow p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-inner" disabled>
+                <button id="send-btn" class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-xl transition duration-150 shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Modal de Erro -->
+    <div id="error-modal" class="hidden fixed inset-0 bg-red-900 bg-opacity-75 z-50 overflow-y-auto flex items-center justify-center">
+        <div class="relative w-full max-w-sm mx-4 p-6 bg-white rounded-xl shadow-2xl">
+            <div class="text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-600 mx-auto" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h2a1 1 0 000-2H9zm-2 4h6v2H7v-2z" clip-rule="evenodd" />
+                </svg>
+                <h3 class="text-lg leading-6 font-medium text-red-900 mt-3">Erro de Aplicação</h3>
+                <p id="error-message" class="text-sm text-gray-500 mt-2">Ocorreu um erro desconhecido.</p>
+            </div>
+            <div class="mt-4">
+                <button id="close-error-modal" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-lg w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal do TCLE (Termo de Consentimento Livre e Esclarecido) -->
+    <div id="tcle-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 overflow-y-auto flex items-center justify-center">
+        <div class="relative w-full max-w-xl mx-4 my-8 p-6 bg-white rounded-3xl shadow-2xl transform transition-all duration-300">
+            <div class="text-center border-b pb-4 mb-4">
+                <h3 class="text-2xl font-extrabold text-green-700 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    Termo de Consentimento
+                </h3>
+                <p class="text-sm text-gray-500 mt-2">Sua participação é voluntária e sigilosa.</p>
+            </div>
+            <div class="max-h-[60vh] overflow-y-auto p-4 border rounded-xl bg-gray-50 text-left text-sm text-gray-700 space-y-3 custom-scrollbar">
+                <p>Eu, o participante, confirmo que li e entendi o Termo de Consentimento Livre e Esclarecido (TCLE) referente ao projeto de monitoramento de saúde. Compreendo que meus dados de monitoramento e de saúde (como RG, CPF e histórico de Malária) serão utilizados exclusivamente para fins de pesquisa e acompanhamento epidemiológico, de forma anonimizada e sigilosa, pela equipe de saúde de Porto Velho.</p>
+                <p>Fui informado sobre o objetivo do estudo, os procedimentos envolvidos (preenchimento diário de questionário via chatbot), os riscos mínimos e os benefícios potenciais (monitoramento da evolução clínica).</p>
+                <p>Entendo que a minha participação é totalmente **voluntária**, e posso retirar meu consentimento a qualquer momento, sem que isso implique em qualquer prejuízo ao meu tratamento ou à continuidade da minha assistência médica.</p>
+                <p>Ao marcar a caixa abaixo e clicar em "Participar", confirmo que concordo em participar do projeto.</p>
+            </div>
+            <div class="mt-4 pt-4 border-t">
+                <div class="flex items-center mb-4">
+                    <input id="tcle-consent-checkbox" type="checkbox" class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                    <label for="tcle-consent-checkbox" class="ml-3 block text-base font-medium text-gray-900">Eu concordo com os termos acima.</label>
+                </div>
+                <button id="tcle-participar-btn" class="px-4 py-3 bg-gray-400 text-white text-base font-bold rounded-xl w-full shadow-md cursor-not-allowed" disabled>
+                    Participar do Monitoramento
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal do Formulário de Dados Iniciais (NOVO ESTILO) -->
+    <div id="form-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 overflow-y-auto flex items-center justify-center">
+        <div class="relative w-full max-w-xl mx-4 my-8 p-6 bg-white rounded-3xl shadow-2xl transform transition-all duration-300">
+            <!-- HEADER -->
+            <div class="text-center border-b pb-4 mb-4">
+                <h3 class="text-2xl font-extrabold text-indigo-700 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9.5 9a1.5 1.5 0 000 3h1a1.5 1.5 0 000-3h-1z" clip-rule="evenodd" />
+                    </svg>
+                    Dados Essenciais para o Projeto
+                </h3>
+                <p class="text-sm text-gray-500 mt-2">Por favor, preencha as informações para iniciar seu monitoramento. Todos os campos são necessários.</p>
+            </div>
+
+            <!-- FORM CONTENT -->
+            <form id="health-form" class="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+
+                <!-- Seção 1: Dados Pessoais e Endereço -->
+                <div class="p-4 bg-indigo-50 rounded-xl shadow-inner border border-indigo-200">
+                    <h4 class="text-lg font-bold text-indigo-800 mb-4">1. Identificação e Contato</h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-1">
+                            <label for="rg" class="block text-xs font-semibold text-gray-700">RG</label>
+                            <input type="text" id="rg" placeholder="Ex: 1234567-SSP/RO" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        </div>
+                        <div class="col-span-1">
+                            <label for="cpf" class="block text-xs font-semibold text-gray-700">CPF</label>
+                            <input type="text" id="cpf" placeholder="Ex: 000.000.000-00" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="endereco" class="block text-xs font-semibold text-gray-700">Endereço Completo</label>
+                        <input type="text" id="endereco" placeholder="Rua, Número, Bairro" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 mt-4">
+                        <div class="col-span-2">
+                            <label for="cidade" class="block text-xs font-semibold text-gray-700">Cidade</label>
+                            <input type="text" id="cidade" placeholder="Porto Velho" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        </div>
+                        <div class="col-span-1">
+                            <label for="estado" class="block text-xs font-semibold text-gray-700">Estado</label>
+                            <input type="text" id="estado" placeholder="RO" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm uppercase">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Informações Clínicas da Malária -->
+                <div class="p-4 bg-yellow-50 rounded-xl shadow-inner border border-yellow-200">
+                    <h4 class="text-lg font-bold text-yellow-800 mb-4">2. Dados do Diagnóstico e Tratamento</h4>
+
+                    <!-- NOVO: Select para Tipo de Malária -->
+                    <div>
+                        <label for="tipoMalaria" class="block text-xs font-semibold text-gray-700">Tipo de Malária Diagnóstico</label>
+                        <select id="tipoMalaria" class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm bg-white">
+                            <option value="" disabled selected>Selecione o tipo de Malária</option>
+                            <option value="P. vivax">P. vivax</option>
+                            <option value="P. falciparum">P. falciparum</option>
+                            <option value="Mista">Mista (P. vivax e P. falciparum)</option>
+                            <option value="Outro/Desconhecido">Outro/Desconhecido</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label for="inicioSintomas" class="block text-xs font-semibold text-gray-700">Data de Início dos Sintomas</label>
+                            <input type="date" id="inicioSintomas" class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm">
+                        </div>
+                        <div>
+                            <label for="dataAtendimento" class="block text-xs font-semibold text-gray-700">Data do Primeiro Atendimento</label>
+                            <input type="date" id="dataAtendimento" class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label for="unidadeAtendimento" class="block text-xs font-semibold text-gray-700">Unidade de Saúde de Atendimento</label>
+                        <input type="text" id="unidadeAtendimento" placeholder="Nome da UBS ou Centro de Saúde" class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm">
+                    </div>
+
+                    <div class="mt-5 space-y-3">
+                        <div class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm">
+                            <input id="medicacaoDistribuida" type="checkbox" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+                            <label for="medicacaoDistribuida" class="ml-3 block text-sm font-medium text-gray-900">A medicação (incluindo Tafenoquina, se aplicável) foi distribuída?</label>
+                        </div>
+                        <div class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm">
+                            <input id="teveFebre" type="checkbox" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+                            <label for="teveFebre" class="ml-3 block text-sm font-medium text-gray-900">Você apresentou febre no dia do atendimento?</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 3: Histórico de Comorbidades -->
+                <div class="p-4 bg-red-50 rounded-xl shadow-inner border border-red-200">
+                    <h4 class="text-lg font-bold text-red-800 mb-4">3. Comorbidades (Condições Crônicas)</h4>
+
+                    <p class="text-sm text-gray-600 mb-4">Marque as condições de saúde que você já possui. Essa informação é importante para o monitoramento.</p>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm">
+                            <input id="hipertenso" type="checkbox" class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                            <label for="hipertenso" class="ml-3 block text-sm font-medium text-gray-900">Sou hipertenso(a) (pressão alta).</label>
+                        </div>
+                        <div class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm">
+                            <input id="diabetes" type="checkbox" class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                            <label for="diabetes" class="ml-3 block text-sm font-medium text-gray-900">Tenho diabetes (açúcar elevado no sangue).</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTÃO DE AÇÃO -->
+                <div class="pt-4 sticky bottom-0 bg-white border-t -mx-6 px-6">
+                    <button id="save-form-btn" type="button" class="px-4 py-3 bg-indigo-600 text-white text-base font-bold rounded-xl w-full shadow-lg hover:bg-indigo-700 transition duration-150 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.103A.89.89 0 0021 6.168v7.832a2 2 0 01-2 2H5a2 2 0 01-2-2V6.168c0-.68.397-1.3.882-1.615l4.404-2.202a1.2 1.2 0 011.096 0l4.404 2.202a.89.89 0 00.882 1.615z"/>
+                        </svg>
+                        Salvar Dados e Prosseguir para o Termo de Consentimento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script JavaScript -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -239,7 +308,7 @@ const firebaseConfig = {
 };
 
 // Chave de API do Gemini, nunca a exponha.
-const geminiApiKey = "AIzaSyBeLGZcfbhn9lYFzsy6YWDI8PNquvZ9aE0";
+const geminiApiKey = "";
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
@@ -272,14 +341,120 @@ const tcleModal = document.getElementById('tcle-modal');
 const tcleConsentCheckbox = document.getElementById('tcle-consent-checkbox');
 const tcleParticiparBtn = document.getElementById('tcle-participar-btn');
 
-// Perguntas aprimoradas
-let dailyQuestions = [
-    "1. Como você está se sentindo hoje? (Responda: Em uma escala de 1 a 5, sendo 1-Ruim e 5-Excelente)",
-    "2. Você faz uso de alguma medicação de uso contínuo? (Responda: Informe o nome da medicação ou Não)",
-    "3. Você apresentou sinais de febre, vômito, diarréia, cefeléia ou algum outro sintoma?",
-    "4. Fez uso de alguma medicação que não seja a Tafenoquina indicada para o tratamento da malária e que não seja a de uso contínuo? (Informe o nome ou Não)",
-    "5. Teve necessidade de procurar ajuda em alguma Unidade Básica de Saúde?",
+// ==========================================================
+// ESTRUTURA DE PERGUNTAS COM OPÇÕES DE BOTÃO (ATUALIZADA)
+// ==========================================================
+const dailyQuestions = [
+    // I. Avaliação Geral e Sintomas Principais (Q1 a Q3)
+    { 
+        text: "1. Como você se sente no geral hoje em comparação com ontem e com o início do tratamento?",
+        type: "select",
+        options: ["Sinto-me muito melhor", "Sinto-me um pouco melhor", "Igual a ontem", "Sinto-me pior", "Não sei dizer"]
+    },
+    {
+        text: "2. A febre diminuiu ou está mais controlada? Qual foi a temperatura máxima que você mediu nas últimas 24 horas?",
+        type: "select",
+        options: ["Não tive febre", "Diminuiu e está controlada (máx 37.5°C)", "Persiste, mas com melhora (máx 38.5°C)", "Persiste alta e intensa (acima de 38.5°C)"],
+        warning: (response) => response.includes("acima de 38.5°C") ? "**Sinal de Alerta:** Febre alta persistente. Por favor, procure atendimento médico IMEDIATO." : null
+    },
+    {
+        text: "3. Você ainda tem calafrios e tremores intensos? Eles estão menos frequentes ou menos intensos do que antes?",
+        type: "select",
+        options: ["Não tenho mais", "Estão muito mais leves/raros", "Estão iguais a antes", "Estão mais intensos/frequentes"]
+    },
+
+    // II. Outros Sintomas Comuns e Nível de Energia (Q4 a Q6)
+    {
+        text: "4. As dores de cabeça e as dores no corpo (musculares ou nas articulações) estão mais leves ou continuam fortes?",
+        type: "select",
+        options: ["Não sinto mais dores", "Dores muito mais leves", "Continuam fortes", "Estão piores"]
+    },
+    {
+        text: "5. Você tem conseguido se alimentar e beber líquidos normalmente? Houve vômitos ou diarreia nas últimas horas?",
+        type: "select",
+        options: ["Sim, alimentação e hidratação normais", "Consigo comer e beber, mas com dificuldade", "Tive vômitos ou diarreia isolados", "Vômitos ou diarreia persistentes e intensos"],
+        warning: (response) => response.includes("persistentes e intensos") ? "**Sinal de Alerta:** Vômitos/Diarreia intensos. Risco de desidratação e má absorção da medicação. Procure atendimento médico IMEDIATO." : null
+    },
+    {
+        text: "6. Como está seu nível de energia e disposição? Você se sente muito cansado, com fraqueza extrema ou consegue realizar atividades simples com menos dificuldade?",
+        type: "select",
+        options: ["Sinto-me com energia normal/melhor", "Ainda sinto fraqueza, mas consigo me mover", "Cansaço e fraqueza extremas, dificuldade para atividades simples"]
+    },
+
+    // III. Sinais de Alerta para Buscar Ajuda Médica Imediata (Malária Grave) (Q7 a Q12)
+    {
+        text: "7. Você notou alguma coloração amarelada na pele ou nos olhos (icterícia)?",
+        type: "select",
+        options: ["Não", "Sim"],
+        warning: (response) => response === "Sim" ? "**SINAL DE ALERTA GRAVE:** Procure atendimento médico IMEDIATO." : null
+    },
+    {
+        text: "8. Sua respiração está normal ou você tem sentido falta de ar, dificuldade para respirar ou respiração muito rápida e superficial, mesmo em repouso?",
+        type: "select",
+        options: ["Respiração normal", "Sinto leve dificuldade ao fazer esforço", "Sinto falta de ar em repouso ou dificuldade intensa para respirar"],
+        warning: (response) => response.includes("dificuldade intensa") ? "**SINAL DE ALERTA GRAVE:** Procure atendimento médico IMEDIATO." : null
+    },
+    {
+        text: "9. Você sentiu tonturas intensas, desmaios, confusão mental (dificuldade de raciocínio, desorientação), sonolência excessiva ou dificuldade para se manter acordado?",
+        type: "select",
+        options: ["Não", "Sim, senti tonturas/sonolência leves", "Sim, senti confusão mental, tontura intensa ou desmaios"],
+        warning: (response) => response.includes("confusão mental") || response.includes("desmaios") ? "**SINAL DE ALERTA GRAVÍSSIMO:** Procure atendimento médico IMEDIATO." : null
+    },
+    {
+        text: "10. Você está urinando menos do que o normal, sua urina está muito escura ou notou inchaço nas pernas e tornozelos?",
+        type: "select",
+        options: ["Normal", "Sim, estou urinando menos e/ou urina escura"],
+        warning: (response) => response.includes("Sim") ? "**SINAL DE ALERTA GRAVE:** Pode indicar problema renal. Procure atendimento médico IMEDIATO." : null
+    },
+    {
+        text: "11. Há sangramentos incomuns (pelo nariz, gengivas, manchas roxas na pele, urina ou fezes com sangue)?",
+        type: "select",
+        options: ["Não", "Sim"],
+        warning: (response) => response === "Sim" ? "**SINAL DE ALERTA GRAVE:** Procure atendimento médico IMEDIATO." : null
+    },
+    {
+        text: "12. Você sentiu dores intensas no abdômen, no peito ou nas costas, ou sensibilidade aumentada na barriga?",
+        type: "select",
+        options: ["Não", "Senti dor leve e passageira", "Senti dor intensa e persistente no abdômen, peito ou costas"],
+        warning: (response) => response.includes("intensa e persistente") ? "**SINAL DE ALERTA GRAVE:** Procure atendimento médico IMEDIATO." : null
+    },
+
+    // IV. Adesão ao Tratamento e Acompanhamento (Q13 e Q14)
+    {
+        text: "13. Você está tomando todos os medicamentos exatamente como o médico prescreveu, nos horários certos e sem esquecer nenhuma dose?",
+        type: "select",
+        options: ["Sim, corretamente", "Esqueci doses ou errei o horário", "Parei de tomar a medicação"]
+    },
+    {
+        text: "14. A medicação está causando algum efeito colateral intenso e insuportável (além do que foi avisado pelo médico)?",
+        type: "select",
+        options: ["Não, os efeitos são leves/suportáveis", "Sim, os efeitos colaterais são intensos e insuportáveis"],
+        warning: (response) => response.includes("insuportáveis") ? "Importante: Entre em contato com a Unidade de Saúde para avaliação e possível ajuste." : null
+    },
+    
+    // V. BUSCA POR AJUDA E AUTOMEDICAÇÃO (NOVAS PERGUNTAS)
+    {
+        text: "15. Desde o seu último check-in (ou atendimento), você precisou buscar atendimento em alguma Unidade Básica de Saúde (UBS), Unidade de Pronto Atendimento (UPA) ou Hospital?",
+        type: "select",
+        options: ["Não, não procurei ajuda", "Sim, procurei e fui reavaliado(a)", "Estou a caminho da unidade agora"],
+        warning: (response) => response.includes("a caminho") ? "Por favor, continue nos informando após a reavaliação médica. Tenha um atendimento seguro." : null
+    },
+    {
+        text: "16. Você tomou algum medicamento para febre, dor ou outros sintomas que NÃO FOI receitado especificamente para o tratamento da malária?",
+        type: "select",
+        options: ["Não, apenas a medicação prescrita", "Sim, tomei (Ex: Paracetamol, Dipirona, vitaminas)", "Sim, tomei antibióticos ou outros remédios fortes por conta própria"],
+        warning: (response) => response.includes("por conta própria") ? "**Atenção!** A automedicação pode ser perigosa e interferir no tratamento da malária. Por favor, evite tomar remédios não prescritos." : null
+    },
+
+    // VI. CONTROLE DE CURA (DINÂMICA)
+    {
+        text: "17. A data recomendada para seu próximo exame de Gota Espessa de controle é: [DATA CALCULADA]. Você pretende comparecer ao seu retorno/exame conforme indicação médica?",
+        type: "select",
+        options: ["Sim, irei na data indicada", "Já realizei (e deu negativo)", "Já realizei (e deu positivo)", "Não poderei comparecer"]
+    }
 ];
+// ==========================================================
+
 
 // Variável para rastrear o estado da conversa e dados do usuário
 let conversationStep = 0;
@@ -289,12 +464,12 @@ let userProfileData = null;
 
 // VARIÁVEIS PARA O TEMPORIZADOR DE INATIVIDADE
 let inactivityTimer;
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutos em milissegundos
+const INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 5 minutos em milissegundos
 let isSessionActive = false; // Começa como inativa até o login e início do questionário
 
 // Função para mostrar o modal de erro
 function showError(message) {
-    errorMessageElem.textContent = message;
+    errorMessageElem.innerHTML = message; // Usando innerHTML para permitir formatação de texto (negrito)
     errorModal.classList.remove('hidden');
 }
 
@@ -307,35 +482,80 @@ function scrollToBottom() {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// 💥 FUNÇÃO CORRIGIDA: Usa toLocaleDateString e toLocaleTimeString separadamente para garantir a exibição completa
+// Funções de formato de data e hora
 function formatTimestamp(timestamp) {
     if (!timestamp) return '';
     const date = timestamp.toDate();
-    
-    // Opções de Data
     const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
-    // Opções de Hora
     const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-
     const formattedDate = date.toLocaleDateString('pt-BR', dateOptions);
     const formattedTime = date.toLocaleTimeString('pt-BR', timeOptions);
-
-    // Concatena explicitamente a data e a hora
     return `${formattedDate} ${formattedTime}`;
 }
 
-// Função para formatar a data apenas
 function getFormattedDate() {
     const today = new Date();
-    const options = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    };
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return today.toLocaleDateString('pt-BR', options);
 }
 
-// 💥 FUNÇÃO CORRIGIDA: Utiliza a nova lógica de formatação de fallback
+/**
+ * Calcula a próxima data de controle de Gota Espessa (Dia 3, 7, 14 ou 28)
+ * com base na data do primeiro atendimento e na data atual.
+ * @param {string} firstConsultationDateString - Data do primeiro atendimento (YYYY-MM-DD).
+ * @returns {string} Texto indicando o próximo controle necessário ou "Completo" se já passou o D28.
+ */
+function calculateNextControlDate(firstConsultationDateString) {
+    if (!firstConsultationDateString) return "Data não fornecida. Por favor, procure sua UBS.";
+
+    const initialDate = new Date(firstConsultationDateString + 'T00:00:00'); // Garante que é meia-noite
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const controls = [3, 7, 14, 28]; // Dias para o controle
+    
+    // Adiciona 1 dia porque o controle D+N ocorre N dias APÓS o D0 (dia do atendimento)
+    // O D1 é o dia seguinte ao D0.
+    const getControlDate = (day) => {
+        const controlDate = new Date(initialDate);
+        controlDate.setDate(initialDate.getDate() + day);
+        return controlDate;
+    };
+
+    let nextControl = null;
+
+    for (const day of controls) {
+        const controlDate = getControlDate(day);
+        
+        // Verifica se a data de controle é no futuro ou hoje (mas não no passado)
+        if (controlDate >= today) {
+            nextControl = { day: day, date: controlDate };
+            break; // Encontrou o próximo controle
+        }
+    }
+
+    if (nextControl) {
+        const controlDate = nextControl.date;
+        const formattedDate = controlDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        // Verifica se o controle é hoje
+        if (controlDate.getTime() === today.getTime()) {
+            return `HOJE (Dia ${nextControl.day}, ${formattedDate})`;
+        } else {
+            return `Dia ${nextControl.day} (${formattedDate})`;
+        }
+    }
+
+    // Se a data de controle D28 já passou
+    const d28Date = getControlDate(28);
+    if (d28Date < today) {
+        return "Controle D28 já realizado. Continue o monitoramento, mas o controle laboratorial primário está completo.";
+    }
+
+    return "Erro no cálculo. Procure a unidade de saúde para confirmar a data correta.";
+}
+
+// Função para exibir mensagem no chat
 function displayMessage(message, isUser, timestamp) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `my-2 p-2 rounded max-w-sm whitespace-pre-wrap ${isUser ? 'user-message self-end' : 'gemini-message self-start'}`;
@@ -347,14 +567,11 @@ function displayMessage(message, isUser, timestamp) {
     const timestampNode = document.createElement('span');
     timestampNode.className = `text-xs mt-1 block ${isUser ? 'text-gray-400' : 'text-gray-500'}`;
     
-    // Lógica para o fallback de timestamp, garantindo data e hora
     const dateOptionsFallback = { year: 'numeric', month: '2-digit', day: '2-digit' };
     const timeOptionsFallback = { hour: '2-digit', minute: '2-digit', hour12: false };
     const now = new Date();
-
     const fallbackDisplay = `${now.toLocaleDateString('pt-BR', dateOptionsFallback)} ${now.toLocaleTimeString('pt-BR', timeOptionsFallback)}`;
 
-    // Chama formatTimestamp para mensagens do DB ou usa o fallback explícito
     timestampNode.textContent = timestamp 
         ? formatTimestamp(timestamp) 
         : fallbackDisplay; 
@@ -364,6 +581,82 @@ function displayMessage(message, isUser, timestamp) {
     chatContainer.appendChild(messageDiv);
     scrollToBottom();
 }
+
+// ==========================================================
+// 🚨 FUNÇÃO ADAPTADA PARA EXIBIR PERGUNTA E BOTÕES INLINE
+// ==========================================================
+async function displayQuestionWithButtons(question) {
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+    let questionText = question.text;
+    
+    // ⚠️ Lógica para a PERGUNTA DINÂMICA (Q17)
+    if (question.text.includes("[DATA CALCULADA]") && userProfileData && userProfileData.dataAtendimento) {
+        const nextControlInfo = calculateNextControlDate(userProfileData.dataAtendimento);
+        questionText = question.text.replace("[DATA CALCULADA]", nextControlInfo);
+    }
+
+    // 1. Adiciona a pergunta ao Firestore (e ao chat via onSnapshot)
+    await addDoc(chatCollectionRef, { text: questionText, isUser: false, timestamp: serverTimestamp() });
+    
+    // 2. Desabilita o input enquanto espera a resposta de botão/texto
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+
+    // Se for uma pergunta de seleção, adiciona os botões no DOM
+    if (question.type === 'select' && question.options) {
+        // Esperamos um pequeno tempo para garantir que a mensagem foi renderizada.
+        await new Promise(resolve => setTimeout(resolve, 50)); 
+        
+        const lastMessageDiv = chatContainer.lastElementChild;
+        if (!lastMessageDiv || lastMessageDiv.classList.contains('user-message')) {
+            console.error("Não foi possível encontrar a última mensagem do bot para anexar botões.");
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            return;
+        }
+
+        const buttonsDiv = document.createElement('div');
+        // Identificador exclusivo para remover os botões após a resposta
+        buttonsDiv.classList.add('response-buttons', 'mt-2', 'p-2', 'bg-white', 'rounded-b-lg', 'shadow-md');
+        
+        question.options.forEach(optionText => {
+            const button = document.createElement('button');
+            button.className = 'w-full text-left bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-medium py-2 px-4 rounded-lg my-1 transition duration-150 ease-in-out shadow-sm text-sm';
+            button.textContent = optionText;
+            button.onclick = () => processButtonResponse(optionText);
+            buttonsDiv.appendChild(button);
+        });
+
+        // Adiciona os botões ao final da div da mensagem do Bot
+        lastMessageDiv.appendChild(buttonsDiv);
+        scrollToBottom();
+
+    } else {
+        // Se for tipo 'text', reabilita o input
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+    }
+}
+// ==========================================================
+
+// ==========================================================
+// 🚨 FUNÇÃO PARA PROCESSAR RESPOSTAS DE BOTÃO (AGORA REMOVE O BOTÃO)
+// ==========================================================
+async function processButtonResponse(response) {
+    if (!currentUser || isWaitingForSummary) return;
+
+    // 1. Remove os botões de resposta da tela
+    const buttons = chatContainer.querySelectorAll('.response-buttons');
+    buttons.forEach(btn => btn.remove());
+    
+    // 2. Reabilita o input e simula o envio de mensagem do usuário
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    
+    await sendMessage(response, true); 
+}
+// ==========================================================
+
 
 // FUNÇÕES DO TEMPORIZADOR
 function resetInactivityTimer() {
@@ -380,20 +673,20 @@ async function endSession() {
     messageInput.disabled = true;
     sendBtn.disabled = true;
 
+    // Remove botões existentes ao encerrar
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
     const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, atualize a página!";
 
-    // O timestamp será adicionado pela função displayMessage
     await addDoc(chatCollectionRef, { text: endMessage, isUser: false, timestamp: serverTimestamp() });
-    conversationStep = -1; // Estado que indica sessão encerrada
+    conversationStep = -1; 
 }
 
 // Função para gerar uma resposta do chatbot usando a API Gemini
 async function getGeminiResponse(prompt) {
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
-    const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-    };
+    const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
     let retries = 0;
     const maxRetries = 3;
@@ -403,13 +696,9 @@ async function getGeminiResponse(prompt) {
     while (!success && retries < maxRetries) {
         try {
             const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
             });
-            if (!response.ok) {
-                throw new Error(`Erro HTTP! status: ${response.status}`);
-            }
+            if (!response.ok) { throw new Error(`Erro HTTP! status: ${response.status}`); }
             responseData = await response.json();
             success = true;
         } catch (e) {
@@ -418,156 +707,183 @@ async function getGeminiResponse(prompt) {
             if (retries < maxRetries) {
                 const delay = Math.pow(2, retries) * 1000;
                 await new Promise(res => setTimeout(res, delay));
-            } else {
-                throw e;
-            }
+            } else { throw e; }
         }
     }
-    if (!success) {
-        throw new Error('Falha na conexão com a API após várias tentativas.');
-    }
+    if (!success) { throw new Error('Falha na conexão com a API após várias tentativas.'); }
     const candidate = responseData.candidates?.[0];
     const text = candidate?.content?.parts?.[0]?.text;
     return text || "Não foi possível gerar uma resposta. Tente novamente.";
 }
 
 // Função para gerar uma resposta de reconhecimento com a API Gemini
-async function getGeminiAcknowledgement(userResponse, question) {
-    const prompt = `Gere uma pequena e amigável resposta de reconhecimento, com cerca de 20 palavras, para a seguinte resposta do usuário: "${userResponse}" à pergunta: "${question}".`;
+async function getGeminiAcknowledgement(userResponse, questionText) {
+    const prompt = `Gere uma pequena e amigável resposta de reconhecimento, com cerca de 20 palavras, para a seguinte resposta do usuário: "${userResponse}" à pergunta: "${questionText}".`;
     return await getGeminiResponse(prompt);
 }
 
-// Função para lidar com o envio de mensagens
-async function sendMessage() {
+// ==========================================================
+// FUNÇÃO SENDMESSAGE ADAPTADA COM MELHOR TRATAMENTO DE ERROS
+// ==========================================================
+async function sendMessage(manualMessage = null, isButtonResponse = false) {
     if (!currentUser) {
         showError("Você precisa estar logado para enviar mensagens.");
         return;
     }
 
-    const message = messageInput.value.trim();
+    const message = manualMessage || messageInput.value.trim();
     if (message === '' || isWaitingForSummary) return;
 
     // Lógica para reiniciar o questionário após inatividade
     if (conversationStep === -1) {
+        // Limpa botões existentes
+        chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+        
         messageInput.value = '';
         messageInput.disabled = true;
         sendBtn.disabled = true;
         loadingIndicator.classList.remove('hidden');
 
-        // Adiciona a mensagem do usuário antes de reiniciar
         const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
         await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
         
-        await startNewSession(); // Reinicia o questionário (apaga o chat e começa do 0)
+        await startNewSession(); 
         loadingIndicator.classList.add('hidden');
         resetInactivityTimer();
         return; 
     }
 
-    resetInactivityTimer(); // Reseta o timer a cada interação
+    resetInactivityTimer(); 
 
-    messageInput.value = '';
+    if (!isButtonResponse) {
+        messageInput.value = '';
+    }
+    
     loadingIndicator.classList.remove('hidden');
+
+    // Variável para rastrear o índice da pergunta antes de avançar o passo
+    let questionIndexBeforeAdvance = -1;
 
     try {
         const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        
+        // 1. Salva a mensagem do usuário
         await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
 
-        // Lógica para responder a perguntas sobre malária
-        const malariaKeywords = ["malária", "malaria", "sintomas", "tratamento", "diagnóstico", "prevenção", "dúvida"];
-        // Verifica se é uma pergunta sobre malária E se o questionário já foi concluído
-        const isMalariaQuestion = conversationStep >= dailyQuestions.length && malariaKeywords.some(keyword => message.toLowerCase().includes(keyword));
+        const currentQuestionIndex = conversationStep;
+        questionIndexBeforeAdvance = currentQuestionIndex; // Captura o índice antes de qualquer tentativa de avanço
+        
+        if (currentQuestionIndex < dailyQuestions.length) {
+            const currentQuestion = dailyQuestions[currentQuestionIndex];
 
-        if (isMalariaQuestion) {
-            const prompt = `Com base nas informações do Ministério da Saúde sobre malária em https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/m/malaria ou outra autoridade internacional no assunto, gere uma resposta detalhada e amigável sobre a pergunta: "${message}".`;
-            const botResponse = await getGeminiResponse(prompt);
-            await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
-        } else if (conversationStep < dailyQuestions.length) {
-            userResponses[conversationStep] = message;
+            // 2. Salva a resposta do usuário
+            userResponses[currentQuestionIndex] = message;
 
-            let botResponseText = '';
-            if (conversationStep === 0) {
-                const sentiment = parseInt(message);
-                if (sentiment < 3) {
-                    botResponseText = "Entendido. Acompanharemos de perto sua evolução clínica.";
-                } else {
-                    botResponseText = "Que bom! Ficamos felizes em saber que seu estado clínico está bem .";
+            // 3. Verifica e envia o Alerta
+            if (currentQuestion.warning) {
+                const warningMessage = currentQuestion.warning(message);
+                if (warningMessage) {
+                    await addDoc(chatCollectionRef, { text: warningMessage, isUser: false, timestamp: serverTimestamp() });
                 }
-            } else if (conversationStep === 3) {
-                const hasSymptoms = message.toLowerCase().includes("sim");
-                if (hasSymptoms) {
-                    botResponseText = "É muito importante monitorar esses sintomas. Continuamos no monitoramento.";
-                } else {
-                    botResponseText = "Excelente! Continuamos no monitoramento.";
-                }
-            } else {
-                botResponseText = await getGeminiAcknowledgement(message, dailyQuestions[conversationStep]);
+            }
+            
+            // 4. Mensagem de reconhecimento (Chamada de API)
+            // Se for a pergunta dinâmica 17, pega o texto real exibido no chat
+            let questionTextForAck = currentQuestion.text;
+             if (currentQuestionIndex === dailyQuestions.length - 1 && questionTextForAck.includes("[DATA CALCULADA]")) {
+                questionTextForAck = dailyQuestions[currentQuestionIndex].text.replace("[DATA CALCULADA]", calculateNextControlDate(userProfileData.dataAtendimento));
             }
 
+            const botResponseText = await getGeminiAcknowledgement(message, questionTextForAck);
             await addDoc(chatCollectionRef, { text: botResponseText, isUser: false, timestamp: serverTimestamp() });
 
+            // 5. Avança o passo (SOMENTE APÓS O SUCESSO DO REGISTRO E ACK)
             conversationStep++;
-            let nextQuestionText = dailyQuestions[conversationStep];
+            const nextQuestion = dailyQuestions[conversationStep];
 
-            if (userProfileData && (userProfileData.hipertenso || userProfileData.diabetes) && conversationStep === 1) {
-                const hasDiabetes = userProfileData.diabetes;
-                const hasHypertension = userProfileData.hipertenso;
-                let comorbidade = '';
-
-                if (hasHypertension && hasDiabetes) {
-                    comorbidade = ' para hipertensão e diabetes';
-                } else if (hasHypertension) {
-                    comorbidade = ' para hipertensão';
-                } else if (hasDiabetes) {
-                    comorbidade = ' para diabetes';
-                }
-
-                nextQuestionText = `2. Você faz uso de alguma medicação de uso contínuo${comorbidade}?`;
-            }
-
-            if (nextQuestionText) {
-                await addDoc(chatCollectionRef, { text: nextQuestionText, isUser: false, timestamp: serverTimestamp() });
+            if (nextQuestion) {
+                // 6. Exibe a próxima pergunta
+                await displayQuestionWithButtons(nextQuestion);
+                
             } else {
+                // Fim do questionário
                 await generateSummary(currentUser);
             }
+
         } else {
-            // Se o questionário já foi concluído (e não é uma pergunta de malária)
-            const prompt = `Responda de forma amigável e breve à seguinte mensagem do usuário, sem iniciar um novo questionário: "${message}".`;
-            const botResponse = await getGeminiResponse(prompt);
-            await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
+            // Se o questionário já foi concluído (Lógica de Malária e Bate-papo)
+            const malariaKeywords = ["malária", "malaria", "sintomas", "tratamento", "diagnóstico", "prevenção", "dúvida"];
+            const isMalariaQuestion = malariaKeywords.some(keyword => message.toLowerCase().includes(keyword));
+
+            if (isMalariaQuestion) {
+                const prompt = `Com base nas informações do Ministério da Saúde sobre malária em https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/m/malaria ou outra autoridade internacional no assunto, gere uma resposta detalhada e amigável sobre a pergunta: "${message}".`;
+                const botResponse = await getGeminiResponse(prompt);
+                await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
+            } else {
+                const prompt = `Responda de forma amigável e breve à seguinte mensagem do usuário, sem iniciar um novo questionário: "${message}".`;
+                const botResponse = await getGeminiResponse(prompt);
+                await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
+            }
         }
 
     } catch (error) {
         console.error("Erro ao enviar mensagem ou obter resposta:", error);
-        showError("Não foi possível enviar a mensagem ou obter a resposta do chatbot. Tente novamente mais tarde.");
+        
+        let customErrorMsg = "Não foi possível enviar a mensagem ou obter a resposta do chatbot. Tente novamente mais tarde.";
+
+        if (questionIndexBeforeAdvance !== -1 && questionIndexBeforeAdvance < dailyQuestions.length) {
+            // Se a falha ocorreu durante o processamento de uma pergunta específica (antes do avanço do 'conversationStep')
+            const failedQuestionNum = questionIndexBeforeAdvance + 1;
+            customErrorMsg = `Ocorreu um erro ao registrar sua resposta para a **Pergunta ${failedQuestionNum}**. Por favor, tente enviar a mensagem novamente. Sua sessão **não avançou** e você pode **retentar** a resposta.`;
+        }
+
+        showError(customErrorMsg);
+        // Reabilita o input e o botão de envio
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
     } finally {
         loadingIndicator.classList.add('hidden');
     }
 }
+// ==========================================================
 
 async function generateSummary(user) {
     isWaitingForSummary = true;
     messageInput.disabled = true;
     sendBtn.disabled = true;
-    clearTimeout(inactivityTimer); // Pausa o timer enquanto gera o relatório
+    clearTimeout(inactivityTimer); 
 
     const formattedDate = getFormattedDate();
+
+    // Remove botões de qualquer pergunta anterior que possa ter ficado
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+
 
     const summaryPrompt = `Gere um relatório detalhado com a seguinte estrutura e informações:
 **Data:** ${formattedDate}
 **Fonte das Informações:** Respostas a questionário de saúde.
 ---
 ### **1. Análise das Respostas Individuais:**
-${Object.keys(userResponses).map(key => `* **Pergunta ${parseInt(key) + 1}: ${dailyQuestions[key]} Resposta: ${userResponses[key]}**\n     * **Avaliação:** (Gere uma avaliação curta para esta resposta)`).join('\n')}
+${Object.keys(userResponses).map(key => {
+    let questionText = dailyQuestions[key].text;
+    const responseText = userResponses[key];
+
+    // Trata a pergunta dinâmica Q17
+    if (parseInt(key) === dailyQuestions.length - 1 && questionText.includes("[DATA CALCULADA]")) {
+        questionText = questionText.replace("[DATA CALCULADA]", calculateNextControlDate(userProfileData.dataAtendimento));
+    }
+
+    return `* **Pergunta ${parseInt(key) + 1}: ${questionText} Resposta: ${responseText}**\n     * **Avaliação:** (Gere uma avaliação curta para esta resposta)`
+}).join('\n')}
 ---
 ### **2. Avaliação Clínica Baseada em Expertise Médica:**
 (Gere um parágrafo que resume a situação clínica com base em todas as respostas.)
 ---
 ### **3. Sintomas Relatados e Avaliação da Gravidade:**
-(Gere um parágrafo que liste os sintomas relatados ou a ausência deles e avalie a gravidade.)
+(Gere um parágrafo que liste os sintomas relatados ou a ausência deles e avalie a gravidade. **DESTAQUE se a pergunta 7 a 12 (Sinais de Alerta) foi respondida com uma opção que indica gravidade.**)
 ---
 ### **4. Conduta do Paciente:**
-(Gere um parágrafo que descreva as ações do paciente com base nas respostas.)
+(Gere um parágrafo que descreva as ações do paciente com base nas respostas, **incluindo se houve automedicação e se buscou ajuda em UBS/UPA**.)
 ---
 ### **5. Conclusão e Recomendações:**
 (Gere uma conclusão forte. Se os sintomas (como febre alta, vômito, diarreia, calafrios) forem persistentes ou indicativos de gravidade, a conclusão deve ser uma forte recomendação para o paciente procurar a unidade de saúde mais próxima, com urgência. Se os sintomas não forem graves ou se o paciente estiver se sentindo bem, a conclusão deve indicar que não é necessário procurar uma unidade de saúde, mas sim continuar se hidratando e fazendo uso correto da medicação, se aplicável e indique se houve evolução clinica entre o monitoramento anterior e o atual, caso exista.)
@@ -580,34 +896,21 @@ ${Object.keys(userResponses).map(key => `* **Pergunta ${parseInt(key) + 1}: ${da
     const botResponse = await getGeminiResponse(summaryPrompt);
 
     const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
-    await setDoc(checkinRef, {
-        lastCheckin: serverTimestamp(),
-        summary: botResponse,
-    });
+    await setDoc(checkinRef, { lastCheckin: serverTimestamp(), summary: botResponse });
 
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
     
-    // Adiciona o relatório detalhado
-    await addDoc(chatCollectionRef, {
-        text: "✨ Relatório Detalhado:\n" + botResponse,
-        isUser: false,
-        timestamp: serverTimestamp(),
-    });
+    await addDoc(chatCollectionRef, { text: "✨ Relatório Detalhado:\n" + botResponse, isUser: false, timestamp: serverTimestamp() });
     
-    // Adiciona a pergunta de encerramento
     const finalQuestion = "Agradecemos sua participação! Espero que seu estado clínico evolua rapidamente e sua saúde seja restabelecida. Estamos trabalhando fortemente para erradicar a Malária em Porto Velho e sua participação é de fundamental importância, conte conosco! Estaremos sempre à disposição. Fique a vontade para tirar dúvidas com a nossa Inteligência Artificial.";
-    await addDoc(chatCollectionRef, {
-        text: finalQuestion,
-        isUser: false,
-        timestamp: serverTimestamp(),
-    });
+    await addDoc(chatCollectionRef, { text: finalQuestion, isUser: false, timestamp: serverTimestamp() });
 
     isWaitingForSummary = false;
     messageInput.disabled = false;
     sendBtn.disabled = false;
     newSessionContainer.classList.remove('hidden');
-    conversationStep = dailyQuestions.length; // Indica que o questionário foi concluído
-    resetInactivityTimer(); // Inicia o timer de inatividade de 5 minutos
+    conversationStep = dailyQuestions.length;
+    resetInactivityTimer(); 
 }
 
 async function startNewSession() {
@@ -636,14 +939,16 @@ async function startInitialConversation(user) {
     const userProfileSnap = await getDoc(userProfileRef);
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
 
-    // **NOTA: O chatContainer.innerHTML = '' está sendo movido para startFreshSession para evitar flashes na tela.**
     conversationStep = 0;
     userResponses = {};
-    isSessionActive = true; // Ativa a sessão
-    resetInactivityTimer(); // Inicia o timer
+    isSessionActive = true; 
+    resetInactivityTimer(); 
+
+    // Remove botões remanescentes de qualquer sessão anterior
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+
 
     if (!userProfileSnap.exists()) {
-        // Usuário novo: Exibe o formulário de cadastro
         formModal.classList.remove('hidden');
         messageInput.disabled = true;
         sendBtn.disabled = true;
@@ -651,47 +956,43 @@ async function startInitialConversation(user) {
     } else {
         userProfileData = userProfileSnap.data();
 
-        // Verifica se já deu o consentimento
         if (!userProfileData.consentido) {
-            // Usuário cadastrado mas sem consentimento: Exibe o TCLE
             tcleModal.classList.remove('hidden');
             messageInput.disabled = true;
             sendBtn.disabled = true;
             isSessionActive = false;
-            return; // Para o fluxo aqui e espera o consentimento
+            return;
         }
 
-        // Usuário cadastrado E consentiu: Inicia o chat
         const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
         const checkinSnap = await getDoc(checkinRef);
 
-        messageInput.disabled = false;
-        sendBtn.disabled = false;
-
+        const firstQuestion = dailyQuestions[0];
+        
         if (checkinSnap.exists()) {
             const lastSummary = checkinSnap.data().summary;
             const summaryMessage = `Olá, ${user.displayName}! 👋 Que bom te ver de volta. Aqui está um resumo da sua última consulta: \n\n${lastSummary}`;
             await addDoc(chatCollectionRef, { text: summaryMessage, isUser: false, timestamp: serverTimestamp() });
-            await addDoc(chatCollectionRef, { text: dailyQuestions[0], isUser: false, timestamp: serverTimestamp() });
+            
+            await displayQuestionWithButtons(firstQuestion);
+
         } else {
             const welcomeMessage = `Olá, ${user.displayName}! 👋 Que bom que você chegou até aqui. Vamos começar o seu primeiro check-in diário.`;
             await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
-            await addDoc(chatCollectionRef, { text: dailyQuestions[0], isUser: false, timestamp: serverTimestamp() });
+            
+            await displayQuestionWithButtons(firstQuestion);
         }
     }
 }
 
-// ==========================================================
-// 🚨 NOVO MÉTODO PARA FORÇAR O REINÍCIO DA SESSÃO NO REFRESH
-// ==========================================================
 async function startFreshSession(user) {
     loadingIndicator.classList.remove('hidden');
     try {
         // 1. Limpa o estado da aplicação
-        chatContainer.innerHTML = ''; // Limpa a interface do chat imediatamente
+        chatContainer.innerHTML = ''; 
         conversationStep = 0;
         userResponses = {};
-        isSessionActive = false; // Começa inativa até a primeira pergunta
+        isSessionActive = false; 
 
         // 2. Limpa o histórico de chat no Firestore
         const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
@@ -699,7 +1000,7 @@ async function startFreshSession(user) {
         const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
         await Promise.all(deletePromises);
         
-        // 3. Inicia a conversa (mostrando modals ou a primeira pergunta)
+        // 3. Inicia a conversa
         await startInitialConversation(user); 
     } catch (error) {
         console.error("Erro ao iniciar sessão limpa:", error);
@@ -708,7 +1009,6 @@ async function startFreshSession(user) {
         loadingIndicator.classList.add('hidden');
     }
 }
-// ==========================================================
 
 async function handleFormSubmission() {
     if (!currentUser) {
@@ -716,9 +1016,17 @@ async function handleFormSubmission() {
         return;
     }
 
-    // Validação básica
     const requiredFields = ['rg', 'cpf', 'endereco', 'cidade', 'estado', 'tipoMalaria', 'inicioSintomas', 'dataAtendimento', 'unidadeAtendimento'];
-    const isFormValid = requiredFields.every(id => document.getElementById(id).value.trim() !== '');
+    
+    // Verifica se todos os campos estão preenchidos, incluindo o select
+    const isFormValid = requiredFields.every(id => {
+        const element = document.getElementById(id);
+        if (element.tagName === 'SELECT') {
+            return element.value !== ""; // Verifica se alguma opção foi selecionada
+        }
+        return element.value.trim() !== ''; // Verifica campos de texto/data
+    });
+
 
     if (!isFormValid) {
         showError("Por favor, preencha todos os campos do formulário para continuar.");
@@ -739,24 +1047,18 @@ async function handleFormSubmission() {
         teveFebre: document.getElementById('teveFebre').checked,
         hipertenso: document.getElementById('hipertenso').checked,
         diabetes: document.getElementById('diabetes').checked,
-        consentido: false // Inicializa como NÃO consentido
+        consentido: false 
     };
 
     try {
         const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, {
-            uid: currentUser.uid,
-            email: currentUser.email,
-            displayName: currentUser.displayName,
-            createdAt: serverTimestamp(),
-            ...formData
+            uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
+            createdAt: serverTimestamp(), ...formData
         });
         formModal.classList.add('hidden');
-
-        // Após salvar o formulário, exibe o modal do TCLE
         tcleModal.classList.remove('hidden');
 
-        // Atualiza os dados do perfil localmente
         const userProfileSnap = await getDoc(userProfileRef);
         userProfileData = userProfileSnap.data();
 
@@ -766,7 +1068,6 @@ async function handleFormSubmission() {
     }
 }
 
-// Lógica do Modal de Termo de Consentimento (TCLE)
 tcleConsentCheckbox.addEventListener('change', () => {
     if (tcleConsentCheckbox.checked) {
         tcleParticiparBtn.disabled = false;
@@ -786,13 +1087,10 @@ tcleParticiparBtn.addEventListener('click', async () => {
     }
 
     try {
-        // Salva o status de consentimento no perfil do usuário
         const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
 
         tcleModal.classList.add('hidden');
-
-        // FINALIZA A INICIALIZAÇÃO e inicia o questionário
         await startInitialConversation(currentUser);
 
     } catch (error) {
@@ -801,7 +1099,6 @@ tcleParticiparBtn.addEventListener('click', async () => {
     }
 });
 
-// Funções de Autenticação e Listener
 googleSigninBtn.onclick = async () => {
     const provider = new GoogleAuthProvider();
     try {
@@ -812,13 +1109,12 @@ googleSigninBtn.onclick = async () => {
     }
 };
 
-// ==========================================================
-// 💥 ALTERAÇÃO AQUI: Chama startFreshSession para forçar o reinício
-// ==========================================================
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
-        userNameElem.textContent = `Olá, ${user.displayName || user.email}!`;
+        // Atualiza o nome do usuário no cabeçalho
+        userNameElem.textContent = `Olá, ${user.displayName || user.email}!`; 
+
         loginScreen.classList.add('opacity-0', 'pointer-events-none');
         setTimeout(() => {
             loginScreen.classList.add('hidden');
@@ -828,10 +1124,13 @@ onAuthStateChanged(auth, (user) => {
             // Força o reinício da sessão (apaga o histórico e inicia a 1ª pergunta/modal)
             startFreshSession(user); 
             
-            listenForMessages(user); // Começa a ouvir o novo chat vazio
+            listenForMessages(user); 
         }, 500);
     } else {
         currentUser = null;
+        // Ao deslogar, limpa quaisquer botões que possam estar na tela
+        chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+        
         chatScreen.classList.remove('opacity-100');
         chatScreen.classList.add('opacity-0');
         loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -841,20 +1140,14 @@ onAuthStateChanged(auth, (user) => {
         clearTimeout(inactivityTimer);
     }
 });
-// ==========================================================
 
-// Função para ouvir mensagens do chat em tempo real
 function listenForMessages(user) {
     if (!user) return;
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
     const q = query(chatCollectionRef, orderBy("timestamp", "asc"));
 
     onSnapshot(q, (snapshot) => {
-        // Reinicia o timer em qualquer atividade do chat (inclusive as do bot)
         resetInactivityTimer();
-        
-        // Remove a lógica de isInitialLoad e atualização de conversationStep
-        // porque startFreshSession e startInitialConversation já definem o estado.
         
         snapshot.docChanges().forEach(change => {
             if (change.type === "added") {
@@ -869,7 +1162,7 @@ function listenForMessages(user) {
 saveFormBtn.addEventListener('click', handleFormSubmission);
 
 // Event listener para o botão de Envio (Send)
-sendBtn.addEventListener('click', sendMessage);
+sendBtn.addEventListener('click', () => sendMessage());
 
 // Event listener para o Enter no input
 messageInput.addEventListener('keypress', (e) => {
