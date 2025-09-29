@@ -718,7 +718,7 @@ async function getGeminiResponse(prompt) {
 
 // Função para gerar uma resposta de reconhecimento com a API Gemini
 async function getGeminiAcknowledgement(userResponse, questionText) {
-    const prompt = `Gere uma pequena e amigável resposta de reconhecimento, com cerca de 20 palavras, para a seguinte resposta do usuário: "${userResponse}" à pergunta: "${questionText}".`;
+    const prompt = `Gere uma pequena e amigável resposta de reconhecimento, com cerca de 10 palavras, para a seguinte resposta do usuário: "${userResponse}" à pergunta: "${questionText}".`;
     return await getGeminiResponse(prompt);
 }
 
@@ -812,11 +812,11 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
 
         } else {
             // Se o questionário já foi concluído (Lógica de Malária e Bate-papo)
-            const malariaKeywords = ["malária", "malaria", "sintomas", "tratamento", "diagnóstico", "prevenção", "dúvida"];
+            const malariaKeywords = ["malária", "malaria", "sintomas", "tratamento", "diagnóstico", "prevenção", "dúvida", "exame"];
             const isMalariaQuestion = malariaKeywords.some(keyword => message.toLowerCase().includes(keyword));
 
             if (isMalariaQuestion) {
-                const prompt = `Com base nas informações do Ministério da Saúde sobre malária em https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/m/malaria ou outra autoridade internacional no assunto, gere uma resposta detalhada e amigável sobre a pergunta: "${message}".`;
+                const prompt = `Com base nas informações do Ministério da Saúde sobre malária em https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/m/malaria ou outra autoridade internacional referência no assunto, gere uma resposta detalhada, resumida e amigável sobre a pergunta: "${message}".`;
                 const botResponse = await getGeminiResponse(prompt);
                 await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
             } else {
