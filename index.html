@@ -583,13 +583,13 @@ function displayMessage(message, isUser, timestamp) {
 }
 
 // ==========================================================
-// FUNÇÃO ADAPTADA PARA EXIBIR PERGUNTA E BOTÕES INLINE
+// 🚨 FUNÇÃO ADAPTADA PARA EXIBIR PERGUNTA E BOTÕES INLINE
 // ==========================================================
 async function displayQuestionWithButtons(question) {
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
     let questionText = question.text;
     
-    // Lógica para a PERGUNTA DINÂMICA (Q17)
+    // ⚠️ Lógica para a PERGUNTA DINÂMICA (Q17)
     if (question.text.includes("[DATA CALCULADA]") && userProfileData && userProfileData.dataAtendimento) {
         const nextControlInfo = calculateNextControlDate(userProfileData.dataAtendimento);
         questionText = question.text.replace("[DATA CALCULADA]", nextControlInfo);
@@ -640,7 +640,7 @@ async function displayQuestionWithButtons(question) {
 // ==========================================================
 
 // ==========================================================
-// FUNÇÃO PARA PROCESSAR RESPOSTAS DE BOTÃO (AGORA REMOVE O BOTÃO)
+// 🚨 FUNÇÃO PARA PROCESSAR RESPOSTAS DE BOTÃO (AGORA REMOVE O BOTÃO)
 // ==========================================================
 async function processButtonResponse(response) {
     if (!currentUser || isWaitingForSummary) return;
@@ -677,7 +677,7 @@ async function endSession() {
     chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
 
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
-    const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, atualize a página!";
+    const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, clique no botão Iniciar Sessão! Alertamos que as respostas são realizadas por meio de Inteligência Artificial e caso persista os sintomas procure ajuda médica imediatamente!";
 
     await addDoc(chatCollectionRef, { text: endMessage, isUser: false, timestamp: serverTimestamp() });
     conversationStep = -1; 
@@ -716,8 +716,14 @@ async function getGeminiResponse(prompt) {
     return text || "Não foi possível gerar uma resposta. Tente novamente.";
 }
 
+// Função para gerar uma resposta de reconhecimento com a API Gemini
+async function getGeminiAcknowledgement(userResponse, questionText) {
+    const prompt = `Gere uma pequena e amigável resposta de reconhecimento, com cerca de 10 palavras, para a seguinte resposta do usuário: "${userResponse}" à pergunta: "${questionText}".`;
+    return await getGeminiResponse(prompt);
+}
+
 // ==========================================================
-// FUNÇÃO SENDMESSAGE ADAPTADA SEM MENSAGEM DE RECONHECIMENTO ENTRE RESPOSTAS
+// FUNÇÃO SENDMESSAGE ADAPTADA COM MELHOR TRATAMENTO DE ERROS
 // ==========================================================
 async function sendMessage(manualMessage = null, isButtonResponse = false) {
     if (!currentUser) {
@@ -781,9 +787,17 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
                 }
             }
             
-            // 4. MENSAGEM DE RECONHECIMENTO REMOVIDA AQUI!
+            // 4. Mensagem de reconhecimento (Chamada de API)
+            // Se for a pergunta dinâmica 17, pega o texto real exibido no chat
+            let questionTextForAck = currentQuestion.text;
+             if (currentQuestionIndex === dailyQuestions.length - 1 && questionTextForAck.includes("[DATA CALCULADA]")) {
+                questionTextForAck = dailyQuestions[currentQuestionIndex].text.replace("[DATA CALCULADA]", calculateNextControlDate(userProfileData.dataAtendimento));
+            }
 
-            // 5. Avança o passo (SOMENTE APÓS O SUCESSO DO REGISTRO)
+            const botResponseText = await getGeminiAcknowledgement(message, questionTextForAck);
+            await addDoc(chatCollectionRef, { text: botResponseText, isUser: false, timestamp: serverTimestamp() });
+
+            // 5. Avança o passo (SOMENTE APÓS O SUCESSO DO REGISTRO E ACK)
             conversationStep++;
             const nextQuestion = dailyQuestions[conversationStep];
 
@@ -859,23 +873,21 @@ ${Object.keys(userResponses).map(key => {
         questionText = questionText.replace("[DATA CALCULADA]", calculateNextControlDate(userProfileData.dataAtendimento));
     }
 
-    return `* **Pergunta ${parseInt(key) + 1}: ${questionText} Resposta: ${responseText}**`
+    return `* **Pergunta ${parseInt(key) + 1}: ${questionText} Resposta: ${responseText}**\n     * **Avaliação:** (Gere uma avaliação curta para esta resposta)`
 }).join('\n')}
 ---
-### **2. Avaliação Clínica Baseada em Expertise Médica:**
-(Gere um parágrafo que resume a situação clínica com base em todas as respostas.)
----
-### **3. Sintomas Relatados e Avaliação da Gravidade:**
+
+### **2. Sintomas Relatados e Avaliação da Gravidade:**
 (Gere um parágrafo que liste os sintomas relatados ou a ausência deles e avalie a gravidade. **DESTAQUE se a pergunta 7 a 12 (Sinais de Alerta) foi respondida com uma opção que indica gravidade.**)
 ---
-### **4. Conduta do Paciente:**
+### **3. Conduta do Paciente:**
 (Gere um parágrafo que descreva as ações do paciente com base nas respostas, **incluindo se houve automedicação e se buscou ajuda em UBS/UPA**.)
 ---
-### **5. Conclusão e Recomendações:**
+### **4. Conclusão e Recomendações:**
 (Gere uma conclusão forte. Se os sintomas (como febre alta, vômito, diarreia, calafrios) forem persistentes ou indicativos de gravidade, a conclusão deve ser uma forte recomendação para o paciente procurar a unidade de saúde mais próxima, com urgência. Se os sintomas não forem graves ou se o paciente estiver se sentindo bem, a conclusão deve indicar que não é necessário procurar uma unidade de saúde, mas sim continuar se hidratando e fazendo uso correto da medicação, se aplicável e indique se houve evolução clinica entre o monitoramento anterior e o atual, caso exista.)
 ---
-### **6. Informe sobre o tratamento da malária:**
-(Gere um parágrafo que descreva o que é a malária, seu tratamento e caso necessite falar a respeito do tratamento, do diaginóstico e do estado clínico apresentado, pode ser feito por aqui, basta formular a sua sua pergunta!)
+### **5. Informe sobre o tratamento da malária:**
+(Gere um parágrafo que descreva o que é a malária, seu tratamento e caso necessite falar a respeito do tratamento, do diaginóstico e do estado clínico apresentado, pode ser feito por aqui, basta formular a sua pergunta!)
 
 `;
 
@@ -907,283 +919,259 @@ async function startNewSession() {
     loadingIndicator.classList.remove('hidden');
     try {
         const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
-        
-        // Limpar respostas antigas
-        userResponses = {};
-        conversationStep = 0;
-        
-        const initialMessage = `Olá ${userProfileData?.nome || currentUser.displayName}! Bem-vindo(a) ao seu Check-up de Acompanhamento Diário de Malária para o dia ${getFormattedDate()}. Lembre-se, este não substitui o médico. Por favor, responda as perguntas com atenção.`;
-        await addDoc(chatCollectionRef, { text: initialMessage, isUser: false, timestamp: serverTimestamp() });
-        
+        const docsToDelete = await getDocs(chatCollectionRef);
+        const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
+        await Promise.all(deletePromises);
+        await startInitialConversation(currentUser);
         newSessionContainer.classList.add('hidden');
-        isSessionActive = true;
-        
-        // Iniciar com a primeira pergunta
-        await displayQuestionWithButtons(dailyQuestions[0]);
-        
     } catch (error) {
         console.error("Erro ao iniciar nova sessão:", error);
-        showError("Não foi possível iniciar uma nova sessão. Tente novamente.");
-    } finally {
-        loadingIndicator.classList.add('hidden');
-        resetInactivityTimer();
-    }
-}
-
-// ==========================================================
-// FUNÇÕES DE TCLE (Com tratamento para primeiro acesso)
-// ==========================================================
-async function checkTcleStatus(user) {
-    const tcleRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/consent/tcle`);
-    try {
-        const tcleDoc = await getDoc(tcleRef);
-        // Se o documento existe E o campo 'accepted' é true, retorna true.
-        // Caso contrário (documento não existe ou accepted é false/nulo), retorna false.
-        return tcleDoc.exists() && tcleDoc.data().accepted === true;
-    } catch (e) {
-        console.error("Erro ao verificar status do TCLE:", e);
-        return false; 
-    }
-}
-
-async function showTcleModal() {
-    tcleConsentCheckbox.checked = false;
-    tcleParticiparBtn.disabled = true;
-    tcleModal.classList.remove('hidden');
-}
-
-tcleConsentCheckbox.onchange = () => {
-    tcleParticiparBtn.disabled = !tcleConsentCheckbox.checked;
-};
-
-tcleParticiparBtn.onclick = async () => {
-    if (!tcleConsentCheckbox.checked) return;
-
-    loadingIndicator.classList.remove('hidden');
-    try {
-        const tcleRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/consent/tcle`);
-        await setDoc(tcleRef, { accepted: true, acceptedAt: serverTimestamp() });
-        tcleModal.classList.add('hidden');
-        
-        // Próxima etapa: Carregar perfil e verificar formulário
-        await loadUserProfile(currentUser); 
-    } catch (e) {
-        console.error("Erro ao registrar consentimento do TCLE:", e);
-        showError("Não foi possível registrar seu consentimento. Tente novamente.");
+        showError("Não foi possível iniciar uma nova sessão. Tente novamente mais tarde.");
     } finally {
         loadingIndicator.classList.add('hidden');
     }
-};
+}
 
-// ==========================================================
-// FUNÇÕES DE CADASTRO (FORMULÁRIO)
-// ==========================================================
-async function loadUserProfile(user) {
-    loadingIndicator.classList.remove('hidden');
-    const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/profile/info`);
-    
-    try {
-        const profileDoc = await getDoc(userProfileRef);
-        if (profileDoc.exists()) {
-            userProfileData = profileDoc.data();
-            userNameElem.textContent = userProfileData.nome || user.displayName;
-            chatScreen.classList.remove('hidden');
-            loginScreen.classList.add('hidden');
-            tcleModal.classList.add('hidden');
-            // Próxima etapa: Verificar sessão diária
-            await checkDailySession(user);
-        } else {
-            // Se o perfil não existe, mostra o formulário de cadastro
-            chatScreen.classList.add('hidden');
-            tcleModal.classList.add('hidden');
-            loginScreen.classList.add('hidden');
-            showFormModal();
+async function startInitialConversation(user) {
+    const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+
+    conversationStep = 0;
+    userResponses = {};
+    isSessionActive = true; 
+    resetInactivityTimer(); 
+
+    // Remove botões remanescentes de qualquer sessão anterior
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+
+
+    if (!userProfileSnap.exists()) {
+        formModal.classList.remove('hidden');
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        isSessionActive = false;
+    } else {
+        userProfileData = userProfileSnap.data();
+
+        if (!userProfileData.consentido) {
+            tcleModal.classList.remove('hidden');
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            isSessionActive = false;
+            return;
         }
-    } catch (e) {
-        console.error("Erro ao carregar perfil do usuário:", e);
-        showError("Erro ao carregar seu perfil. Tente recarregar a página.");
+
+        const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
+        const checkinSnap = await getDoc(checkinRef);
+
+        const firstQuestion = dailyQuestions[0];
+        
+        if (checkinSnap.exists()) {
+            const lastSummary = checkinSnap.data().summary;
+            const summaryMessage = `Olá, ${user.displayName}! 👋 Que bom te ver de volta. Aqui está um resumo da sua última consulta: \n\n${lastSummary}`;
+            await addDoc(chatCollectionRef, { text: summaryMessage, isUser: false, timestamp: serverTimestamp() });
+            
+            await displayQuestionWithButtons(firstQuestion);
+
+        } else {
+            const welcomeMessage = `Olá, ${user.displayName}! 👋 Que bom que você chegou até aqui. Vamos começar o seu primeiro check-in diário.`;
+            await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
+            
+            await displayQuestionWithButtons(firstQuestion);
+        }
+    }
+}
+
+async function startFreshSession(user) {
+    loadingIndicator.classList.remove('hidden');
+    try {
+        // 1. Limpa o estado da aplicação
+        chatContainer.innerHTML = ''; 
+        conversationStep = 0;
+        userResponses = {};
+        isSessionActive = false; 
+
+        // 2. Limpa o histórico de chat no Firestore
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+        const docsToDelete = await getDocs(chatCollectionRef);
+        const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
+        await Promise.all(deletePromises);
+        
+        // 3. Inicia a conversa
+        await startInitialConversation(user); 
+    } catch (error) {
+        console.error("Erro ao iniciar sessão limpa:", error);
+        showError("Não foi possível reiniciar a sessão. Tente novamente mais tarde.");
     } finally {
         loadingIndicator.classList.add('hidden');
     }
 }
 
-function showFormModal() {
-    // Preenche campos se houver dados parciais ou sugestões do Google
-    document.getElementById('form-nome').value = currentUser.displayName || '';
-    document.getElementById('form-email').value = currentUser.email || '';
-    
-    formModal.classList.remove('hidden');
-}
-
-saveFormBtn.onclick = async () => {
-    const nome = document.getElementById('form-nome').value.trim();
-    const dataNascimento = document.getElementById('form-data-nascimento').value.trim();
-    const dataAtendimento = document.getElementById('form-data-atendimento').value.trim();
-    const municipio = document.getElementById('form-municipio').value.trim();
-
-    if (!nome || !dataNascimento || !dataAtendimento || !municipio) {
-        showError("Por favor, preencha todos os campos do formulário de cadastro.");
+async function handleFormSubmission() {
+    if (!currentUser) {
+        showError("Erro: Usuário não autenticado.");
         return;
     }
 
-    loadingIndicator.classList.remove('hidden');
-    try {
-        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/profile/info`);
-        
-        userProfileData = {
-            nome: nome,
-            email: currentUser.email,
-            dataNascimento: dataNascimento,
-            dataAtendimento: dataAtendimento, // Data do D0 para cálculo do controle
-            municipio: municipio,
-            createdAt: serverTimestamp()
-        };
-
-        await setDoc(userProfileRef, userProfileData);
-        formModal.classList.add('hidden');
-
-        // Confirma o nome na tela de chat
-        userNameElem.textContent = nome;
-        
-        // Próxima etapa: Iniciar sessão diária
-        await checkDailySession(currentUser);
-
-    } catch (e) {
-        console.error("Erro ao salvar formulário:", e);
-        showError("Não foi possível salvar seu cadastro. Tente novamente.");
-    } finally {
-        loadingIndicator.classList.add('hidden');
-    }
-};
-
-// ==========================================================
-// FUNÇÕES DE SESSÃO
-// ==========================================================
-async function checkDailySession(user) {
-    loadingIndicator.classList.remove('hidden');
-    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
-    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
-
-    try {
-        const checkinDoc = await getDoc(checkinRef);
-        const lastCheckinTimestamp = checkinDoc.exists() ? checkinDoc.data().lastCheckin : null;
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (lastCheckinTimestamp) {
-            const lastCheckinDate = lastCheckinTimestamp.toDate();
-            lastCheckinDate.setHours(0, 0, 0, 0);
-
-            if (lastCheckinDate.getTime() === today.getTime()) {
-                // Sessão de hoje já concluída
-                conversationStep = dailyQuestions.length; // Garante que está no modo bate-papo
-                messageInput.disabled = false;
-                sendBtn.disabled = false;
-                newSessionContainer.classList.remove('hidden');
-                
-                // Exibe a última mensagem de relatório (se houver) e mensagem final
-                const summary = checkinDoc.data().summary || "Relatório do último check-in não disponível.";
-                const finalMsg = "Você já concluiu o check-up de hoje. Fique à vontade para tirar dúvidas sobre a Malária com a nossa Inteligência Artificial ou inicie uma nova sessão amanhã. (O último relatório detalhado está acima)";
-                
-                // Garante que o chat está limpo e carrega o histórico
-                chatContainer.innerHTML = '';
-                await loadChatHistory(user); 
-
-                await addDoc(chatCollectionRef, { text: finalMsg, isUser: false, timestamp: serverTimestamp() });
-                
-                loadingIndicator.classList.add('hidden');
-                isSessionActive = true; 
-                resetInactivityTimer();
-                return;
-            }
+    const requiredFields = ['rg', 'cpf', 'endereco', 'cidade', 'estado', 'tipoMalaria', 'inicioSintomas', 'dataAtendimento', 'unidadeAtendimento'];
+    
+    // Verifica se todos os campos estão preenchidos, incluindo o select
+    const isFormValid = requiredFields.every(id => {
+        const element = document.getElementById(id);
+        if (element.tagName === 'SELECT') {
+            return element.value !== ""; // Verifica se alguma opção foi selecionada
         }
+        return element.value.trim() !== ''; // Verifica campos de texto/data
+    });
 
-        // Se a sessão não foi feita hoje, inicia uma nova
-        await startNewSession(); 
 
-    } catch (e) {
-        console.error("Erro ao verificar sessão diária:", e);
-        showError("Erro ao verificar sua sessão. Tente novamente.");
-        loadingIndicator.classList.add('hidden');
+    if (!isFormValid) {
+        showError("Por favor, preencha todos os campos do formulário para continuar.");
+        return;
+    }
+
+    const formData = {
+        rg: document.getElementById('rg').value,
+        cpf: document.getElementById('cpf').value,
+        endereco: document.getElementById('endereco').value,
+        cidade: document.getElementById('cidade').value,
+        estado: document.getElementById('estado').value,
+        tipoMalaria: document.getElementById('tipoMalaria').value,
+        inicioSintomas: document.getElementById('inicioSintomas').value,
+        dataAtendimento: document.getElementById('dataAtendimento').value,
+        unidadeAtendimento: document.getElementById('unidadeAtendimento').value,
+        medicacaoDistribuida: document.getElementById('medicacaoDistribuida').checked,
+        teveFebre: document.getElementById('teveFebre').checked,
+        hipertenso: document.getElementById('hipertenso').checked,
+        diabetes: document.getElementById('diabetes').checked,
+        consentido: false 
+    };
+
+    try {
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        await setDoc(userProfileRef, {
+            uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
+            createdAt: serverTimestamp(), ...formData
+        });
+        formModal.classList.add('hidden');
+        tcleModal.classList.remove('hidden');
+
+        const userProfileSnap = await getDoc(userProfileRef);
+        userProfileData = userProfileSnap.data();
+
+    } catch (error) {
+        console.error("Erro ao salvar dados do formulário:", error);
+        showError("Não foi possível salvar seus dados. Tente novamente.");
     }
 }
 
-async function loadChatHistory(user) {
+tcleConsentCheckbox.addEventListener('change', () => {
+    if (tcleConsentCheckbox.checked) {
+        tcleParticiparBtn.disabled = false;
+        tcleParticiparBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        tcleParticiparBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'focus:ring-indigo-500');
+    } else {
+        tcleParticiparBtn.disabled = true;
+        tcleParticiparBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+        tcleParticiparBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'focus:ring-indigo-500');
+    }
+});
+
+tcleParticiparBtn.addEventListener('click', async () => {
+    if (!tcleConsentCheckbox.checked) {
+        showError("Você deve concordar com o Termo de Consentimento para participar.");
+        return;
+    }
+
+    try {
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
+
+        tcleModal.classList.add('hidden');
+        await startInitialConversation(currentUser);
+
+    } catch (error) {
+        console.error("Erro ao registrar consentimento:", error);
+        showError("Não foi possível registrar seu consentimento. Tente novamente.");
+    }
+});
+
+googleSigninBtn.onclick = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+    } catch (error) {
+        console.error("Erro no login com Google:", error);
+        showError("Falha ao entrar com Google. Tente novamente.");
+    }
+};
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        // Atualiza o nome do usuário no cabeçalho
+        userNameElem.textContent = `Olá, ${user.displayName || user.email}!`; 
+
+        loginScreen.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+            loginScreen.classList.add('hidden');
+            chatScreen.classList.remove('hidden');
+            chatScreen.classList.add('opacity-100');
+            
+            // Força o reinício da sessão (apaga o histórico e inicia a 1ª pergunta/modal)
+            startFreshSession(user); 
+            
+            listenForMessages(user); 
+        }, 500);
+    } else {
+        currentUser = null;
+        // Ao deslogar, limpa quaisquer botões que possam estar na tela
+        chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+        
+        chatScreen.classList.remove('opacity-100');
+        chatScreen.classList.add('opacity-0');
+        loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        isSessionActive = false;
+        clearTimeout(inactivityTimer);
+    }
+});
+
+function listenForMessages(user) {
+    if (!user) return;
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
-    const q = query(chatCollectionRef, orderBy('timestamp', 'asc'));
+    const q = query(chatCollectionRef, orderBy("timestamp", "asc"));
 
-    // Limpa o chat antes de carregar
-    chatContainer.innerHTML = '';
-
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        displayMessage(data.text, data.isUser, data.timestamp);
+    onSnapshot(q, (snapshot) => {
+        resetInactivityTimer();
+        
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                displayMessage(data.text, data.isUser, data.timestamp);
+            }
+        });
     });
 }
 
-// ==========================================================
-// AUTENTICAÇÃO E INICIALIZAÇÃO DO APLICATIVO (FLUXO ALTERADO)
-// ==========================================================
+// Event listener para o botão Salvar do formulário
+saveFormBtn.addEventListener('click', handleFormSubmission);
 
-const provider = new GoogleAuthProvider();
+// Event listener para o botão de Envio (Send)
+sendBtn.addEventListener('click', () => sendMessage());
 
-googleSigninBtn.onclick = async () => {
-    try {
-        // A autenticação chama onAuthStateChanged, que por sua vez chama checkUserStatus
-        await signInWithPopup(auth, provider);
-    } catch (error) {
-        console.error("Erro de login com Google:", error);
-        showError("Falha ao fazer login com o Google. Tente novamente.");
+// Event listener para o Enter no input
+messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
     }
-};
-
-// Função para iniciar o fluxo após o login/re-autenticação
-async function checkUserStatus(user) {
-    currentUser = user;
-    if (user) {
-        // 1. Verificar TCLE (Primeira etapa obrigatória)
-        const tcleAccepted = await checkTcleStatus(user);
-        
-        if (tcleAccepted) {
-            // 2. Se o TCLE foi aceito, carrega o perfil (que verificará se o form está preenchido)
-            await loadUserProfile(user); 
-        } else {
-            // 2. Se o TCLE NÃO foi aceito (incluindo o primeiro acesso), mostra o modal do TCLE.
-            loginScreen.classList.add('hidden');
-            chatScreen.classList.add('hidden'); 
-            formModal.classList.add('hidden'); 
-            await showTcleModal();
-        }
-    } else {
-        // Não logado: Exibe a tela de login
-        currentUser = null;
-        chatScreen.classList.add('hidden');
-        tcleModal.classList.add('hidden');
-        formModal.classList.add('hidden');
-        loginScreen.classList.remove('hidden');
-        clearTimeout(inactivityTimer);
-    }
-}
-
-// Listener de autenticação do Firebase
-onAuthStateChanged(auth, (user) => {
-    checkUserStatus(user);
 });
 
-// Listener para o botão de nova sessão (disponível após o check-up diário)
-newSessionBtn.onclick = startNewSession;
-
-// Resetar o timer de inatividade em interações-chave
-document.addEventListener('mousemove', resetInactivityTimer);
-document.addEventListener('keypress', resetInactivityTimer);
-// Garantir que a tela de login é a primeira a aparecer antes da verificação de status
-window.onload = () => {
-    if (!currentUser) {
-        loginScreen.classList.remove('hidden');
-    }
-};
+// Event listener para o botão Nova Sessão
+newSessionBtn.addEventListener('click', startNewSession);
 </script>
 </body>
 </html>
