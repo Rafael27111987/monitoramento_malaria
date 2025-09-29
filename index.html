@@ -62,7 +62,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-600 mb-4" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12h-2v-4h-2V7h4v5h2z" />
         </svg>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Monitoramento de Malária</h1>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">Monitoramento da Malária em Porto Velho</h1>
         <p class="text-gray-600 mb-6 text-center">Entre para iniciar seu check-in diário e receber monitoramento personalizado.</p>
         <button id="google-signin-btn" class="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-300 shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 48 48" fill="currentColor">
@@ -80,7 +80,7 @@
         <!-- Cabeçalho do Chat - CENTRALIZADO -->
         <header class="p-4 bg-indigo-600 text-white rounded-t-none md:rounded-t-2xl shadow-md flex flex-col justify-center items-center">
             <!-- Título Centralizado -->
-            <h2 class="text-xl font-bold">Monitoramento de Malária RO</h2>
+            <h2 class="text-xl font-bold">Monitoramento de Malária PVH</h2>
             <!-- Nome do Usuário na Resposta/Abaixo do Título -->
             <span id="user-name" class="text-sm font-light opacity-80 mt-1"></span>
         </header>
@@ -293,28 +293,27 @@
     <!-- Script JavaScript -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- CONFIGURAÇÃO E INICIALIZAÇÃO OBRIGATÓRIA DO FIREBASE ---
-// As configurações são fornecidas pelo ambiente.
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+// Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
+const firebaseConfig = {
+    apiKey: "AIzaSyCEW-C1FavyFqjabMjmS-JVo2fLXHNt5Yg",
+    authDomain: "meuaplicativosaude.firebaseapp.com",
+    projectId: "meuaplicativosaude",
+    storageBucket: "meuaplicativosaude.firebasestorage.app",
+    messagingSenderId: "547845597696",
+    appId: "1:547845597696:web:7942056f2d48601fa086e5",
+    measurementId: "G-MYE47X3LNH"
+};
 
-// Chave de API do Gemini (AGORA UTILIZA A CHAVE FORNECIDA PELO USUÁRIO)
-const geminiApiKey = "AIzaSyBeLGZcfbhn9lYFzsy6YWDI8PNquvZ9aE0"; 
+// Chave de API do Gemini, nunca a exponha.
+const geminiApiKey = "AIzaSyBeLGZcfbhn9lYFzsy6YWDI8PNquvZ9aE0";
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// Adiciona o log para debug no console
-import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-setLogLevel('debug');
-// ----------------------------------------------------------------------
-
 
 // Variável para armazenar o estado do usuário
 let currentUser = null;
@@ -468,28 +467,6 @@ let inactivityTimer;
 const INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 5 minutos em milissegundos
 let isSessionActive = false; // Começa como inativa até o login e início do questionário
 
-// ======================================================================================
-// 🚨 INICIALIZAÇÃO OBRIGATÓRIA DO FIREBASE E AUTENTICAÇÃO ANÔNIMA/CUSTOMIZADA
-// ======================================================================================
-async function initializeAuth() {
-    try {
-        if (initialAuthToken) {
-            await signInWithCustomToken(auth, initialAuthToken);
-            console.log("Autenticação inicial: Usuário autenticado via token personalizado.");
-        } else {
-            await signInAnonymously(auth);
-            console.log("Autenticação inicial: Usuário autenticado anonimamente.");
-        }
-    } catch (error) {
-        console.error("Erro na autenticação inicial:", error);
-    }
-}
-
-// Inicia o processo de autenticação obrigatória ao carregar o script
-initializeAuth();
-// ======================================================================================
-
-
 // Função para mostrar o modal de erro
 function showError(message) {
     errorMessageElem.innerHTML = message; // Usando innerHTML para permitir formatação de texto (negrito)
@@ -609,7 +586,7 @@ function displayMessage(message, isUser, timestamp) {
 // 🚨 FUNÇÃO ADAPTADA PARA EXIBIR PERGUNTA E BOTÕES INLINE
 // ==========================================================
 async function displayQuestionWithButtons(question) {
-    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
     let questionText = question.text;
     
     // ⚠️ Lógica para a PERGUNTA DINÂMICA (Q17)
@@ -699,7 +676,7 @@ async function endSession() {
     // Remove botões existentes ao encerrar
     chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
 
-    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
     const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, atualize a página!";
 
     await addDoc(chatCollectionRef, { text: endMessage, isUser: false, timestamp: serverTimestamp() });
@@ -767,7 +744,7 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
         sendBtn.disabled = true;
         loadingIndicator.classList.remove('hidden');
 
-        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
         await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
         
         await startNewSession(); 
@@ -788,7 +765,7 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
     let questionIndexBeforeAdvance = -1;
 
     try {
-        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
         
         // 1. Salva a mensagem do usuário
         await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
@@ -918,10 +895,10 @@ ${Object.keys(userResponses).map(key => {
 
     const botResponse = await getGeminiResponse(summaryPrompt);
 
-    const checkinRef = doc(db, `artifacts/${appId}/users/${user.uid}/checkin_status/daily_status`);
+    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
     await setDoc(checkinRef, { lastCheckin: serverTimestamp(), summary: botResponse });
 
-    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
     
     await addDoc(chatCollectionRef, { text: "✨ Relatório Detalhado:\n" + botResponse, isUser: false, timestamp: serverTimestamp() });
     
@@ -943,7 +920,7 @@ async function startNewSession() {
     }
     loadingIndicator.classList.remove('hidden');
     try {
-        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${currentUser.uid}/chat_messages`);
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
         const docsToDelete = await getDocs(chatCollectionRef);
         const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
         await Promise.all(deletePromises);
@@ -958,9 +935,9 @@ async function startNewSession() {
 }
 
 async function startInitialConversation(user) {
-    const userProfileRef = doc(db, `artifacts/${appId}/users/${user.uid}`);
+    const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
     const userProfileSnap = await getDoc(userProfileRef);
-    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
 
     conversationStep = 0;
     userResponses = {};
@@ -987,7 +964,7 @@ async function startInitialConversation(user) {
             return;
         }
 
-        const checkinRef = doc(db, `artifacts/${appId}/users/${user.uid}/checkin_status/daily_status`);
+        const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
         const checkinSnap = await getDoc(checkinRef);
 
         const firstQuestion = dailyQuestions[0];
@@ -1018,7 +995,7 @@ async function startFreshSession(user) {
         isSessionActive = false; 
 
         // 2. Limpa o histórico de chat no Firestore
-        const chatCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/chat_messages`);
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
         const docsToDelete = await getDocs(chatCollectionRef);
         const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
         await Promise.all(deletePromises);
@@ -1074,7 +1051,7 @@ async function handleFormSubmission() {
     };
 
     try {
-        const userProfileRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}`);
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, {
             uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
             createdAt: serverTimestamp(), ...formData
@@ -1110,7 +1087,7 @@ tcleParticiparBtn.addEventListener('click', async () => {
     }
 
     try {
-        const userProfileRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}`);
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
 
         tcleModal.classList.add('hidden');
@@ -1122,11 +1099,9 @@ tcleParticiparBtn.addEventListener('click', async () => {
     }
 });
 
-// 🚨 LÓGICA DO BOTÃO GOOGLE SIGN-IN
 googleSigninBtn.onclick = async () => {
     const provider = new GoogleAuthProvider();
     try {
-        // Usa o pop-up para o login do Google
         await signInWithPopup(auth, provider);
     } catch (error) {
         console.error("Erro no login com Google:", error);
@@ -1138,7 +1113,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         // Atualiza o nome do usuário no cabeçalho
-        userNameElem.textContent = `Olá, ${user.displayName || user.email}! ID: ${user.uid.substring(0, 8)}...`; 
+        userNameElem.textContent = `Olá, ${user.displayName || user.email}!`; 
 
         loginScreen.classList.add('opacity-0', 'pointer-events-none');
         setTimeout(() => {
@@ -1168,7 +1143,7 @@ onAuthStateChanged(auth, (user) => {
 
 function listenForMessages(user) {
     if (!user) return;
-    const chatCollectionRef = collection(db, `artifacts/${appId}/users/${user.uid}/chat_messages`);
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
     const q = query(chatCollectionRef, orderBy("timestamp", "asc"));
 
     onSnapshot(q, (snapshot) => {
