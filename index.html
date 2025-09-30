@@ -165,6 +165,24 @@
             </div>
         </div>
     </div>
+    <div id="rating-container" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <h3 class="text-xl font-bold mb-4 text-indigo-700">Avalie sua Experiência</h3>
+            <p class="mb-4 text-gray-700">Gostaríamos de saber sua opinião sobre o aplicativo:</p>
+            
+            <div id="star-rating" class="flex justify-center space-x-2 mb-6 text-3xl">
+                <span data-value="1" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
+                <span data-value="2" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
+                <span data-value="3" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
+                <span data-value="4" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
+                <span data-value="5" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
+            </div>
+            
+            <button id="submit-rating-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out disabled:opacity-50" disabled>
+                Enviar Avaliação e Encerrar
+            </button>
+        </div>
+    </div>
 
     <!-- Modal do Formulário de Dados Iniciais (NOVO ESTILO) -->
     <div id="form-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 overflow-y-auto flex items-center justify-center">
@@ -293,7 +311,7 @@
     <!-- Script JavaScript -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
@@ -336,10 +354,143 @@ const enableRemindersBtn = document.getElementById('enable-reminders-btn');
 const formModal = document.getElementById('form-modal');
 const saveFormBtn = document.getElementById('save-form-btn');
 const userNameElem = document.getElementById('user-name');
+const ratingContainer = document.getElementById('rating-container');
+const starRatingDiv = document.getElementById('star-rating');
+const submitRatingBtn = document.getElementById('submit-rating-btn');
+let selectedRating = 0; // Variável para armazenar a nota selecionada
 // NOVAS VARIÁVEIS PARA O TCLE
 const tcleModal = document.getElementById('tcle-modal');
 const tcleConsentCheckbox = document.getElementById('tcle-consent-checkbox');
 const tcleParticiparBtn = document.getElementById('tcle-participar-btn');
+
+
+// ==========================================================
+// 🚨 NOVO: FUNÇÃO PARA AVALIAÇÃO E ENCERRAMENTO
+// ==========================================================
+function setupRatingAndEndSession() {
+    // 1. Esconde containers de chat e botões extras
+    newSessionContainer.classList.add('hidden');
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+
+    // 2. Exibe a tela de avaliação
+    ratingContainer.classList.remove('hidden');
+    
+    // 3. Inicializa a lógica das estrelas
+    const stars = starRatingDiv.querySelectorAll('span');
+    stars.forEach(star => {
+        // Evento de mouseover para preencher estrelas temporariamente
+        star.addEventListener('mouseover', () => {
+            if (selectedRating === 0) { // Só faz o hover se não tiver clicado ainda
+                stars.forEach(s => {
+                    if (parseInt(s.dataset.value) <= parseInt(star.dataset.value)) {
+                        s.classList.replace('text-gray-300', 'text-yellow-400');
+                    } else {
+                        s.classList.replace('text-yellow-400', 'text-gray-300');
+                    }
+                });
+            }
+        });
+        
+        // Evento de mouseout para reverter o hover
+        star.addEventListener('mouseout', () => {
+             if (selectedRating === 0) { // Só reverte o hover se não tiver clicado ainda
+                stars.forEach(s => s.classList.replace('text-yellow-400', 'text-gray-300'));
+             }
+        });
+
+        // Evento de click para selecionar a nota
+        star.onclick = () => {
+            selectedRating = parseInt(star.dataset.value);
+            // Preenche as estrelas até a nota selecionada
+            stars.forEach(s => {
+                if (parseInt(s.dataset.value) <= selectedRating) {
+                    s.classList.replace('text-gray-300', 'text-yellow-500');
+                } else {
+                    s.classList.replace('text-yellow-500', 'text-gray-300');
+                }
+            });
+            // Habilita o botão de envio
+            submitRatingBtn.disabled = false;
+        };
+    });
+
+    // 4. Configura o evento do botão de envio
+    submitRatingBtn.onclick = async () => {
+        if (selectedRating === 0 || !currentUser) return;
+
+        submitRatingBtn.disabled = true;
+        submitRatingBtn.textContent = 'Enviando...';
+
+        try {
+            // Salva a avaliação no Firestore (em uma nova coleção 'ratings')
+            const ratingCollectionRef = collection(db, `ratings`);
+            await addDoc(ratingCollectionRef, {
+                userId: currentUser.uid,
+                rating: selectedRating,
+                timestamp: serverTimestamp(),
+                userEmail: currentUser.email || 'N/A'
+            });
+
+            // Adiciona uma mensagem de confirmação ao chat (opcional)
+            const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+            await addDoc(chatCollectionRef, { 
+                text: `✅ Obrigado(a)! Sua avaliação de **${selectedRating} estrelas** foi registrada.`, 
+                isUser: false, 
+                timestamp: serverTimestamp() 
+            });
+
+            // 5. Encerra a sessão
+            await logoutUser(); // Chama a nova função de logout (que criaremos abaixo)
+            
+        } catch (error) {
+            console.error("Erro ao salvar avaliação ou fazer logout:", error);
+            showError("Ocorreu um erro ao salvar a avaliação. Por favor, tente novamente.");
+            submitRatingBtn.disabled = false;
+            submitRatingBtn.textContent = 'Tente Novamente';
+        }
+    };
+}
+// ==========================================================
+
+// ==========================================================
+// 🚨 NOVO: FUNÇÃO DE LOGOUT COMPLETO
+// ==========================================================
+async function logoutUser() {
+    isSessionActive = false;
+    clearTimeout(inactivityTimer);
+    
+    // Reset da interface
+    ratingContainer.classList.add('hidden');
+    loginScreen.classList.remove('hidden');
+    chatScreen.classList.add('hidden');
+    newSessionContainer.classList.add('hidden');
+    reminderContainer.classList.add('hidden');
+    
+    // Limpeza de variáveis de estado
+    currentUser = null;
+    conversationStep = 0;
+    userResponses = {};
+    selectedRating = 0;
+    
+    // Limpeza das estrelas e botão
+    starRatingDiv.querySelectorAll('span').forEach(s => {
+        s.classList.replace('text-yellow-500', 'text-gray-300');
+    });
+    submitRatingBtn.disabled = true;
+    submitRatingBtn.textContent = 'Enviar Avaliação e Encerrar';
+    
+    // Limpa o chat-container
+    chatContainer.innerHTML = '';
+    
+    // Desloga do Firebase Auth
+    try {
+        await auth.signOut();
+    } catch (error) {
+        console.error("Erro ao fazer logout do Firebase Auth:", error);
+    }
+}
+// ==========================================================
 
 // ==========================================================
 // ESTRUTURA DE PERGUNTAS COM OPÇÕES DE BOTÃO (ATUALIZADA)
@@ -904,11 +1055,15 @@ ${Object.keys(userResponses).map(key => {
     await addDoc(chatCollectionRef, { text: finalQuestion, isUser: false, timestamp: serverTimestamp() });
 
     isWaitingForSummary = false;
-    messageInput.disabled = false;
-    sendBtn.disabled = false;
-    newSessionContainer.classList.remove('hidden');
+    messageInput.disabled = true; // Desabilita o chat para forçar a avaliação
+    sendBtn.disabled = true;
+    
     conversationStep = dailyQuestions.length;
-    resetInactivityTimer(); 
+    resetInactivityTimer();
+    
+    // 🚨 NOVO PASSO: Chamar a avaliação do aplicativo
+    setTimeout(setupRatingAndEndSession, 1000); // Espera 1 segundo para garantir a renderização final
+
 }
 
 async function startNewSession() {
