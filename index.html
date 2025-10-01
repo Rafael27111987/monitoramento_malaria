@@ -7,10 +7,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f9fc;
-        }
+body {
+    font-family: 'Inter', sans-serif;
+    /* * Gradiente de cores da saúde:
+     * 1. Um Verde Água Suave (#E0F2F1) que remete à cura e bem-estar.
+     * 2. Um Azul Claro (#E3F2FD) que remete à confiança e limpeza (cores hospitalares).
+     */
+    background: linear-gradient(180deg, #E0F2F1 0%, #E3F2FD 100%);
+    /* Define altura mínima para garantir que o gradiente cubra toda a tela */
+    min-height: 100vh;
+    margin: 0;
+}
         /* Ajuste crucial: removemos a altura fixa (80vh) e confiamos no flex-grow */
         .chat-container {
             overflow-y: auto;
@@ -62,8 +69,8 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-600 mb-4" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12h-2v-4h-2V7h4v5h2z" />
         </svg>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">Projeto de Mestrado acerca do Monitoramento da Malária em Porto Velho</h1>
-        <p class="text-gray-600 mb-6 text-center">Entre para iniciar seu check-in diário e receber monitoramento personalizado.</p>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">Projeto de Mestrado - Monitoramento da Malária em Porto Velho/RO</h1>
+        <p class="text-gray-600 mb-6 text-center">Entre para iniciar seu check-in e receber monitoramento personalizado com o uso de IA.</p>
         <button id="google-signin-btn" class="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-300 shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 48 48" fill="currentColor">
                 <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.692-5.743 7.917-10.303 7.917-6.903 0-12.498-5.592-12.498-12.496s5.595-12.496 12.498-12.496c3.243 0 6.208 1.157 8.524 3.037l-4.243 3.491c-1.353-.98-3.044-1.579-4.281-1.579-4.881 0-8.86 3.988-8.86 8.873s3.979 8.873 8.86 8.873c5.32 0 8.544-4.438 8.95-6.736h-8.95v-6.004z"/>
@@ -71,18 +78,18 @@
                 <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.4-5.195l-5.694-4.493c-2.091 1.585-4.707 2.488-7.706 2.488-5.32 0-9.858-3.342-11.666-8.23l-5.378 4.227c2.618 6.275 9.421 10.708 16.944 10.708z"/>
                 <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.692-5.743 7.917-10.303 7.917-6.903 0-12.498-5.592-12.498-12.496s5.595-12.496 12.498-12.496c3.243 0 6.208 1.157 8.524 3.037l-4.243 3.491c-1.353-.98-3.044-1.579-4.281-1.579-4.881 0-8.86 3.988-8.86 8.873s3.979 8.873 8.86 8.873c5.32 0 8.544-4.438 8.95-6.736h-8.95v-6.004z"/>
             </svg>
-            Entrar com Google
+            Login com Google
         </button>
     </div>
 
     <!-- Tela do Chat - Altura ajustada para 95% da tela e responsividade de bordas -->
     <div id="chat-screen" class="hidden flex flex-col w-full max-w-2xl bg-white shadow-2xl rounded-none md:rounded-2xl h-[95vh] transition-opacity duration-500 opacity-0">
         <!-- Cabeçalho do Chat - CENTRALIZADO -->
-        <header class="p-4 bg-indigo-600 text-white rounded-t-none md:rounded-t-2xl shadow-md flex flex-col justify-center items-center">
+        <header class="p-4 bg-indigo-900 text-white rounded-t-none md:rounded-t-2xl shadow-md flex flex-col justify-center items-center">
             <!-- Título Centralizado -->
-            <h2 class="text-xl font-bold">Projeto de Mestrado - Monitoramento da Malária em Porto Velho/RO</h2>
+            <h2 class="text-xl font-bold">Monitoramento da Malária em Porto Velho/RO</h2>
             <!-- Nome do Usuário na Resposta/Abaixo do Título -->
-            <span id="user-name" class="text-sm font-light opacity-40 mt-1 text-white"></span>
+            <span id="user-name" class="text-sm font-light opacity-80 mt-1 text-white"></span>
         </header>
 
         <!-- Container de Mensagens - Usa flex-grow para ocupar o espaço restante -->
@@ -97,12 +104,12 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Digitando...
+                Processando...
             </div>
             
             <div id="new-session-container" class="hidden text-center my-2">
                 <button id="new-session-btn" class="px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition duration-150 shadow-md">
-                    Iniciar Novo Check-in Diário
+                    Iniciar Novo Check-in
                 </button>
             </div>
 
@@ -119,7 +126,7 @@
     </div>
 
     <!-- Modal de Erro -->
-    <div id="error-modal" class="hidden fixed inset-0 bg-red-900 bg-opacity-75 z-50 overflow-y-auto flex items-center justify-center">
+    <div id="error-modal" class="hidden fixed inset-0 bg-red-900 bg-opacity-75 z-[9999] overflow-y-auto flex items-center justify-center">
         <div class="relative w-full max-w-sm mx-4 p-6 bg-white rounded-xl shadow-2xl">
             <div class="text-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-600 mx-auto" viewBox="0 0 20 20" fill="currentColor">
@@ -165,21 +172,15 @@
             </div>
         </div>
     </div>
-    <div id="rating-container" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-            <h3 class="text-xl font-bold mb-4 text-indigo-700">Avalie sua Experiência</h3>
-            <p class="mb-4 text-gray-700">Gostaríamos de saber sua opinião sobre o aplicativo:</p>
-            
-            <div id="star-rating" class="flex justify-center space-x-2 mb-6 text-3xl">
-                <span data-value="1" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
-                <span data-value="2" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
-                <span data-value="3" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
-                <span data-value="4" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
-                <span data-value="5" class="cursor-pointer text-gray-300 hover:text-yellow-500 transition duration-150">★</span>
-            </div>
-            
-            <button id="submit-rating-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out disabled:opacity-50" disabled>
-                Enviar Avaliação e Encerrar
+
+    <div id="evaluation-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-96">
+            <h2 class="text-xl font-bold mb-4 text-indigo-800">Avalie o Atendimento</h2>
+            <p class="mb-4 text-gray-700">Sua sessão será encerrada por inatividade. Por favor, avalie sua experiência:</p>
+            <div id="rating-stars-container" class="flex justify-center space-x-2 my-4">
+                </div>
+            <button id="confirm-rating-btn" disabled class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+                Confirmar Avaliação e Encerrar Sessão
             </button>
         </div>
     </div>
@@ -193,7 +194,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9.5 9a1.5 1.5 0 000 3h1a1.5 1.5 0 000-3h-1z" clip-rule="evenodd" />
                     </svg>
-                    Dados Essenciais para identificação do Participante do Projeto
+                    Dados Essenciais para o Projeto
                 </h3>
                 <p class="text-sm text-gray-500 mt-2">Por favor, preencha as informações para iniciar seu monitoramento. Todos os campos são necessários.</p>
             </div>
@@ -208,7 +209,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="col-span-1">
                             <label for="rg" class="block text-xs font-semibold text-gray-700">RG</label>
-                            <input type="text" id="rg" placeholder="Ex: 1234567-SSP/RO" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            <input type="text" 
+                                id="rg" 
+                                placeholder="Ex: 1234567" 
+                                class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                maxlength="15"
+                                inputmode="numeric"
+                                pattern="[0-9]*"
+                                >
                         </div>
                         <div class="col-span-1">
                             <label for="cpf" class="block text-xs font-semibold text-gray-700">CPF</label>
@@ -308,10 +316,10 @@
         </div>
     </div>
 
-    <!-- Script JavaScript -->
+<!-- Script JavaScript -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
@@ -354,143 +362,14 @@ const enableRemindersBtn = document.getElementById('enable-reminders-btn');
 const formModal = document.getElementById('form-modal');
 const saveFormBtn = document.getElementById('save-form-btn');
 const userNameElem = document.getElementById('user-name');
-const ratingContainer = document.getElementById('rating-container');
-const starRatingDiv = document.getElementById('star-rating');
-const submitRatingBtn = document.getElementById('submit-rating-btn');
-let selectedRating = 0; // Variável para armazenar a nota selecionada
 // NOVAS VARIÁVEIS PARA O TCLE
 const tcleModal = document.getElementById('tcle-modal');
 const tcleConsentCheckbox = document.getElementById('tcle-consent-checkbox');
 const tcleParticiparBtn = document.getElementById('tcle-participar-btn');
-
-
-// ==========================================================
-// 🚨 NOVO: FUNÇÃO PARA AVALIAÇÃO E ENCERRAMENTO
-// ==========================================================
-function setupRatingAndEndSession() {
-    // 1. Esconde containers de chat e botões extras
-    newSessionContainer.classList.add('hidden');
-    messageInput.disabled = true;
-    sendBtn.disabled = true;
-
-    // 2. Exibe a tela de avaliação
-    ratingContainer.classList.remove('hidden');
-    
-    // 3. Inicializa a lógica das estrelas
-    const stars = starRatingDiv.querySelectorAll('span');
-    stars.forEach(star => {
-        // Evento de mouseover para preencher estrelas temporariamente
-        star.addEventListener('mouseover', () => {
-            if (selectedRating === 0) { // Só faz o hover se não tiver clicado ainda
-                stars.forEach(s => {
-                    if (parseInt(s.dataset.value) <= parseInt(star.dataset.value)) {
-                        s.classList.replace('text-gray-300', 'text-yellow-400');
-                    } else {
-                        s.classList.replace('text-yellow-400', 'text-gray-300');
-                    }
-                });
-            }
-        });
-        
-        // Evento de mouseout para reverter o hover
-        star.addEventListener('mouseout', () => {
-             if (selectedRating === 0) { // Só reverte o hover se não tiver clicado ainda
-                stars.forEach(s => s.classList.replace('text-yellow-400', 'text-gray-300'));
-             }
-        });
-
-        // Evento de click para selecionar a nota
-        star.onclick = () => {
-            selectedRating = parseInt(star.dataset.value);
-            // Preenche as estrelas até a nota selecionada
-            stars.forEach(s => {
-                if (parseInt(s.dataset.value) <= selectedRating) {
-                    s.classList.replace('text-gray-300', 'text-yellow-500');
-                } else {
-                    s.classList.replace('text-yellow-500', 'text-gray-300');
-                }
-            });
-            // Habilita o botão de envio
-            submitRatingBtn.disabled = false;
-        };
-    });
-
-    // 4. Configura o evento do botão de envio
-    submitRatingBtn.onclick = async () => {
-        if (selectedRating === 0 || !currentUser) return;
-
-        submitRatingBtn.disabled = true;
-        submitRatingBtn.textContent = 'Enviando...';
-
-        try {
-            // Salva a avaliação no Firestore (em uma nova coleção 'ratings')
-            const ratingCollectionRef = collection(db, `ratings`);
-            await addDoc(ratingCollectionRef, {
-                userId: currentUser.uid,
-                rating: selectedRating,
-                timestamp: serverTimestamp(),
-                userEmail: currentUser.email || 'N/A'
-            });
-
-            // Adiciona uma mensagem de confirmação ao chat (opcional)
-            const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
-            await addDoc(chatCollectionRef, { 
-                text: `✅ Obrigado(a)! Sua avaliação de **${selectedRating} estrelas** foi registrada.`, 
-                isUser: false, 
-                timestamp: serverTimestamp() 
-            });
-
-            // 5. Encerra a sessão
-            await logoutUser(); // Chama a nova função de logout (que criaremos abaixo)
-            
-        } catch (error) {
-            console.error("Erro ao salvar avaliação ou fazer logout:", error);
-            showError("Ocorreu um erro ao salvar a avaliação. Por favor, tente novamente.");
-            submitRatingBtn.disabled = false;
-            submitRatingBtn.textContent = 'Tente Novamente';
-        }
-    };
-}
-// ==========================================================
-
-// ==========================================================
-// 🚨 NOVO: FUNÇÃO DE LOGOUT COMPLETO
-// ==========================================================
-async function logoutUser() {
-    isSessionActive = false;
-    clearTimeout(inactivityTimer);
-    
-    // Reset da interface
-    ratingContainer.classList.add('hidden');
-    loginScreen.classList.remove('hidden');
-    chatScreen.classList.add('hidden');
-    newSessionContainer.classList.add('hidden');
-    reminderContainer.classList.add('hidden');
-    
-    // Limpeza de variáveis de estado
-    currentUser = null;
-    conversationStep = 0;
-    userResponses = {};
-    selectedRating = 0;
-    
-    // Limpeza das estrelas e botão
-    starRatingDiv.querySelectorAll('span').forEach(s => {
-        s.classList.replace('text-yellow-500', 'text-gray-300');
-    });
-    submitRatingBtn.disabled = true;
-    submitRatingBtn.textContent = 'Enviar Avaliação e Encerrar';
-    
-    // Limpa o chat-container
-    chatContainer.innerHTML = '';
-    
-    // Desloga do Firebase Auth
-    try {
-        await auth.signOut();
-    } catch (error) {
-        console.error("Erro ao fazer logout do Firebase Auth:", error);
-    }
-}
-// ==========================================================
+// VARIÁVEIS DO MODAL DE AVALIAÇÃO (Verifique se estão presentes)
+const evaluationModal = document.getElementById('evaluation-modal'); 
+const ratingStarsContainer = document.getElementById('rating-stars-container'); 
+const confirmRatingBtn = document.getElementById('confirm-rating-btn'); 
 
 // ==========================================================
 // ESTRUTURA DE PERGUNTAS COM OPÇÕES DE BOTÃO (ATUALIZADA)
@@ -615,7 +494,7 @@ let userProfileData = null;
 
 // VARIÁVEIS PARA O TEMPORIZADOR DE INATIVIDADE
 let inactivityTimer;
-const INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 5 minutos em milissegundos
+const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 5 minutos em milissegundos
 let isSessionActive = false; // Começa como inativa até o login e início do questionário
 
 // Função para mostrar o modal de erro
@@ -811,15 +690,25 @@ async function processButtonResponse(response) {
 
 // FUNÇÕES DO TEMPORIZADOR
 function resetInactivityTimer() {
-    clearTimeout(inactivityTimer);
-    if (currentUser && isSessionActive) {
-        inactivityTimer = setTimeout(endSession, INACTIVITY_TIMEOUT);
-    }
+    clearTimeout(inactivityTimer);
+    if (currentUser && isSessionActive) {
+        inactivityTimer = setTimeout(endSession, INACTIVITY_TIMEOUT);
+    }
 }
 
 async function endSession() {
-    if (!currentUser || !isSessionActive) return;
+    if (!currentUser) return;
 
+    // 🚨 1. VERIFICAÇÃO PRINCIPAL: O questionário já foi concluído?
+    if (conversationStep >= dailyQuestions.length) {
+        // Sim, questionário concluído. Mostra o modal de avaliação.
+        showSystemEvaluationModal();
+        return; 
+    }
+    
+    // 2. AÇÃO PADRÃO PARA INATIVIDADE DURANTE O QUESTIONÁRIO
+    if (!isSessionActive) return; // Se a sessão já estava inativa, não faz nada
+    
     isSessionActive = false;
     messageInput.disabled = true;
     sendBtn.disabled = true;
@@ -831,7 +720,8 @@ async function endSession() {
     const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, clique no botão Iniciar Sessão! Alertamos que as respostas são realizadas por meio de Inteligência Artificial e caso persista os sintomas procure ajuda médica imediatamente!";
 
     await addDoc(chatCollectionRef, { text: endMessage, isUser: false, timestamp: serverTimestamp() });
-    conversationStep = -1; 
+    conversationStep = -1; // Estado de sessão encerrada
+    newSessionContainer.classList.remove('hidden'); // Mostra o botão
 }
 
 // Função para gerar uma resposta do chatbot usando a API Gemini
@@ -871,6 +761,109 @@ async function getGeminiResponse(prompt) {
 async function getGeminiAcknowledgement(userResponse, questionText) {
     const prompt = `Gere uma pequena e amigável resposta de reconhecimento, com cerca de 10 palavras, para a seguinte resposta do usuário: "${userResponse}" à pergunta: "${questionText}".`;
     return await getGeminiResponse(prompt);
+}
+
+// VARIÁVEL GLOBAL PARA O RATING
+let selectedRating = 0; 
+
+
+// ==========================================================
+// 🚨 NOVO FLUXO: AVALIAÇÃO DO SISTEMA APÓS Q17
+// ==========================================================
+
+function applyRatingStyle(rating) {
+    document.querySelectorAll('.star-button').forEach(s => {
+        const starRating = parseInt(s.getAttribute('data-rating'));
+        // Verifica se a estrela está "cheia" (amarela) ou "vazia" (cinza)
+        if (starRating <= rating) {
+            s.classList.remove('text-gray-400');
+            s.classList.add('text-yellow-500');
+        } else {
+            s.classList.remove('text-yellow-500');
+            s.classList.add('text-gray-400');
+        }
+    });
+    // Habilita o botão de confirmação se uma avaliação foi selecionada
+    confirmRatingBtn.disabled = rating === 0;
+}
+
+// Função para mostrar o modal de avaliação do sistema
+function showSystemEvaluationModal() {
+    if (!currentUser) return;
+
+    // Desativa o input e pausa o timer principal
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    clearTimeout(inactivityTimer); 
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+    
+    // Configura o estado inicial do modal
+    selectedRating = 0;
+    confirmRatingBtn.disabled = true;
+    ratingStarsContainer.innerHTML = ''; // Limpa estrelas anteriores
+    
+    // Cria as estrelas (1 a 5)
+    for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('button');
+        star.textContent = '★'; // Estrela Unicode
+        star.classList.add('star-button', 'text-2xl', 'text-gray-400', 'hover:text-yellow-500', 'transition', 'duration-150', 'focus:outline-none');
+        star.setAttribute('data-rating', i);
+        
+        star.onmouseover = () => applyRatingStyle(i);
+        star.onmouseout = () => applyRatingStyle(selectedRating);
+        star.onclick = () => {
+            selectedRating = i;
+            applyRatingStyle(selectedRating);
+        };
+        ratingStarsContainer.appendChild(star);
+    }
+    
+    // Define o evento do botão de confirmação para continuar o fluxo
+    confirmRatingBtn.onclick = () => {
+        if (selectedRating > 0) {
+            submitSystemRatingAndContinue(selectedRating);
+        }
+    };
+    
+    // Atualiza o texto do modal para o propósito correto (Se o HTML permitir)
+    const modalTitle = evaluationModal.querySelector('h2');
+    if(modalTitle) modalTitle.textContent = 'Avaliação do Sistema';
+
+    const modalText = evaluationModal.querySelector('p');
+    if(modalText) modalText.textContent = 'Por favor, avalie o nosso sistema de acompanhamento (1 a 5 estrelas) antes de gerar o relatório final:';
+
+
+    // Mostra o modal
+    evaluationModal.classList.remove('hidden');
+}
+
+// Função para salvar a avaliação e prosseguir para o Relatório Detalhado
+async function submitSystemRatingAndContinue(rating) {
+    // 1. Esconde o modal
+    evaluationModal.classList.add('hidden');
+    
+    // O loadingIndicator não é usado aqui
+
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+    
+    // 2. Salva a avaliação no banco de dados (Firestore)
+    const ratingMessage = `✨ Avaliação do Sistema pelo Usuário: ${rating} estrela(s).`;
+    await addDoc(chatCollectionRef, { 
+        text: ratingMessage, 
+        isUser: false, 
+        timestamp: serverTimestamp(), 
+        type: 'system_rating', 
+        rating: rating 
+    });
+
+    // 3. Define o estado final da sessão (SESSÃO ENCERRADA)
+    isWaitingForSummary = false;
+    isSessionActive = false; // Desativa a sessão
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    newSessionContainer.classList.remove('hidden'); // Mostra o botão para Nova Sessão
+    conversationStep = -1; // Define para o estado de reinício
+    clearTimeout(inactivityTimer); // Limpa o timer
 }
 
 // ==========================================================
@@ -957,9 +950,11 @@ async function sendMessage(manualMessage = null, isButtonResponse = false) {
                 await displayQuestionWithButtons(nextQuestion);
                 
             } else {
-                // Fim do questionário
-                await generateSummary(currentUser);
-            }
+                    // Fim do questionário (APÓS PERGUNTA 17)
+                    
+                    // 🚨 NOVO FLUXO: CHAMA O RESUMO DIRETAMENTE
+                    await generateSummary(currentUser); // Chama o relatório
+            }
 
         } else {
             // Se o questionário já foi concluído (Lógica de Malária e Bate-papo)
@@ -1004,6 +999,8 @@ async function generateSummary(user) {
     sendBtn.disabled = true;
     clearTimeout(inactivityTimer); 
 
+    loadingIndicator.classList.remove('hidden'); // Mostra o indicador de carregamento
+
     const formattedDate = getFormattedDate();
 
     // Remove botões de qualquer pergunta anterior que possa ter ficado
@@ -1036,34 +1033,45 @@ ${Object.keys(userResponses).map(key => {
 ---
 ### **4. Conclusão e Recomendações:**
 (Gere uma conclusão forte. Se os sintomas (como febre alta, vômito, diarreia, calafrios) forem persistentes ou indicativos de gravidade, a conclusão deve ser uma forte recomendação para o paciente procurar a unidade de saúde mais próxima, com urgência. Se os sintomas não forem graves ou se o paciente estiver se sentindo bem, a conclusão deve indicar que não é necessário procurar uma unidade de saúde, mas sim continuar se hidratando e fazendo uso correto da medicação, se aplicável e indique se houve evolução clinica entre o monitoramento anterior e o atual, caso exista.)
----
-### **5. Informe sobre o tratamento da malária:**
-(Gere um parágrafo que descreva o que é a malária, seu tratamento e caso necessite falar a respeito do tratamento, do diaginóstico e do estado clínico apresentado, pode ser feito por aqui, basta formular a sua pergunta!)
 
 `;
 
-    const botResponse = await getGeminiResponse(summaryPrompt);
+    try {
+        const botResponse = await getGeminiResponse(summaryPrompt);
 
-    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
-    await setDoc(checkinRef, { lastCheckin: serverTimestamp(), summary: botResponse });
+        // Salva o resumo no status do check-in
+        const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
+        await setDoc(checkinRef, { lastCheckin: serverTimestamp(), summary: botResponse });
 
-    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
-    
-    await addDoc(chatCollectionRef, { text: "✨ Relatório Detalhado:\n" + botResponse, isUser: false, timestamp: serverTimestamp() });
-    
-    const finalQuestion = "Agradecemos sua participação! Espero que seu estado clínico evolua rapidamente e sua saúde seja restabelecida. Estamos trabalhando fortemente para erradicar a Malária em Porto Velho e sua participação é de fundamental importância, conte conosco! Estaremos sempre à disposição. Fique a vontade para tirar dúvidas com a nossa Inteligência Artificial.";
-    await addDoc(chatCollectionRef, { text: finalQuestion, isUser: false, timestamp: serverTimestamp() });
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+        
+        // Adiciona o relatório detalhado ao chat
+        await addDoc(chatCollectionRef, { text: "✨ Relatório Detalhado:\n" + botResponse, isUser: false, timestamp: serverTimestamp() });
+        
+        // Mensagem final de encerramento
+        const finalQuestion = "Agradecemos sua participação! Espero que esteja bem e sua participação foi de fundamental importância, conte conosco e não esqueça de registrar diariamente para acompanharmos sua evolução clínica! Estaremos sempre à disposição 24h por dia. Fique a vontade para tirar dúvidas com a nossa Inteligência Artificial.";
+        await addDoc(chatCollectionRef, { text: finalQuestion, isUser: false, timestamp: serverTimestamp() });
+        
+        loadingIndicator.classList.add('hidden'); // Esconde o indicador após o relatório
+        
+        // 🚨 REMOVEMOS showSystemEvaluationModal() DAQUI. 
+        // A AVALIAÇÃO SERÁ DISPARADA PELO TIMER DE INATIVIDADE.
 
-    isWaitingForSummary = false;
-    messageInput.disabled = true; // Desabilita o chat para forçar a avaliação
-    sendBtn.disabled = true;
-    
-    conversationStep = dailyQuestions.length;
-    resetInactivityTimer();
-    
-    // 🚨 NOVO PASSO: Chamar a avaliação do aplicativo
-    setTimeout(setupRatingAndEndSession, 1000); // Espera 1 segundo para garantir a renderização final
+    } catch (error) {
+        console.error("Erro ao gerar ou salvar o resumo:", error);
+        showError("Ocorreu um erro ao gerar o relatório detalhado. Por favor, tente iniciar uma nova sessão.");
+        
+        loadingIndicator.classList.add('hidden');
 
+    } finally {
+        // 🚨 Configura o estado para BATE-PAPO APÓS RELATÓRIO:
+        isWaitingForSummary = false;
+        messageInput.disabled = false; // Reabilita para o usuário interagir
+        sendBtn.disabled = false;
+        newSessionContainer.classList.add('hidden'); // ESCONDE O BOTÃO AQUI
+        conversationStep = dailyQuestions.length; // Permite o modo bate-papo
+        resetInactivityTimer(); // Inicia o timer de 3 minutos para a avaliação
+    }
 }
 
 async function startNewSession() {
@@ -1327,6 +1335,78 @@ messageInput.addEventListener('keypress', (e) => {
 
 // Event listener para o botão Nova Sessão
 newSessionBtn.addEventListener('click', startNewSession);
+
+// ==========================================================
+// FUNÇÕES DE MÁSCARA E RESTRIÇÃO
+// ==========================================================
+
+/**
+ * Aplica a máscara de CPF (000.000.000-00).
+ * @param {string} value - O valor do input.
+ * @returns {string} O valor formatado.
+ */
+function maskCPF(value) {
+    // 1. Remove tudo que não é dígito
+    value = value.replace(/\D/g, ""); 
+    
+    // 2. Aplica a máscara
+    value = value.replace(/(\d{3})(\d)/, "$1.$2");
+    value = value.replace(/(\d{3})(\d)/, "$1.$2");
+    value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    
+    return value;
+}
+
+/**
+ * Filtra a entrada do usuário para remover caracteres indesejados e aplicar máscara.
+ * @param {Event} event - O evento de input.
+ * @param {function | null} maskFunction - A função de máscara a ser aplicada.
+ */
+function restrictToNumbers(event, maskFunction = null) {
+    const input = event.target;
+    let value = input.value;
+    
+    // Filtra: remove tudo que não for dígito.
+    const sanitizedValue = value.replace(/[^0-9]/g, ''); 
+    
+    // Se uma função de máscara for fornecida (CPF), aplica a máscara
+    if (maskFunction) {
+        // Usa o valor original (que pode ter pontos/traços da máscara)
+        // para aplicar a formatação
+        input.value = maskFunction(value); 
+    } else {
+        // Se não houver máscara (RG), usa o valor apenas com dígitos
+        input.value = sanitizedValue; 
+    }
+}
+
+// ==========================================================
+// APLICAÇÃO DOS FILTROS E MÁSCARAS AO CARREGAR A PÁGINA
+// ==========================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const rgInput = document.getElementById('rg');
+    const cpfInput = document.getElementById('cpf');
+    
+    // 1. RG: PERMITIR APENAS NÚMEROS
+    if (rgInput) {
+        // Chama restrictToNumbers sem a função de máscara, forçando
+        // a limpeza total de não-dígitos.
+        rgInput.addEventListener('input', (event) => restrictToNumbers(event)); 
+        rgInput.maxLength = 15; // Mantém o max length
+        rgInput.type = 'tel'; // Para teclado numérico em mobile
+        rgInput.inputmode = 'numeric';
+    }
+    
+    // 2. CPF: COM MÁSCARA
+    if (cpfInput) {
+        // Chama restrictToNumbers passando a função maskCPF
+        cpfInput.addEventListener('input', (event) => restrictToNumbers(event, maskCPF));
+        cpfInput.maxLength = 14; // Tamanho máximo incluindo a máscara (11 dígitos + 3 pontos + 1 traço)
+        cpfInput.type = 'tel'; // Para teclado numérico em mobile
+        cpfInput.inputmode = 'numeric';
+    }
+});
 </script>
 </body>
 </html>
