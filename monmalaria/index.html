@@ -1,0 +1,2719 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento da Malária em Porto Velho/RO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+body {
+    font-family: 'Inter', sans-serif;
+    /* * Gradiente de cores da saúde:
+     * 1. Um Verde Água Suave (#E0F2F1) que remete à cura e bem-estar.
+     * 2. Um Azul Claro (#E3F2FD) que remete à confiança e limpeza (cores hospitalares).
+     */
+    background: linear-gradient(180deg, #E0F2F1 0%, #E3F2FD 100%);
+    /* Define altura mínima para garantir que o gradiente cubra toda a tela */
+    min-height: 100vh;
+    margin: 0;
+}
+        /* Ajuste crucial: removemos a altura fixa (80vh) e confiamos no flex-grow */
+        .chat-container {
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+        .user-message {
+            background-color: #4f46e5; /* Indigo-600 */
+            color: white;
+            border-top-right-radius: 1rem;
+            border-bottom-left-radius: 1rem;
+            border-top-left-radius: 1rem;
+            margin-left: auto; /* Alinha à direita */
+        }
+        .gemini-message {
+            background-color: #eef2ff; /* Indigo-50 */
+            color: #1e293b; /* Slate-800 */
+            border-top-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+            border-top-right-radius: 1rem;
+            margin-right: auto; /* Alinha à esquerda */
+        }
+        .chat-container > div {
+            max-width: 80%;
+        }
+        /* Estilos do Scrollbar Customizado para o formulário */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c3c3c3;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Tela de Login -->
+    <div id="login-screen" class="flex flex-col items-center justify-center p-8 bg-white shadow-2xl rounded-2xl w-full max-w-md transition-all duration-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-600 mb-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 12h-2v-4h-2V7h4v5h2z" />
+        </svg>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">Projeto de Mestrado</h1>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center"> Monitoramento da Malária em Porto Velho/RO</h2>
+        <p class="text-gray-600 mb-6 text-center">Entre para iniciar seu check-in e receber monitoramento personalizado com o uso de IA.</p>
+        <button id="google-signin-btn" class="flex items-center justify-center 
+            bg-white hover:bg-gray-100 
+            text-gray-700 font-semibold 
+            py-3 px-6 rounded-xl 
+            transition duration-300 
+            shadow-lg border border-gray-300 
+            focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-opacity-50">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 48 48" fill="currentColor">
+                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.692-5.743 7.917-10.303 7.917-6.903 0-12.498-5.592-12.498-12.496s5.595-12.496 12.498-12.496c3.243 0 6.208 1.157 8.524 3.037l-4.243 3.491c-1.353-.98-3.044-1.579-4.281-1.579-4.881 0-8.86 3.988-8.86 8.873s3.979 8.873 8.86 8.873c5.32 0 8.544-4.438 8.95-6.736h-8.95v-6.004z"/>
+                <path fill="#FF3D00" d="M6.306 14.693l-4.405 3.486c-.991 1.932-1.501 3.992-1.501 6.321s.51 4.389 1.501 6.321l4.405 3.486c.942-2.228 1.487-4.498 1.487-7.238s-.545-5.01-1.487-7.238z"/>
+                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.4-5.195l-5.694-4.493c-2.091 1.585-4.707 2.488-7.706 2.488-5.32 0-9.858-3.342-11.666-8.23l-5.378 4.227c2.618 6.275 9.421 10.708 16.944 10.708z"/>
+                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.692-5.743 7.917-10.303 7.917-6.903 0-12.498-5.592-12.498-12.496s5.595-12.496 12.498-12.496c3.243 0 6.208 1.157 8.524 3.037l-4.243 3.491c-1.353-.98-3.044-1.579-4.281-1.579-4.881 0-8.86 3.988-8.86 8.873s3.979 8.873 8.86 8.873c5.32 0 8.544-4.438 8.95-6.736h-8.95v-6.004z"/>
+            </svg>
+            Login com Google
+        </button>
+    </div>
+
+    <!-- Tela do Chat - Altura ajustada para 95% da tela e responsividade de bordas -->
+    <div id="chat-screen" class="hidden flex flex-col w-full max-w-4xl bg-white shadow-2xl rounded-none md:rounded-2xl h-[95vh] transition-opacity duration-500 opacity-0">
+        <!-- Cabeçalho do Chat - CENTRALIZADO -->
+<header class="p-4 bg-indigo-900 text-white rounded-t-none md:rounded-t-2xl shadow-md">
+    
+    <div class="flex items-center justify-between">
+    
+        <div class="flex flex-col items-center md:items-start min-w-0 pr-2 flex-grow">
+            
+            <h2 class="text-lg font-bold truncate">Monitoramento da Malária</h2>
+            
+            <span id="user-name" class="text-xs font-light text-gray-300 mt-0.5 truncate"></span>
+            
+            <span id="checkin-day-indicator-sm" 
+                  class="block md:hidden text-xs mt-1 text-gray-300 w-full text-center">
+                Você está preenchendo o Check-in de D?
+            </span>
+        </div>
+
+        <div id="checkin-indicator-lg" 
+             class="hidden md:flex flex-shrink-0 p-2 ml-4 text-center min-w-[150px] items-center justify-end">
+            
+            <div class="mr-2 text-right">
+                <p class="text-xs font-light opacity-90 leading-none">Você está na:</p>
+            </div>
+            
+            <span id="checkin-day-indicator-lg" class="text-xl font-extrabold text-white leading-none block">
+                D?
+            </span>
+        </div>
+    </div>
+</header>
+
+<div id="checkinTrackerContainer" 
+    class="py-1 bg-gray-100 border border-gray-200 mb-2 
+           overflow-x-auto overflow-y-hidden transition-all duration-150 
+           min-h-[95px] sm:min-h-[110px]">
+    
+    <div id="checkinDaysList" 
+         class="flex flex-row space-x-1 px-1 py-1 
+                h-full                items-center          justify-start sm:justify-center"> </div>
+</div>
+
+        <!-- Container de Mensagens - Usa flex-grow para ocupar o espaço restante -->
+        <div class="chat-container flex-grow overflow-y-auto" id="chat-container">
+            <!-- Mensagens serão injetadas aqui -->
+        </div>
+
+        <!-- Indicador de Carregamento e Nova Sessão -->
+        <div class="p-4 border-t border-gray-200">
+            <div id="loading-indicator" class="hidden text-center text-indigo-500 font-medium my-2">
+                <svg class="animate-spin h-5 w-5 text-indigo-500 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Aguarde...
+            </div>
+            
+            <div id="new-session-container" class="hidden text-center my-2">
+                <button id="new-session-btn" class="px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition duration-150 shadow-md">
+                    Iniciar Novo Check-in
+                </button>
+            </div>
+
+            <!-- Input de Mensagem -->
+            <div class="flex space-x-3">
+                <input type="text" id="message-input" placeholder="Digite sua resposta ou uma dúvida sobre malária..." class="flex-grow p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-inner" disabled>
+                <button id="send-btn" class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-xl transition duration-150 shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Erro -->
+    <div id="error-modal" class="hidden fixed inset-0 bg-red-900 bg-opacity-75 z-[9999] overflow-y-auto flex items-center justify-center">
+        <div class="relative w-full max-w-sm mx-4 p-6 bg-white rounded-xl shadow-2xl">
+            <div class="text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-600 mx-auto" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h2a1 1 0 000-2H9zm-2 4h6v2H7v-2z" clip-rule="evenodd" />
+                </svg>
+                <h3 class="text-lg leading-6 font-medium text-red-900 mt-3">Erro de Aplicação</h3>
+                <p id="error-message" class="text-sm text-gray-500 mt-2">Ocorreu um erro desconhecido.</p>
+            </div>
+            <div class="mt-4">
+                <button id="close-error-modal" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-lg w-full shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+<div id="tcle-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 overflow-y-auto flex items-center justify-center">
+    <div class="relative w-full max-w-xl mx-4 my-8 p-6 bg-white rounded-3xl shadow-2xl transform transition-all duration-300">
+        <div class="text-center border-b pb-4 mb-4">
+            <h3 class="text-2xl font-extrabold text-green-700 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                Termo de Consentimento
+            </h3>
+            <p class="text-sm text-gray-500 mt-2">Sua participação é voluntária e sigilosa.</p>
+        </div>
+        
+<div id="tcle-content-lgpd" class="max-h-[60vh] overflow-y-auto p-4 text-justify text-left text-sm text-gray-700 space-y-4 custom-scrollbar">
+
+    <h2 class="font-bold text-base text-center">TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO (TCLE)</h2>
+    <h3 class="font-bold text-base">Projeto: Monitoramento de Sinais e Sintomas durante o Tratamento da Malária</h3>
+
+    <p>Eu, <span id="tcle-nome-paciente" class="font-bold">[Nome do Paciente]</span>, portador(a) do RG <span id="tcle-rg" class="font-bold">[rg]</span>, do CPF nº <span id="tcle-cpf" class="font-bold">[cpf]</span>, nascido(a) em <span id="tcle-data-nascimento" class="font-bold">[DD/MM/AAAA]</span>, residente à <span id="tcle-endereco" class="font-bold">[endereco]</span>, nº <span id="tcle-numero" class="font-bold">[numero]</span>, <span id="tcle-cidade" class="font-bold">[cidade]</span>/<span id="tcle-estado" class="font-bold">[estado]</span>, confirmo que li, entendi e concordo com os termos abaixo referentes ao projeto de pesquisa coordenado pela enfermeira Rosiane Iurczak Machado, no âmbito de seu Mestrado.</p>
+
+    <h3 class="font-bold text-sm mt-3">1. Objetivo do Estudo e Procedimentos</h3>
+    <p>O objetivo principal deste estudo é **monitorar a evolução do seu quadro clínico, os sinais e sintomas (como febre, calafrios, cefaleia, etc.) e a adesão ao tratamento** durante todo o período de cura da malária. Os dados coletados auxiliarão na geração de conhecimento sobre a eficácia do acompanhamento remoto de pacientes em tratamento.</p>
+    
+    <p class="font-semibold text-red-700">Compreendo que qualquer informação de diagnóstico, alerta ou resumo gerado pelo sistema (chatbot/IA) é um suporte à pesquisa e **não substitui, em hipótese alguma, uma análise ou avaliação clínica realizada por um profissional médico**. O objetivo da IA é apenas auxiliar no monitoramento e triagem de risco para a equipe de pesquisa.</p>
+    
+    <p>Minha participação envolve o **preenchimento diário de um questionário** breve e padronizado por meio de um chatbot (assistente virtual), conforme as orientações da equipe de pesquisa, pelo período de duração do meu tratamento e acompanhamento epidemiológico.</p>
+
+    <h3 class="font-bold text-sm mt-3">2. Dados Pessoais Coletados e Tratamento (LGPD)</h3>
+    <p>Em observância à **Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018)**, os seguintes dados serão coletados e tratados:</p>
+    <ul class="list-disc ml-6 space-y-1">
+        <li><strong>Dados Pessoais (Identificáveis):</strong> Nome completo, RG, CPF, data de nascimento, endereço e telefone de contato. Estes dados são necessários para a identificação única do participante e para o contato durante o monitoramento.</li>
+        <li><strong>Dados Pessoais Sensíveis (Dados de Saúde):</strong> Histórico de Malária (diagnóstico, tipo, tratamento prescrito), sinais e sintomas diários (autorreferidos no chatbot) e outros dados clínicos relevantes.</li>
+    </ul>
+    <p>Com base no **Art. 7º, Inciso V e Art. 11, Inciso I da LGPD (Consentimento do Titular)**, eu forneço meu consentimento livre e informado para o tratamento dos meus dados pessoais e dados pessoais sensíveis, os quais serão utilizados **exclusivamente para os fins desta pesquisa, acompanhamento clínico e análise epidemiológica.**</p>
+
+    <h3 class="font-bold text-sm mt-3">3. Confidencialidade e Segurança dos Dados</h3>
+    <p>Os dados coletados serão armazenados em ambiente seguro, protegido por senhas e criptografia. Todos os resultados de pesquisa serão divulgados de forma **anonimizada**, ou seja, sem a exposição do meu nome, RG, CPF ou qualquer outro dado que possa me identificar diretamente. Somente a pesquisadora principal e, se necessário, membros autorizados da equipe de pesquisa terão acesso aos dados de identificação.</p>
+    <p>Os dados serão retidos pelo tempo estritamente necessário à conclusão da pesquisa, conforme as diretrizes éticas e legais, e serão posteriormente eliminados ou anonimizados permanentemente.</p>
+
+    <h3 class="font-bold text-sm mt-3">4. Voluntariedade, Comunicação e Desistência</h3>
+    <p>Minha participação é totalmente **voluntária**. Entendo que posso retirar meu consentimento a qualquer momento, sem necessidade de justificativa, o que implica na interrupção imediata da coleta dos meus dados. A minha recusa ou desistência não resultará em qualquer prejuízo ao meu tratamento médico, assistência à saúde ou relacionamento com a equipe responsável.</p>
+    <p><strong>Autorizo</strong> que a equipe de pesquisa mantenha contato comigo via **ligação telefônica, mensagem de texto (SMS) e/ou WhatsApp** para lembretes de preenchimento, confirmação de dados ou acompanhamento clínico emergencial durante a vigência do projeto.</p>
+
+    <h3 class="font-bold text-sm mt-3">5. Riscos e Benefícios</h3>
+    <p>Os **riscos** são considerados mínimos, limitando-se a possíveis inconvenientes no uso do chatbot ou do canal de comunicação (WhatsApp). Os **benefícios potenciais** incluem o monitoramento diário da minha evolução clínica, o que pode auxiliar na identificação precoce de agravamentos ou falhas no tratamento.</p>
+
+    <h3 class="font-bold text-sm mt-3">6. Contato</h3>
+    <p>Para dúvidas, esclarecimentos, revogação do consentimento ou informações sobre a proteção dos meus dados, posso contatar a pesquisadora responsável:</p>
+    <ul class="list-disc ml-6 space-y-1">
+        <li>**Responsável:** Rosiane Iurczak Machado</li>
+        <li>**Telefone:** (69) 98485-5060</li>
+        <li>**Email:** enf.a.rosianemachado@gmail.com</li>
+    </ul>
+
+    <p class="mt-4 font-bold text-base">Ao marcar a caixa de seleção e clicar em "Participar", eu confirmo que recebi e compreendi integralmente as informações, e que concordo em participar do projeto, cedendo meus dados para o tratamento exclusivo nos termos acima.</p>
+</div>
+        
+        <div class="mt-4 pt-4 border-t">
+            <div class="flex items-center mb-4">
+                <input id="tcle-consent-checkbox" type="checkbox" class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                <label for="tcle-consent-checkbox" class="ml-3 block text-base font-medium text-gray-900">Eu concordo com os termos acima.</label>
+            </div>
+            <button id="tcle-participar-btn" class="px-4 py-3 bg-gray-400 text-white text-base font-bold rounded-xl w-full shadow-md cursor-not-allowed" disabled>
+                Participar do Monitoramento
+            </button>
+        </div>
+    </div>
+</div>
+
+    <div id="evaluation-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-96">
+            <h2 class="text-xl font-bold mb-4 text-indigo-800">Avalie o Atendimento</h2>
+            <p class="mb-4 text-gray-700">Por favor, avalie sua experiência em nosso aplicativo:</p>
+            <div id="rating-stars-container" class="flex justify-center space-x-2 my-4">
+                </div>
+            <button id="confirm-rating-btn" disabled class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+                Confirmar Avaliação e Encerrar Sessão
+            </button>
+        </div>
+    </div>
+
+<div id="form-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-0">
+    <div class="relative w-full max-w-xl sm:max-w-3xl mx-auto max-h-screen sm:max-h-[90vh] 
+                bg-white sm:rounded-3xl rounded-none shadow-2xl 
+                transform transition-all duration-300 flex flex-col h-full sm:h-auto">
+
+        <div class="text-center border-b pb-4 pt-6 px-6 sm:px-8 sticky top-0 bg-white z-10">
+            <h3 class="text-xl sm:text-2xl font-extrabold text-indigo-700 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8 mr-3 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9.5 9a1.5 1.5 0 000 3h1a1.5 1.5 0 000-3h-1z" clip-rule="evenodd" />
+                </svg>
+                Dados Pessoais
+            </h3>
+            <p class="text-xs sm:text-sm text-gray-500 mt-2">Por favor, preencha os campos abaixo para iniciar seu monitoramento.</p>
+        </div>
+
+        <form id="health-form" class="space-y-6 flex-grow overflow-y-auto p-4 sm:p-8 custom-scrollbar">
+
+            <div class="p-4 bg-indigo-50 rounded-xl shadow-inner border border-indigo-200">
+                <h4 class="text-lg font-bold text-indigo-800 mb-4">1. Identificação e Contato</h4>
+
+                <div>
+                    <label for="nomeCompleto" class="block text-xs font-semibold text-gray-700">Nome Completo (Ajuste se Necessário)</label>
+                    <input type="text" 
+                        id="nomeCompleto" 
+                        placeholder="Nome da conta Google" 
+                        required 
+                        class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                </div>
+
+                <div class="mt-4">
+                    <label for="email" class="block text-xs font-semibold text-gray-700">E-mail (Não Editável)</label>
+                    <input type="email" 
+                        id="email" 
+                        disabled 
+                        placeholder="E-mail da conta Google" 
+                        class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm bg-gray-100 text-gray-500 text-sm">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"> 
+                    <div>
+                        <label for="dataNascimento" class="block text-xs font-semibold text-gray-700">Data de Nascimento</label>
+                        <input type="date" id="dataNascimento" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label for="sexo" class="block text-xs font-semibold text-gray-700">Sexo</label>
+                        <select id="sexo" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
+                            <option value="" disabled selected>Selecione</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"> 
+                    <div>
+                        <label for="corRaca" class="block text-xs font-semibold text-gray-700">Cor/Raça</label>
+                        <select id="corRaca" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
+                            <option value="" disabled selected>Selecione</option>
+                            <option value="Branca">Branca</option>
+                            <option value="Preta">Preta</option>
+                            <option value="Parda">Parda</option>
+                            <option value="Amarela">Amarela</option>
+                            <option value="Indígena">Indígena</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="escolaridade" class="block text-xs font-semibold text-gray-700">Nível de Escolaridade</label>
+                        <select id="escolaridade" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
+                            <option value="" disabled selected>Selecione</option>
+                            <option value="Analfabeto">Analfabeto</option>
+                            <option value="Fundamental Incompleto">Fundamental Incompleto</option>
+                            <option value="Fundamental Completo">Fundamental Completo</option>
+                            <option value="Médio Incompleto">Médio Incompleto</option>
+                            <option value="Médio Completo">Médio Completo</option>
+                            <option value="Superior Incompleto">Superior Incompleto</option>
+                            <option value="Superior Completo">Superior Completo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"> 
+                    <div>
+                        <label for="contato" class="block text-xs font-semibold text-gray-700">Contato (Telefone/WhatsApp)</label>
+                        <input type="tel" 
+                            id="contato" 
+                            placeholder="" 
+                            required 
+                            class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    </div>
+                    
+                    <div>
+                        <label for="rg" class="block text-xs font-semibold text-gray-700">RG</label>
+                        <input type="text" 
+                            id="rg" 
+                            placeholder="" 
+                            class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            maxlength="15"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            >
+                    </div>
+                </div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"> 
+    
+    <div class="col-span-1"> 
+        <label for="cpf" class="block text-xs font-semibold text-gray-700">CPF</label>
+        <input type="text" id="cpf" placeholder="" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+    </div>
+    
+    <div class="col-span-1"> 
+        <label for="sivep" class="block text-xs font-semibold text-gray-700">SIVEP</label>
+        <input type="text" id="sivep" placeholder="" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+    </div>
+</div>
+
+                <hr class="my-6 border-indigo-200">
+                
+                <h4 class="text-lg font-bold text-indigo-800 mb-4">Endereço (Busca por CEP)</h4>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4"> 
+                    <div class="col-span-1 sm:col-span-1">
+                        <label for="cep" class="block text-xs font-semibold text-gray-700">CEP</label>
+                        <input type="text" id="cep" placeholder="" maxlength="9" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    </div>
+                    
+                    <div class="col-span-1 sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4"> 
+                        <div>
+                            <label for="cidade" class="block text-xs font-semibold text-gray-700">Cidade</label>
+                            <input type="text" id="cidade" placeholder="Aguardando CEP" readonly class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm bg-gray-100 text-gray-500 text-sm">
+                        </div>
+                        <div>
+                            <label for="estado" class="block text-xs font-semibold text-gray-700">Estado</label>
+                            <input type="text" id="estado" placeholder="UF" readonly class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm bg-gray-100 text-gray-500 text-sm uppercase">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label for="endereco" class="block text-xs font-semibold text-gray-700">Logradouro e Bairro</label>
+                    <input type="text" id="endereco" placeholder="Rua, Avenida, Bairro" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label for="numero" class="block text-xs font-semibold text-gray-700">Número</label>
+                        <input type="text" id="numero" placeholder="" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label for="complemento" class="block text-xs font-semibold text-gray-700">Complemento (Opcional)</label>
+                        <input type="text" id="complemento" placeholder="Apto, Casa, Bloco" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-yellow-50 rounded-xl shadow-inner border border-yellow-200">
+                <h4 class="text-lg font-bold text-yellow-800 mb-4">2. Dados do Diagnóstico e Tratamento</h4>
+
+                <div>
+                    <label for="tipoMalaria" class="block text-xs font-semibold text-gray-700">Tipo de Malária Diagnosticada</label>
+                    <select id="tipoMalaria" class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm bg-white">
+                        <option value="" disabled selected>Selecione o tipo de Malária</option>
+                        <option value="P. vivax">P. vivax</option>
+                        <option value="P. falciparum">P. falciparum</option>
+                        <option value="Mista">Mista (P. vivax e P. falciparum)</option>
+                        <option value="Outro/Desconhecido">Outro/Desconhecido</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-1 mt-4">
+                    <div>
+                        <label for="dataDiagnostico" class="block text-xs font-semibold text-gray-700">Data do Diagnóstico</label>
+                        <input type="date" id="dataDiagnostico" required class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm">
+                    </div>
+                </div>
+                
+<div class="mt-4">
+    <label for="unidadeAtendimento" class="block text-xs font-semibold text-gray-700">Unidade de Saúde de Atendimento</label>
+    <select id="unidadeAtendimento" required class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm bg-white">
+        <option value="" disabled selected>Selecione a Unidade de Atendimento</option>
+        <option value="UPA SUL">UPA SUL</option>
+        <option value="UPA LESTE">UPA LESTE</option>
+        <option value="UB ANA ADELAIDE">UBS ANA ADELAIDE</option>
+        <option value="CEPEM">CEPEM</option>
+        <option value="CEMETRON">CEMETRON</option>
+    </select>
+</div>
+
+                
+                
+                <div class="mt-5">
+    <label class="block text-sm font-bold text-gray-700 mb-2">
+        Medicação Prescrita para a Malária:
+        <span class="font-normal text-xs text-gray-500">(Selecione todas as medicações que você recebeu ou está tomando)</span>
+    </label>
+    <div class="space-y-2">
+        
+        <label for="med_cloroquina_primaquina" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="med_cloroquina_primaquina" name="medicacao" type="checkbox" value="Cloroquina+Primaquina" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Cloroquina + Primaquina</span>
+</label>
+ 
+<label for="med_artemeter_lumefantrina" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="med_artemeter_lumefantrina" name="medicacao" type="checkbox" value="Artemeter+Lumefantrina" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Artemeter + Lumefantrina (pode incluir Primaquina)</span>
+</label>
+ 
+<label for="med_quinino" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="med_quinino" name="medicacao" type="checkbox" value="Quinino" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Quinino (com Doxiciclina ou Clindamicina)</span>
+</label>
+ 
+<label for="med_tafenoquina" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="med_tafenoquina" name="medicacao" type="checkbox" value="Tafenoquina" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Tafenoquina (para casos específicos)</span>
+</label>        
+        <div class="p-3 border border-yellow-300 rounded-lg bg-white shadow-sm">
+            
+            <div class="flex items-center">
+                <input id="med_outra" name="medicacao_outra_flag" type="checkbox" value="Outra_Selecionada" class="h-4 w-4 text-yellow-800 border-yellow-500 rounded focus:ring-yellow-600">
+                <label for="med_outra" class="ml-3 block text-sm font-bold text-yellow-900">Outra medicação (especificar)</label>
+            </div>
+            
+            <div class="mt-2 ml-7">
+                <label for="medicacaoOutraDescricao" class="block text-xs font-semibold text-gray-700">Qual foi a medicação?</label>
+                <input type="text" id="medicacaoOutraDescricao" 
+                    name="medicacaoOutraDescricao" 
+                    placeholder="Ex: Artesunato, Dipirona"
+                    class="mt-1 block w-full p-2 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm">
+            </div>
+        </div>
+        
+    </div>
+</div>
+                <div class="mt-5 space-y-3">
+                    <div class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm">
+                        <input id="recebeuOrientacoes" type="checkbox" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+                        <label for="recebeuOrientacoes" class="ml-3 block text-sm font-medium text-gray-900">Você recebeu orientações claras sobre como tomar a medicação e os sinais de alerta?</label>
+                    </div>
+                </div>
+                <div class="mt-5 space-y-3">
+    <div class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm">
+        
+        <input id="viajouAreaRisco" 
+            type="checkbox" 
+            class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+        
+        <label for="viajouAreaRisco" 
+               class="ml-3 block text-sm font-medium text-gray-900">
+            Você viajou ou esteve em alguma área de mata ou com maior risco de transmissão de Malária?
+        </label>
+    </div>
+</div>
+            </div>
+
+            <div class="p-4 bg-red-50 rounded-xl shadow-inner border border-red-200">
+                <h4 class="text-lg font-bold text-red-800 mb-4">3. Comorbidades (Condições Crônicas)</h4>
+
+            <p class="text-sm text-gray-600 mb-4">Marque as condições de saúde que você já possui. (Caso não tenha nenhuma, não marque nada!).</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-1 gap-2">
+                
+                        <label for="hipertenso" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+                            <input id="hipertenso" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Hipertensão (Pressão Alta)">
+                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Hipertensão (Pressão Alta)</span>
+                        </label>
+                        
+                        <label for="diabetes" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+                            <input id="diabetes" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Diabetes (Açúcar Elevado)">
+                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Diabetes (Açúcar Elevado)</span>
+                        </label>
+                        
+                        <label for="asma_dpoc" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+                            <input id="asma_dpoc" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Asma ou Doença Pulmonar Crônica (DPOC)">
+                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Asma ou Doença Pulmonar Crônica (DPOC)</span>
+                        </label>
+                        
+                        <label for="doenca_renal" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+                            <input id="doenca_renal" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Doença Renal Crônica">
+                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Doença Renal Crônica</span>
+                        </label>
+                                <label for="doenca_cardiaca" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+                            <input id="doenca_cardiaca" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Doença Cardíaca">
+                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Doença Cardíaca</span>
+                        </label>
+                    
+                        <label for="imunossupressao" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+                            <input id="imunossupressao" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Imunossupressão (HIV, Câncer ou uso de medicamentos)">
+                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Imunossupressão (HIV, Câncer ou uso de medicamentos)</span>
+                        </label>
+                        
+                        <label for="anemia" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+                            <input id="anemia" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Anemia Crônica ou Doença Falciforme">
+                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Anemia Crônica ou Doença Falciforme</span>
+                        </label>
+                        
+                        <label for="hepatite" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+                            <input id="hepatite" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Hepatite Crônica">
+                            <span class="ml-3 block text-sm font-medium text-gray-800 peer-checked:text-red-800">Hepatite Crônica</span>
+                        </label>
+                    </div>
+            </div>
+        </form>
+        
+        <div class="flex-shrink-0 pt-4 pb-6 px-6 sm:px-8 sticky bottom-0 bg-white border-t rounded-b-3xl sm:rounded-b-none z-20">
+            <button id="save-form-btn" type="button" class="px-4 py-3 bg-indigo-600 text-white text-base font-bold rounded-xl w-full shadow-lg hover:bg-indigo-700 transition duration-150 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.103A.89.89 0 0021 6.168v7.832a2 2 0 01-2 2H5a2 2 0 01-2-2V6.168c0-.68.397-1.3.882-1.615l4.404-2.202a1.2 1.2 0 011.096 0l4.404 2.202a.89.89 0 00.882 1.615z"/>
+                </svg>
+                Salvar Dados e Prosseguir para o Termo de Consentimento
+            </button>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<!-- Script JavaScript -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, updateDoc, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
+const firebaseConfig = {
+    apiKey: "AIzaSyCEW-C1FavyFqjabMjmS-JVo2fLXHNt5Yg",
+    authDomain: "meuaplicativosaude.firebaseapp.com",
+    projectId: "meuaplicativosaude",
+    storageBucket: "meuaplicativosaude.firebasestorage.app",
+    messagingSenderId: "547845597696",
+    appId: "1:547845597696:web:7942056f2d48601fa086e5",
+    measurementId: "G-MYE47X3LNH"
+};
+
+// Chave de API do Gemini, nunca a exponha.
+// A chave 'geminiApiKey' não é mais necessária aqui!
+async function getGeminiResponse(prompt) {
+    try {
+        const response = await fetch('/.netlify/functions/gemini_proxy', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt: prompt }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // A função do Netlify retorna { text: "..." }
+        return data.text; 
+
+    } catch (error) {
+        console.error("Erro na comunicação com a IA:", error);
+        return "Desculpe, não foi possível obter uma resposta da IA no momento.";
+    }
+}
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Variável para armazenar o estado do usuário
+let currentUser = null;
+
+// Elementos do DOM
+const loginScreen = document.getElementById('login-screen');
+const chatScreen = document.getElementById('chat-screen');
+const googleSigninBtn = document.getElementById('google-signin-btn');
+const chatContainer = document.querySelector('.chat-container');
+const messageInput = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
+const loadingIndicator = document.getElementById('loading-indicator');
+const errorModal = document.getElementById('error-modal');
+const errorMessageElem = document.getElementById('error-message');
+const closeErrorModalBtn = document.getElementById('close-error-modal');
+const newSessionBtn = document.getElementById('new-session-btn');
+const newSessionContainer = document.getElementById('new-session-container');
+const reminderContainer = document.getElementById('reminder-container');
+const enableRemindersBtn = document.getElementById('enable-reminders-btn');
+const formModal = document.getElementById('form-modal');
+const saveFormBtn = document.getElementById('save-form-btn');
+const userNameElem = document.getElementById('user-name');
+// NOVAS VARIÁVEIS PARA O TCLE
+const tcleModal = document.getElementById('tcle-modal');
+const tcleConsentCheckbox = document.getElementById('tcle-consent-checkbox');
+const tcleParticiparBtn = document.getElementById('tcle-participar-btn');
+
+// 1. Obtém referências aos elementos do DOM
+    const cepInput = document.getElementById('cep');
+    const enderecoInput = document.getElementById('endereco');
+    const cidadeInput = document.getElementById('cidade');
+    const estadoInput = document.getElementById('estado');
+
+    // 2. Adiciona um "listener" (ouvinte) para o evento 'blur' (quando o campo perde o foco)
+    cepInput.addEventListener('blur', function() {
+        // Remove qualquer caractere que não seja número (Ex: hífen, pontos)
+        let cep = this.value.replace(/\D/g, ''); 
+
+        // Verifica se o CEP tem 8 dígitos
+        if (cep.length !== 8) {
+            // Se o CEP for inválido, limpa os campos e sai da função
+            if (cep.length > 0) {
+                alert('CEP inválido ou incompleto.');
+            }
+            limparCamposEndereco();
+            return;
+        }
+
+        // URL da API ViaCEP para o CEP informado
+        const url = `https://viacep.com.br/ws/${cep}/json/`;
+
+        // 3. Faz a requisição à API
+        fetch(url)
+            .then(response => response.json()) // Converte a resposta para JSON
+            .then(data => {
+                // 4. Verifica se a busca foi bem sucedida
+                if (!data.erro) {
+                    // Preenche os campos do formulário
+                    // O campo Logradouro e Bairro serão combinados no campo 'endereco' (como no seu HTML)
+                    enderecoInput.value = `${data.logradouro} - ${data.bairro}`;
+                    cidadeInput.value = data.localidade;
+                    estadoInput.value = data.uf;
+
+                    // O campo 'numero' (que não está aqui, mas você adicionou) precisa ser focado para preenchimento manual.
+                    document.getElementById('numero').focus();
+                } else {
+                    // Se a API retornar erro (CEP não encontrado)
+                    alert('CEP não encontrado. Por favor, preencha o endereço manualmente.');
+                    limparCamposEndereco();
+                    enderecoInput.focus();
+                }
+            })
+            .catch(error => {
+                // Trata erros de conexão
+                console.error('Erro na busca do CEP:', error);
+                alert('Erro ao buscar CEP. Verifique sua conexão ou preencha o endereço manualmente.');
+                limparCamposEndereco();
+            });
+    });
+
+    // Função auxiliar para limpar os campos (em caso de erro ou CEP inválido)
+    function limparCamposEndereco() {
+        enderecoInput.value = '';
+        cidadeInput.value = '';
+        estadoInput.value = '';
+    }
+
+function preloadFormData(user) {
+    // 1. Obtém os elementos de input
+    const nomeInput = document.getElementById('nomeCompleto');
+    const emailInput = document.getElementById('email');
+    
+    // 2. Preenche o Nome (campo editável, com dado do Google)
+    if (user.displayName && nomeInput) {
+        nomeInput.value = user.displayName; 
+    }
+
+    // 3. Preenche o E-mail (campo desabilitado, com dado do Google)
+    if (user.email && emailInput) {
+        emailInput.value = user.email; 
+    }
+    
+    // Nota: Se você já tiver dados salvos no Firestore (RG, CPF, Contato),
+    // você deve ter outra função aqui que busca e preenche o restante.
+}
+
+
+// ==========================================================
+// ESTRUTURA DE PERGUNTAS COM OPÇÕES DE BOTÃO (OTIMIZADA)
+// ==========================================================
+// Array que DEVE ser carregado ANTES da função startInitialConversation
+
+const dailyQuestions = [
+    { 
+        text: "1. Considerando o seu diagnóstico de Malária tipo [TIPO_MALARIA] e os sintomas iniciais ([SINTOMAS_LIST]), como você avalia seu estado de saúde hoje?",
+        type: "select",
+        options: [
+            "Muito Melhor (Quase 100%)", 
+            "Melhor (Melhora clara)", 
+            "Estável (Igual a ontem)", 
+            "Pior (Piora leve)", 
+            "Muito Pior (Piora acentuada)"
+        ]
+    },
+    {
+        text: "2. Nas últimas 24 horas, você apresentou algum dos sintomas abaixo?",
+        type: "multi-select",
+        options: [
+            "Febre (sensação de febre)",
+            "Calafrios",
+            "Dor de Cabeça",
+            "Dores no Corpo (musculares/articulares)",
+            "Cansaço",
+            "Indisposição",
+            "Náusea",
+            "Vômitos",
+            "Diarréia",
+            "Tontura (vertigem)",
+            "Sonolência Excessiva",
+            "Confusão Mental",
+            "Sangramentos incomuns (nariz, gengivas, urina ou fezes)",
+            "Falta de ar",
+            "Dor intensa no peito/abdômen",
+            "Urina muito escura ou avermelhada",
+            "Icterícia (Cor amarelada nos olhos/pele)",
+            "Convulsões ou Perda de Consciência",
+            "Diminuição da Urina (ou não urinar)",
+        ]
+    },
+    {
+        text: "3. Em relação à(s) sua(s) condição(ões) crônica(s) ([COMORBIDADE_PRINCIPAL]), **você percebeu alguma descompensação ou sintoma novo relacionado a ela(s) hoje?**",
+        type: "select", 
+        options: [
+            "Sim", 
+            "Não",
+        ]
+    },
+    {
+        text: "4. Você tomou sua medicação ([MEDICACAO_NOME]) rigorosamente nos horários indicados pelo Médico(a)?",
+        type: "select",
+        options: [
+            "Sim", 
+            "Não",
+        ],
+    },
+    {
+        text: "5. Desde a última dose do medicamento para Malária, você apresentou alguma reação adversa nova ou percebeu piora acentuada dos sintomas da Malária?",
+    type: "select", 
+    options: [
+        "Sim", 
+        "Não",
+    ],
+    },
+    {
+        text: "6. Você procurou ou recebeu atendimento em alguma Unidade de Saúde (UBS, UPA, Hospital) nas últimas 24h?",
+        type: "select",
+        options: [
+            "Sim", // Indica que procurou ajuda externa/profissional
+            "Não", // Indica que não houve busca por atendimento externo
+        ],
+    },
+    {
+        text: "7. Você usou algum outro medicamento (analgésico, antibiótico, fitoterápico, etc.) que NÃO faz parte do seu tratamento contra Malária?",
+        type: "select",
+        options: [
+            "Sim", 
+            "Não",
+        ],
+    },
+    {
+        text: "8. Você pretende comparecer ao exame de Gota Espessa de controle na data recomendada ([DATA_CONTROLE]) ou em outra data próxima?",
+        type: "select",
+        options: [
+            "Sim",
+            "Não"
+        ],
+    },
+];
+
+const Q_ALTERNATIVA_SEM_COMORBIDADE = {
+    text: "3. Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas outras perguntas?",
+    type: "select", 
+    options: [
+        "Sim", 
+        "Não",
+    ],
+};
+
+const RATING_QUESTION = {
+    text: "Por favor, avalie nosso sistema de acompanhamento (1 a 5 estrelas). Sua nota é muito importante:",
+    type: "rating", // <--- NOVO TIPO para identificação
+    options: [
+        { label: "★", value: "1", type: "rating-star", rating: 1 },
+        { label: "★★", value: "2", type: "rating-star", rating: 2 },
+        { label: "★★★", value: "3", type: "rating-star", rating: 3 },
+        { label: "★★★★", value: "4", type: "rating-star", rating: 4 },
+        { label: "★★★★★", value: "5", type: "rating-star", rating: 5 }
+    ]
+};
+
+// Variável para rastrear o estado da conversa e dados do usuário
+let conversationStep = 0;
+let userResponses = {};
+let isWaitingForSummary = false;
+let userProfileData = null;
+
+// VARIÁVEIS PARA O TEMPORIZADOR DE INATIVIDADE
+let inactivityTimer;
+const INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 2 minutos em milissegundos
+let isSessionActive = false; // Começa como inativa até o login e início do questionário
+
+// Função para mostrar o modal de erro
+function showError(message) {
+    errorMessageElem.innerHTML = message; // Usando innerHTML para permitir formatação de texto (negrito)
+    errorModal.classList.remove('hidden');
+}
+
+closeErrorModalBtn.onclick = () => {
+    errorModal.classList.add('hidden');
+};
+
+// Função para rolar para o final do chat
+function scrollToBottom() {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Funções de formato de data e hora
+function formatTimestamp(timestamp) {
+    if (!timestamp || typeof timestamp.toDate !== 'function') {
+        // Retorna string vazia se o timestamp for nulo/indefinido ou não for um Firebase Timestamp válido.
+        return '';
+    }
+    
+    // 1. Converte o timestamp para objeto Date (Necessário se for um objeto Firebase Timestamp)
+    const date = timestamp.toDate();
+    
+    // 2. Opções de Data (Apenas dia, mês e ano)
+    const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    
+    // 3. Opções de Hora (Hora e minuto no formato 24h)
+    // 💡 REMOVI 'second: '2-digit'' para um resumo mais limpo, mas você pode recolocá-lo.
+    const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false }; 
+    
+    // 4. Formata a Data
+    // 🚩 CORREÇÃO: Deve usar a variável 'date' e 'dateOptions'
+    const formattedDate = date.toLocaleDateString('pt-BR', dateOptions); 
+    
+    // 5. Formata a Hora
+    // 🚩 CORRETO: Usa 'date' e 'timeOptions'
+    const formattedTime = date.toLocaleTimeString('pt-BR', timeOptions);
+    
+    // 6. Retorna a combinação da Data e Hora no formato desejado
+    return `${formattedDate} às ${formattedTime}`;
+}
+
+function getFormattedDate() {
+    const today = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return today.toLocaleDateString('pt-BR', options);
+}
+
+/**
+ * Calcula a próxima data de controle de Gota Espessa (Dia 3, 7, 14 ou 28)
+ * com base na data do primeiro atendimento e na data atual.
+ * @param {string} firstConsultationDateString - Data do primeiro atendimento (YYYY-MM-DD).
+ * @returns {string} Texto indicando o próximo controle necessário ou "Completo" se já passou o D28.
+ */
+function calculateNextControlDate(firstConsultationDateString) {
+    if (!firstConsultationDateString) return "Data não fornecida. Por favor, procure sua UBS.";
+
+    // 1. Configura a Data Inicial (D0) e Hoje para comparação (meia-noite)
+    const initialDate = new Date(firstConsultationDateString + 'T00:00:00'); 
+    
+    // Verifica se a data inicial é válida
+    if (isNaN(initialDate.getTime())) {
+        return "Formato de data inválido. Procure sua UBS.";
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Dias para o controle (D+3, D+7, D+28, D+60)
+    const controls = [3, 7, 28, 60]; 
+    
+    // Função auxiliar para calcular a data de controle D+N
+    const getControlDate = (day) => {
+        const controlDate = new Date(initialDate);
+        // Adiciona o número de dias após o D0
+        controlDate.setDate(initialDate.getDate() + day); 
+        return controlDate;
+    };
+
+    let nextControl = null;
+
+    // 2. Encontra o Próximo Controle A Ser Realizado (No futuro ou HOJE)
+    for (const day of controls) {
+        const controlDate = getControlDate(day);
+        
+        // Verifica se a data de controle é no futuro ou hoje
+        if (controlDate >= today) {
+            nextControl = { day: day, date: controlDate };
+            break; // Encontrou o próximo controle
+        }
+    }
+
+    // 3. Formata a Saída
+    if (nextControl) {
+        const controlDate = nextControl.date;
+        const formattedDate = controlDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        // Verifica se o controle é hoje
+        if (controlDate.getTime() === today.getTime()) {
+            return `HOJE (Dia D+${nextControl.day}, ${formattedDate})`;
+        } else {
+            return `Dia D+${nextControl.day} (${formattedDate})`;
+        }
+    }
+
+    // 4. Caso o D+60 já tenha passado
+    const d60Date = getControlDate(60);
+    if (d60Date < today) {
+        return "Período de controle laboratorial primário concluído (D+60).";
+    }
+
+    return "Cálculo pendente ou erro desconhecido. Por favor, verifique a data de diagnóstico.";
+}
+
+/**
+ * Calcula o dia da visita (D+n) com base na data de diagnóstico.
+ * D1 é o dia do diagnóstico. D2 é o dia seguinte, e assim por diante.
+ * @param {string} dataDiagnosticoString - Data do diagnóstico (formato YYYY-MM-DD).
+ * @returns {string} Tag do dia no formato "D+n" (ex: "D1", "D5") ou "Dia Desconhecido".
+ */
+function calculateCheckinDay(dataDiagnosticoString) {
+    if (!dataDiagnosticoString) {
+        return "Dia Desconhecido";
+    }
+    
+    // 1. Converte a data de diagnóstico para o início do dia
+    // Adicionar 'T00:00:00' garante que o JavaScript interprete a data corretamente no fuso horário local.
+    const dataDiagnostico = new Date(dataDiagnosticoString + 'T00:00:00');
+    
+    // 2. Data de hoje (início do dia)
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0); // Zera hora para comparação de dias
+    
+    // Verifica se a data é válida
+    if (isNaN(dataDiagnostico.getTime())) {
+        return "Dia Desconhecido";
+    }
+
+    // 3. Diferença em milissegundos
+    const diffTime = hoje.getTime() - dataDiagnostico.getTime();
+    
+    // 4. Diferença em dias
+    // (1000ms * 60s * 60min * 24h)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // O Check-in Day é o número de dias passados + 1 (pois D1 é o dia do diagnóstico, quando diffDays é 0)
+    const checkinDay = diffDays + 1;
+
+    // Se a data de diagnóstico for no futuro, ou não for o dia 1 ainda
+    if (checkinDay < 1) {
+        return "D1";
+    }
+
+    return `D${checkinDay}`;
+}
+
+// Função para exibir mensagem no chat
+function displayMessage(message, isUser, timestamp) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `my-2 p-2 rounded max-w-sm whitespace-pre-wrap ${isUser ? 'user-message self-end' : 'gemini-message self-start'}`;
+
+    const textNode = document.createElement('p');
+    textNode.textContent = message;
+    messageDiv.appendChild(textNode);
+
+    const timestampNode = document.createElement('span');
+    timestampNode.className = `text-xs mt-1 block ${isUser ? 'text-gray-400' : 'text-gray-500'}`;
+    
+    const dateOptionsFallback = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    const timeOptionsFallback = { hour: '2-digit', minute: '2-digit', hour12: false };
+    const now = new Date();
+    const fallbackDisplay = `${now.toLocaleDateString('pt-BR', dateOptionsFallback)} ${now.toLocaleTimeString('pt-BR', timeOptionsFallback)}`;
+
+    timestampNode.textContent = timestamp 
+        ? formatTimestamp(timestamp) 
+        : fallbackDisplay; 
+
+    messageDiv.appendChild(timestampNode);
+
+    chatContainer.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+// ==========================================================
+// 🚨 FUNÇÃO ADAPTADA PARA EXIBIR PERGUNTA E BOTÕES INLINE
+// ==========================================================
+async function displayQuestionWithButtons(question) {
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+    let questionText = question.text;
+
+    // ⚠️ Lógica para a PERGUNTA DINÂMICA (Q17) - Mantida
+    if (question.text.includes("[DATA CALCULADA]") && userProfileData && userProfileData.dataAtendimento) {
+        const nextControlInfo = calculateNextControlDate(userProfileData.dataAtendimento);
+        questionText = question.text.replace("[DATA CALCULADA]", nextControlInfo);
+    }
+
+    // 1. Adiciona a pergunta ao Firestore (e ao chat via onSnapshot)
+    await addDoc(chatCollectionRef, { text: questionText, isUser: false, timestamp: serverTimestamp() });
+
+    // 2. Desabilita o input enquanto espera a resposta de botão/texto
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+
+    // Esperamos um pequeno tempo para garantir que a mensagem foi renderizada.
+    await new Promise(resolve => setTimeout(resolve, 50)); 
+    
+    const lastMessageDiv = chatContainer.lastElementChild;
+    if (!lastMessageDiv || lastMessageDiv.classList.contains('user-message')) {
+        console.error("Não foi possível encontrar a última mensagem do bot para anexar elementos.");
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        return;
+    }
+
+    // Cria o contêiner de botões/elementos de resposta
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.classList.add('response-buttons', 'mt-2', 'p-2', 'bg-white', 'rounded-b-lg', 'shadow-md');
+
+
+    // ==========================================================
+    // 🚨 NOVO: LÓGICA PARA AVALIAÇÃO DE ESTRELAS (type: 'rating')
+    // ==========================================================
+    if (question.type === 'rating' && question.options) {
+        
+        // Contêiner específico para as estrelas
+        const ratingStarsContainer = document.createElement('div');
+        ratingStarsContainer.classList.add('flex', 'justify-center', 'space-x-2', 'py-2');
+        
+        let selectedRating = 0; // Armazena a avaliação clicada
+
+        // Cria as estrelas (usando os 'options' para configurar)
+        question.options.forEach(option => {
+            if (option.type === 'rating-star') {
+                const i = option.rating; // O valor da estrela (1 a 5)
+                const star = document.createElement('button');
+                star.textContent = '★'; // Estrela Unicode
+                star.classList.add(
+                    'star-button', 
+                    'text-3xl', // Estrelas maiores
+                    'text-gray-400', 
+                    'hover:text-yellow-500', 
+                    'transition', 
+                    'duration-150', 
+                    'focus:outline-none'
+                );
+                star.setAttribute('data-rating', i);
+
+                // Eventos de mouse para hover
+                star.onmouseover = () => applyRatingStyle(i, ratingStarsContainer, selectedRating);
+                star.onmouseout = () => applyRatingStyle(0, ratingStarsContainer, selectedRating);
+                
+                // Evento de clique para submissão
+                star.onclick = () => {
+                    selectedRating = i; // Define a avaliação selecionada
+                    applyRatingStyle(selectedRating, ratingStarsContainer); // Aplica o estilo fixo
+                    
+                    // Envia a avaliação como a resposta final
+                    processRatingSubmission(selectedRating); 
+                };
+                ratingStarsContainer.appendChild(star);
+            }
+        });
+        
+        buttonsDiv.appendChild(ratingStarsContainer);
+        
+    } 
+    // ==========================================================
+    // LÓGICA PARA BOTÕES DE SELEÇÃO PADRÃO (type: 'select') - Mantida
+    // ==========================================================
+    else if (question.type === 'select' && question.options) {
+        question.options.forEach(optionText => {
+            const button = document.createElement('button');
+            button.className = 'w-full text-left bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-medium py-2 px-4 rounded-lg my-1 transition duration-150 ease-in-out shadow-sm text-sm';
+            button.textContent = optionText;
+            button.onclick = () => sendMessage(optionText, true); 
+            buttonsDiv.appendChild(button);
+    });
+    }
+
+// ==========================================================
+// LÓGICA PARA SELEÇÃO MÚLTIPLA (type: 'multi-select') - NOVO CÓDIGO
+// ==========================================================
+else if (question.type === 'multi-select' && question.options) {
+    const selectedOptions = new Set();
+    
+    // 1. Criar e Adicionar Checkboxes
+    question.options.forEach((optionText, index) => {
+        const uniqueId = `multi-select-${index}`;
+        
+        // --- Identifica a opção de exclusão ---
+        const IS_EXCLUSIVE_OPTION = optionText.includes("Não, nenhum problema"); // ⭐️ O Novo critério
+        
+        // Contêiner do Checkbox
+        const container = document.createElement('div');
+        container.className = 'flex items-center bg-gray-50 border border-gray-200 rounded-lg p-3 my-1 cursor-pointer hover:bg-gray-100 transition duration-100';
+
+        // Checkbox Input
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = uniqueId;
+        checkbox.className = 'w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500';
+        
+        // Label (Texto)
+        const label = document.createElement('label');
+        label.htmlFor = uniqueId;
+        label.textContent = optionText;
+        label.className = 'ml-3 text-sm font-medium text-gray-900 flex-grow';
+
+        // Lógica de Seleção
+        checkbox.onchange = () => {
+            
+            // --- VARIÁVEIS DE CONTROLE DO DOM ---
+            const allCheckboxes = buttonsDiv.querySelectorAll('input[type="checkbox"]');
+            
+            if (checkbox.checked) {
+                // 1. Se a opção exclusiva foi marcada
+                if (IS_EXCLUSIVE_OPTION) {
+                    selectedOptions.clear(); // Limpa o Set
+                    selectedOptions.add(optionText); // Adiciona apenas a opção exclusiva
+
+                    // Desmarca todas as outras no DOM
+                    allCheckboxes.forEach(otherCheckbox => {
+                        if (otherCheckbox !== checkbox) {
+                            otherCheckbox.checked = false;
+                        }
+                    });
+                } else {
+                    // 2. Se uma opção normal foi marcada
+                    selectedOptions.add(optionText);
+                    
+                    // Desmarca a opção exclusiva (se estiver marcada) no DOM e no Set
+                    allCheckboxes.forEach(otherCheckbox => {
+                        const otherOptionText = otherCheckbox.nextElementSibling.textContent;
+                        if (otherOptionText.includes("Não, nenhum problema") && otherCheckbox.checked) {
+                            otherCheckbox.checked = false;
+                            selectedOptions.delete(otherOptionText);
+                        }
+                    });
+                }
+            } else {
+                // Se a opção foi desmarcada
+                selectedOptions.delete(optionText);
+            }
+        }; // FIM checkbox.onchange
+        
+        container.appendChild(checkbox);
+        container.appendChild(label);
+        buttonsDiv.appendChild(container); // buttonsDiv é o seu contêiner de opções
+    });
+
+    // 2. Criar Botão de Confirmação (Submit)
+    // ... (o restante do código do botão de confirmação permanece INALTERADO)
+    const confirmButton = document.createElement('button');
+    confirmButton.className = 'w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg my-3 transition duration-150 ease-in-out shadow-lg text-base';
+    confirmButton.textContent = 'Confirmar Seleção';
+
+    confirmButton.onclick = () => {
+        let finalResponse;
+        
+        // Converte o Set (conjunto) de volta para um Array
+        const responseArray = Array.from(selectedOptions);
+
+        if (responseArray.length === 0) {
+            // Se nada foi selecionado, retorna o valor padrão
+            finalResponse = "Nenhum sintoma relatado";
+        } else {
+            // Se a única resposta for a negativa, podemos apenas salvar isso.
+            if (responseArray.length === 1 && responseArray[0].includes("Não, nenhum problema")) {
+                 finalResponse = "Nenhum problema renal ou pulmonar relatado.";
+            } else {
+                 // Converte o array em uma string separada por vírgulas para salvar no Firestore/DB
+                 finalResponse = responseArray.join(', ');
+            }
+        }
+        
+        // Chama a função para processar e salvar a resposta
+        sendMessage(finalResponse, true);
+    };
+
+    buttonsDiv.appendChild(confirmButton);
+}
+
+    // Se houver botões/estrelas para adicionar, anexa.
+    if (buttonsDiv.childElementCount > 0) {
+        lastMessageDiv.appendChild(buttonsDiv);
+        scrollToBottom();
+    } else {
+        // Se for tipo 'text' (ou não tiver options), reabilita o input
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+    }
+}
+// ==========================================================
+
+// ==========================================================
+// 🚨 FUNÇÃO PARA PROCESSAR RESPOSTAS DE BOTÃO (AGORA REMOVE O BOTÃO)
+// ==========================================================
+async function processButtonResponse(response) {
+    if (!currentUser || isWaitingForSummary) return;
+
+    // 1. Remove os botões de resposta da tela
+    const buttons = chatContainer.querySelectorAll('.response-buttons');
+    buttons.forEach(btn => btn.remove());
+    
+    // 2. Reabilita o input e simula o envio de mensagem do usuário
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    
+    await sendMessage(response, true); 
+}
+// ==========================================================
+
+
+// FUNÇÕES DO TEMPORIZADOR
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    if (currentUser && isSessionActive) {
+        inactivityTimer = setTimeout(endSession, INACTIVITY_TIMEOUT);
+    }
+}
+
+async function endSession() {
+    if (!currentUser) return;
+
+    // A sessão é encerrada por inatividade. O bloco que checava a conclusão do
+    // questionário e chamava o modal de avaliação foi removido, pois a avaliação
+    // agora é uma pergunta integrada e a inatividade deve sempre resultar
+    // no encerramento e não em um modal.
+
+    // 1. VERIFICAÇÃO DE ESTADO
+    if (!isSessionActive) return; // Se a sessão já estava inativa, não faz nada
+    
+    // 2. AÇÕES DE ENCERRAMENTO
+    isSessionActive = false;
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+
+    // Remove botões existentes ao encerrar
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+    const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, clique no botão Iniciar Sessão! Alertamos que as respostas são realizadas por meio de Inteligência Artificial e caso persista os sintomas procure ajuda médica imediatamente!";
+
+    await addDoc(chatCollectionRef, { text: endMessage, isUser: false, timestamp: serverTimestamp() });
+    conversationStep = -1; // Estado de sessão encerrada
+    newSessionContainer.classList.remove('hidden'); // Mostra o botão
+}
+
+// Função para gerar uma resposta do chatbot usando a API Gemini
+
+// Função para gerar uma resposta de reconhecimento com a API Gemini
+function getStaticAcknowledgement(userResponse, questionText) {
+    // Lista de mensagens de reconhecimento simples e amigáveis
+    const acknowledgements = [
+        "Registrado! Obrigado pela sua resposta.",
+        "Certo, entendi.",
+        "Anotado.",
+        "Ótimo.",
+        "Perfeito.",
+        "Recebi sua resposta, agradeço.",
+    ];
+
+    // Seleciona uma mensagem aleatoriamente
+    const randomIndex = Math.floor(Math.random() * acknowledgements.length);
+    
+    // Retorna a mensagem estática selecionada
+    return acknowledgements[randomIndex];
+}
+
+// VARIÁVEL GLOBAL PARA O RATING
+let selectedRating = 0; 
+
+
+// ==========================================================
+// 🚨 NOVO FLUXO: AVALIAÇÃO DO SISTEMA APÓS Q17
+// ==========================================================
+
+function applyRatingStyle(rating, container, selectedRating = 0) {
+    // Itera sobre todos os elementos com a classe 'star-button' dentro do container fornecido
+    container.querySelectorAll('.star-button').forEach(s => {
+        const starRating = parseInt(s.getAttribute('data-rating'));
+        
+        // Determina o rating base para a comparação: o hover (rating) ou o selecionado (selectedRating)
+        const baseRating = rating > 0 ? rating : selectedRating;
+        
+        if (starRating <= baseRating) {
+            s.classList.remove('text-gray-400');
+            s.classList.add('text-yellow-500');
+        } else {
+            s.classList.remove('text-yellow-500');
+            s.classList.add('text-gray-400');
+        }
+    });
+}
+
+async function processRatingSubmission(rating) {
+    // 1. Remove o contêiner de botões/estrelas
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+    
+    // 2. Prepara a mensagem de avaliação
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+    const ratingMessage = `Avaliação do sistema: ${rating} estrelas.`;
+    
+    // 3. Salva a resposta do rating no chat_messages (necessário)
+    await addDoc(chatCollectionRef, { 
+        text: ratingMessage, 
+        isUser: true, 
+        timestamp: serverTimestamp() 
+    });
+
+    // 🚨 NOVO PASSO CRÍTICO: RENDERIZA A MENSAGEM NO CHAT (UI) IMEDIATAMENTE.
+    // Utilize aqui a função que seu código usa para exibir mensagens no DOM.
+    // Exemplo: se você tem uma função chamada 'appendMessageToChat':
+    if (typeof appendMessageToChat === 'function') {
+        appendMessageToChat(ratingMessage, true); // true = é mensagem do usuário
+    }
+    
+    // 4. Salva o rating na estrutura de respostas (opcional, mas recomendado)
+    userResponses[dailyQuestions.length] = ratingMessage;
+    
+    // 5. CHAMA A FUNÇÃO DE FINALIZAÇÃO DA SESSÃO E ABERTURA DO CHAT LIVRE.
+    await finalizeSessionAfterRating(currentUser, rating); 
+}
+// ==========================================================
+// FUNÇÃO SENDMESSAGE ADAPTADA COM MELHOR TRATAMENTO DE ERROS
+// ==========================================================
+async function sendMessage(manualMessage = null, isButtonResponse = false) {
+    // Garantimos que o array de perguntas ativas seja usado.
+    const activeQuestions = window.activeQuestions || []; 
+    
+    if (!currentUser) {
+        showError("Você precisa estar logado para enviar mensagens.");
+        return;
+    }
+
+    const message = manualMessage || messageInput.value.trim();
+    if (message === '' || isWaitingForSummary) return;
+
+    // Lógica para reiniciar o questionário após inatividade (MANTIDA)
+    if (conversationStep === -1) {
+        // ... (código de reinício de sessão) ...
+        chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+        messageInput.value = '';
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        loadingIndicator.classList.remove('hidden');
+
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
+        
+        await startNewSession(); 
+        loadingIndicator.classList.add('hidden');
+        resetInactivityTimer();
+        return; 
+    }
+
+    resetInactivityTimer(); 
+
+    if (!isButtonResponse) {
+        messageInput.value = '';
+    }
+    
+    loadingIndicator.classList.remove('hidden');
+
+    let questionIndexBeforeAdvance = -1;
+
+    try {
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        
+        // 1. Salva a mensagem do usuário
+        await addDoc(chatCollectionRef, { text: message, isUser: true, timestamp: serverTimestamp() });
+
+        const currentQuestionIndex = conversationStep;
+        questionIndexBeforeAdvance = currentQuestionIndex; 
+        
+        if (currentQuestionIndex < activeQuestions.length) { 
+            const currentQuestion = activeQuestions[currentQuestionIndex]; 
+
+            // 2. Salva a resposta do usuário
+            userResponses[currentQuestionIndex] = message;
+
+            // 3. Verifica e envia o Alerta
+            if (currentQuestion.warning) {
+                const warningMessage = currentQuestion.warning(message);
+                if (warningMessage) {
+                    await addDoc(chatCollectionRef, { text: warningMessage, isUser: false, timestamp: serverTimestamp() });
+                }
+            }
+            
+            const botResponseText = getStaticAcknowledgement(message, currentQuestion.text); // Chamada da nova função
+            await addDoc(chatCollectionRef, { text: botResponseText, isUser: false, timestamp: serverTimestamp() });
+            
+            // 5. Avança o passo
+            conversationStep++;
+            
+            // =========================================================================
+            // 🚨 REMOÇÃO DA LÓGICA DE REGISTRO ANTECIPADO (ÍNDICE 16)
+            // A lógica de registro foi MOVIDA para a função 'finalizeSessionAfterRating'
+            // =========================================================================
+
+            const nextQuestion = activeQuestions[conversationStep]; 
+
+            if (nextQuestion) {
+                // Continua o questionário
+                await displayQuestionWithButtons(nextQuestion);
+                
+            } else {
+                // =========================================================================
+                // 🚨 FIM DO QUESTIONÁRIO: CHAMA RELATÓRIO E AVALIAÇÃO
+                // Toda a lógica de registro de visita e mensagem final foi MOVIDA
+                // para 'finalizeSessionAfterRating', que será chamada após o rating.
+                // =========================================================================
+                await generateSummary(currentUser);
+            }
+
+        } else {
+            // Se o questionário já foi concluído (Lógica de Bate-papo) (MANTIDA)
+            const malariaKeywords = ["malária", "malaria", "sintomas", "tratamento", "diagnóstico", "prevenção", "dúvida", "exame"];
+            const isMalariaQuestion = malariaKeywords.some(keyword => message.toLowerCase().includes(keyword));
+
+            if (isMalariaQuestion) {
+                const prompt = `Com base nas informações do Ministério da Saúde sobre malária em https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/m/malaria ou outra autoridade internacional referência no assunto malária, gere uma resposta detalhada, resumida e amigável sobre a pergunta: "${message}".`;
+                const botResponse = await getGeminiResponse(prompt);
+                await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
+            } else {
+                const prompt = `Responda de forma amigável e breve à seguinte mensagem do usuário, sem iniciar um novo questionário: "${message}".`;
+                const botResponse = await getGeminiResponse(prompt);
+                await addDoc(chatCollectionRef, { text: botResponse, isUser: false, timestamp: serverTimestamp() });
+            }
+        }
+
+    } catch (error) {
+        console.error("Erro ao enviar mensagem ou obter resposta:", error);
+        
+        let customErrorMsg = "Não foi possível enviar a mensagem ou obter a resposta do chatbot. Tente novamente mais tarde.";
+
+        if (questionIndexBeforeAdvance !== -1 && questionIndexBeforeAdvance < activeQuestions.length) { 
+            const failedQuestionNum = questionIndexBeforeAdvance + 1;
+            customErrorMsg = `Ocorreu um erro ao registrar sua resposta para a **Pergunta ${failedQuestionNum}**. Por favor, tente enviar a mensagem novamente. Sua sessão **não avançou** e você pode **retentar** a resposta.`;
+        }
+
+        showError(customErrorMsg);
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+    } finally {
+        loadingIndicator.classList.add('hidden');
+    }
+}
+// ==========================================================
+
+/**
+ * Calcula todas as datas de controle (D1, D3, D7, D28, D60) e determina o status de cada uma.
+ * @param {string} firstConsultationDateString - Data do primeiro atendimento (YYYY-MM-DD).
+ * @param {string[]} registeredDates - Lista de rótulos de controle JÁ REGISTRADOS (ex: ['D3', 'D7']).
+ * @returns {Array<Object>} Lista de objetos de controle com data e status.
+ */
+function calculateAllControlDates(firstConsultationDateString, registeredDates = []) {
+    if (!firstConsultationDateString) return [];
+
+    // Define a hora para meia-noite para comparação justa
+    const initialDate = new Date(firstConsultationDateString + 'T00:00:00');
+    if (isNaN(initialDate.getTime())) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // D1 (Dia Inicial/D0) é a própria data da consulta
+    const controlsConfig = [
+        { day: 0, label: "D1 (Inicial)" }, // D0 para cálculo de dias
+        { day: 3, label: "D3" },
+        { day: 7, label: "D7" },
+        { day: 28, label: "D28" },
+        { day: 60, label: "D60" }
+    ];
+
+    return controlsConfig.map(config => {
+        const controlDate = new Date(initialDate);
+        controlDate.setDate(initialDate.getDate() + config.day);
+        
+        const formattedDate = controlDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        let status = 'Pendente';
+        let statusClass = 'bg-gray-400';
+        // Pega D1, D3, D7, D28, D60 para o registro (rótulo interno)
+        const registrationLabel = config.label.split(' ')[0]; 
+
+        // 1. Status: Completo/Registrado
+        if (registeredDates.includes(registrationLabel)) {
+            status = 'Registrado';
+            statusClass = 'bg-green-600';
+        } 
+        // 2. Status: Passado/Perdido
+        else if (controlDate < today) {
+            status = 'Perdido'; // Passou da data e não foi registrado
+            statusClass = 'bg-red-500'; 
+        } 
+        // 3. Status: HOJE
+        else if (controlDate.getTime() === today.getTime()) {
+            status = 'HOJE! (Pendente)';
+            statusClass = 'bg-yellow-500 animate-pulse'; // Destaque para HOJE
+        } 
+        // 4. Status: Próximo
+        else {
+            status = 'Próximo';
+            statusClass = 'bg-blue-500';
+        }
+
+        return {
+            label: config.label,
+            date: formattedDate,
+            timestamp: controlDate,
+            status: status,
+            statusClass: statusClass,
+            registrationLabel: registrationLabel
+        };
+    });
+}
+
+/**
+ * Renderiza o Check-in Tracker no DOM (Requer o elemento com id="checkinDaysList").
+ * @param {Array<Object>} controlDates - O resultado de calculateAllControlDates.
+ */
+function renderCheckinTracker(controlDates) {
+    const checkinDaysList = document.getElementById('checkinDaysList');
+    if (!checkinDaysList) {
+        return; 
+    } 
+
+    checkinDaysList.innerHTML = ''; // Limpa o conteúdo anterior
+
+    controlDates.forEach(day => {
+        const itemDiv = document.createElement('div');
+        
+        const textColorClass = (day.statusClass.includes('bg-gray-400') || day.statusClass.includes('bg-gray-100')) 
+            ? 'text-gray-800 border-gray-300 bg-gray-100'
+            : 'text-white shadow-md';
+
+        // ALTERAÇÕES PRINCIPAIS AQUI:
+        itemDiv.className = `
+            flex-shrink-0 
+            w-[90px] sm:w-[110px]   /* Largura reduzida */
+            text-center 
+            px-2 py-2               /* Padding interno (espaçamento) reduzido */
+            rounded-lg             /* Bordas um pouco menos arredondadas */
+            shadow-lg border       /* Sombra um pouco mais sutil */
+            hover:shadow-xl transition-all duration-300 
+            ${day.statusClass} ${textColorClass}
+        `;
+        
+        const labelP = document.createElement('p');
+        // Fonte do rótulo (D1, D2...) reduzida
+        labelP.className = 'font-black text-base'; // Antes: text-xl
+        labelP.textContent = day.label.split(' ')[0];
+        
+        const dateP = document.createElement('p');
+        // Fonte da data um pouco menor
+        dateP.className = 'text-[11px] opacity-90 mt-1'; // Antes: text-xs
+        dateP.textContent = day.date;
+        
+        const statusP = document.createElement('p');
+        // Margem superior e espaçamento entre letras do status reduzidos
+        statusP.className = `
+            text-[9px] font-extrabold 
+            mt-1.5                 /* Margem superior reduzida */
+            uppercase 
+            tracking-wide          /* Espaçamento entre letras reduzido */
+            px-1.5 py-0.5 rounded-full 
+            ${(day.statusClass.includes('bg-gray-400') || day.statusClass.includes('bg-gray-100')) ? 'bg-gray-500 text-white' : 'bg-black bg-opacity-20'}
+        `;
+        statusP.textContent = day.status;
+
+        itemDiv.appendChild(labelP);
+        itemDiv.appendChild(dateP);
+        itemDiv.appendChild(statusP);
+        checkinDaysList.appendChild(itemDiv);
+    });
+}
+
+function getTodayControlLabel(firstConsultationDateString) {
+    if (!firstConsultationDateString) return null;
+
+    // Define a hora para meia-noite para comparação justa
+    const initialDate = new Date(firstConsultationDateString + 'T00:00:00');
+    if (isNaN(initialDate.getTime())) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Configuração dos dias de controle
+    const controlsConfig = [
+        { day: 0, label: "D1" }, // Dia 0 após a consulta inicial é o Dia 1
+        { day: 3, label: "D3" },
+        { day: 7, label: "D7" },
+        { day: 28, label: "D28" },
+        { day: 60, label: "D60" }
+    ];
+
+    for (const config of controlsConfig) {
+        const controlDate = new Date(initialDate);
+        controlDate.setDate(initialDate.getDate() + config.day);
+        
+        // Compara apenas a data (milissegundos de 00:00:00)
+        if (controlDate.getTime() === today.getTime()) {
+            return config.label; // Retorna 'D1', 'D3', 'D7', etc.
+        }
+    }
+    return null; // Não é um dia de controle agendado
+}
+
+function getFormattedTimeFromTimestamp(timestamp) {
+    if (!timestamp || !timestamp.toDate) {
+        return "N/A"; // Retorna N/A se o timestamp for inválido
+    }
+    const date = timestamp.toDate();
+    // Formata a hora e o minuto (Ex: 09:05)
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function generateSummary(user) {
+    isWaitingForSummary = true;
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    clearTimeout(inactivityTimer);
+
+    loadingIndicator.classList.remove('hidden'); 
+
+    const formattedDate = getFormattedDate();
+    
+    const currentResponses = userResponses || {}; 
+
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+    
+    // ==========================================================
+    // 🚨 PASSO 1: BUSCAR RELATÓRIO ANTERIOR E HORÁRIO ATUAL
+    // ==========================================================
+    let previousSummary = '';
+    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
+
+    try {
+        const checkinSnap = await getDoc(checkinRef);
+        
+        if (checkinSnap.exists()) {
+            const data = checkinSnap.data(); 
+
+            if (data.summary) {
+                previousSummary = data.summary;
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao buscar relatório anterior:", error);
+    }
+    
+    // NOVO/REFORÇO: Formata as respostas atuais do paciente para inclusão no prompt.
+    let currentResponsesText = "";
+    const responseKeys = Object.keys(currentResponses); 
+    const allQuestions = window.activeQuestions.length > 0 ? window.activeQuestions : dailyQuestions; // Use dailyQuestions ou o ativo
+
+    if (responseKeys.length > 0) {
+        responseKeys.sort((a, b) => parseInt(a) - parseInt(b)).forEach(key => { // AQUI: ParseInt para garantir a ordem numérica
+            const questionIndex = parseInt(key); // Índice 0-based
+            const responseValue = currentResponses[key];
+            
+            // 🚨 CORREÇÃO: Pegar o texto completo da pergunta
+            const questionText = allQuestions[questionIndex] ? allQuestions[questionIndex].text : `Pergunta ${questionIndex + 1}`;
+            
+            // Formato mais legível e explícito para a IA:
+            currentResponsesText += `Pergunta ${questionIndex + 1} (${questionText}): **${responseValue}**\n`;
+        });
+    }
+
+    // Texto base para a seção de Comparação
+    let analysisPrompt = '';
+
+    // Lista de sintomas que indicam URGÊNCIA/GRAVIDADE
+    const SINAIS_DE_ALARME = "Convulsões ou Perda de Consciência, Confusão Mental, Sangramentos incomuns, Falta de ar, Dor intensa no peito/abdômen, Urina muito escura ou avermelhada, Icterícia (Cor amarelada nos olhos/pele) ou Diminuição da Urina";
+
+if (previousSummary) {
+        // Cenário 1: Há Relatório Anterior (3 Parágrafos)
+        analysisPrompt = `
+        **1º Parágrafo (Evolução e Sintomas de Alerta):**
+        Com base na resposta à Pergunta 1 e no "Relatório Anterior", comece com uma análise comparativa concisa (melhora, piora ou estabilidade geral). **Liste OBRIGATORIAMENTE todos os sintomas relatados na Pergunta 2 (Q2).** **DESTAQUE E CHAME DE SINAL DE ALARME** se houver a presença de qualquer um dos seguintes: ${SINAIS_DE_ALARME}, ou se a resposta à Pergunta 3 for "Sim" (descompensação de comorbidade/mal-estar).
+
+        **2º Parágrafo (Conduta e Controle de Cura):**
+        Descreva a conduta do paciente: adesão à medicação (Q4), reação adversa (Q5), busca por ajuda externa (Q6) e automedicação (Q7). Inclua o status da comorbidade/mal-estar (Q3) e a intenção de realizar o exame de Gota Espessa de controle (Q8).
+
+        **3º Parágrafo (Recomendações e Esclarecimento Final):**
+        Forneça recomendações claras e objetivas. A recomendação deve ser de **URGÊNCIA MÉDICA IMEDIATA** se houver sinais de gravidade (mencionados no 1º parágrafo). Caso contrário, oriente sobre a continuidade do tratamento e a importância da hidratação. **ESCLAREÇA OBRIGATORIAMENTE** que esta mensagem é gerada por Inteligência Artificial com base nas respostas e **não substitui o parecer médico**.
+        `;
+    } else {
+        // Cenário 2: Primeiro Monitoramento (3 Parágrafos)
+        analysisPrompt = `
+        **1º Parágrafo (Sintomas de Alerta):**
+        **Liste OBRIGATORIAMENTE todos os sintomas relatados na Pergunta 2 (Q2).** **DESTAQUE E CHAME DE SINAL DE ALARME** se houver a presença de qualquer um dos seguintes: ${SINAIS_DE_ALARME}, ou se a resposta à Pergunta 3 for "Sim" (descompensação de comorbidade/mal-estar). Avalie o quadro estritamente com base nas respostas.
+
+        **2º Parágrafo (Conduta e Controle de Cura):**
+        Descreva a conduta do paciente: adesão à medicação (Q4), reação adversa (Q5), busca por ajuda externa (Q6) e automedicação (Q7). Inclua o status da comorbidade/mal-estar (Q3) e a intenção de realizar o exame de Gota Espessa de controle (Q8).
+
+        **3º Parágrafo (Recomendações e Esclarecimento Final):**
+        Forneça recomendações claras e objetivas. A recomendação deve ser de **URGÊNCIA MÉDICA IMEDIATA** se houver sinais de gravidade (mencionados no 1º parágrafo). Caso contrário, oriente sobre a continuidade do tratamento e a importância da hidratação. **ESCLAREÇA OBRIGATORIAMENTE** que esta mensagem é gerada por Inteligência Artificial com base nas respostas e **não substitui o parecer médico**.
+        `;
+    }
+    
+    // ==========================================================
+    // 🚨 PASSO 2: MONTAGEM DO PROMPT
+    // ==========================================================
+
+    const summaryPrompt = `
+    Gere um relatório conciso de **no máximo 3 parágrafos curtos** para o paciente, seguindo as instruções abaixo. Não use títulos de seção no relatório final.
+
+    **Fonte das Informações:** Respostas a questionário de saúde.
+    ---
+    **RESPOSTAS DO PACIENTE (Base para a Análise):**
+    ${currentResponsesText}
+    ---
+    ${previousSummary ? `**Relatório Anterior (Base para Comparação):**\n${previousSummary}\n---` : ''}
+
+    **ESTRUTURA DESEJADA PARA O RELATÓRIO FINAL:**
+    ${analysisPrompt}
+    `;
+
+    try {
+        const botResponse = await getGeminiResponse(summaryPrompt);
+
+        // Salva o resumo (o novo) no status do check-in
+        await setDoc(checkinRef, { lastCheckin: serverTimestamp(), summary: botResponse }, { merge: true });
+
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+        
+        // 1. Adiciona o relatório detalhado ao chat
+        await addDoc(chatCollectionRef, { text: "✨ Relatório Detalhado:\n" + botResponse, isUser: false, timestamp: serverTimestamp() });
+        
+        loadingIndicator.classList.add('hidden'); // Esconde o indicador após o relatório
+        
+        // 2. 🚨 NOVO: CHAMA A PERGUNTA DE AVALIAÇÃO (RATING)
+        
+        // Define o 'conversationStep' para o índice da avaliação (logo após o questionário)
+        conversationStep = dailyQuestions.length; 
+        
+        await displayQuestionWithButtons(RATING_QUESTION); 
+        
+        // **A finalização (registro e mensagem final) ocorrerá após a submissão do rating.**
+
+    } catch (error) {
+        console.error("Erro ao gerar ou salvar o resumo:", error);
+        showError("Ocorreu um erro ao gerar o relatório detalhado. Por favor, tente iniciar uma nova sessão.");
+        
+        loadingIndicator.classList.add('hidden');
+
+    }
+    // O bloco finally foi removido/simplificado, pois o estado final do chat 
+    // é tratado por finalizeSessionAfterRating APÓS a avaliação.
+}
+
+// userProfileData, currentUser, firebaseConfig, getTodayControlLabel,
+// updateDoc, calculateAllControlDates, renderCheckinTracker, addDoc, serverTimestamp
+// e messageInput/sendBtn (e outros elementos DOM) devem estar acessíveis globalmente.
+async function finalizeSessionAfterRating(user, ratingValue) {
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+    let finalInstructionMessage = "";
+
+    // A resposta do rating já foi salva no chat/userResponses pela função processRatingSubmission.
+
+    // 1. Lógica de Registro (MOVIDA DO SENDMESSAGE PARA CÁ)
+    if (!userProfileData || !userProfileData.dataDiagnostico) {
+        console.error("userProfileData ou dataDiagnostico ausente. Não foi possível registrar o check-in.");
+        finalInstructionMessage = "Ocorreu um problema ao registrar seu check-in. Por favor, entre em contato com o suporte.";
+    } else {
+        const todayRegistrationLabel = getTodayControlLabel(userProfileData.dataDiagnostico);
+
+        if (todayRegistrationLabel) {
+            let registeredCheckins = userProfileData.registeredCheckins || [];
+
+            if (!registeredCheckins.includes(todayRegistrationLabel)) {
+                registeredCheckins.push(todayRegistrationLabel);
+                userProfileData.registeredCheckins = registeredCheckins;
+
+                const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
+                await updateDoc(userProfileRef, { registeredCheckins: registeredCheckins });
+
+                // 2. Atualiza o Tracker Visual
+                const controlDates = calculateAllControlDates(userProfileData.dataDiagnostico, registeredCheckins);
+                renderCheckinTracker(controlDates);
+
+                // 3. Cria a mensagem de confirmação e instrução única
+                finalInstructionMessage = `✅ **Check-in de ${todayRegistrationLabel} concluído e registrado!** Seu plano de acompanhamento foi atualizado acima. Agora, aproveite a oportunidade para tirar dúvidas gerais sobre o tratamento da Malária com a nossa Inteligência Artificial. Digite sua pergunta no campo abaixo, e eu responderei! Caso não queira realizar pergunta, feche a página ou aguarde o encerramento de sua sesão que será após 3 minutos de inatividade. Obrigado!`;
+            } else {
+                finalInstructionMessage = "Tudo certo! Seus dados foram registrados com sucesso. Agora, aproveite a oportunidade para tirar dúvidas gerais sobre o tratamento da Malária com a nossa Inteligência Artificial. Digite sua pergunta no campo abaixo, e eu responderei! Caso não queira realizar pergunta, feche a página ou aguarde o encerramento de sua sesão que será após 3 minutos de inatividade. Obrigado!";
+            }
+        } else {
+            // Se o questionário foi concluído, mas NÃO é um dia de controle agendado (D+X)
+            finalInstructionMessage = "Questionário de acompanhamento concluído e salvo com sucesso! Não é um dia de visita programada, mas seus dados foram registrados. Agora, aproveite a oportunidade para tirar dúvidas gerais sobre o tratamento da Malária com a nossa Inteligência Artificial. Digite sua pergunta no campo abaixo, e eu responderei! Caso não queira realizar pergunta, feche a página ou aguarde o encerramento de sua sesão que será após 3 minutos de inatividade. Obrigado!";
+        }
+    }
+
+    // 4. Adiciona a mensagem final (APÓS o Rating)
+    if (finalInstructionMessage) {
+        await addDoc(chatCollectionRef, { text: finalInstructionMessage, isUser: false, timestamp: serverTimestamp() });
+    }
+    
+    // 5. Habilita o modo Bate-papo
+    isWaitingForSummary = false;
+    messageInput.disabled = false; 
+    sendBtn.disabled = false;
+    newSessionContainer.classList.add('hidden'); 
+    // Garante que o modo chat está ativo e fora do questionário.
+    conversationStep = dailyQuestions.length + 1; 
+    resetInactivityTimer();
+}
+
+async function startNewSession() {
+    if (!currentUser) {
+        showError("Você precisa estar logado para iniciar uma nova sessão.");
+        return;
+    }
+    loadingIndicator.classList.remove('hidden');
+    try {
+        const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
+        
+        // ❌ REMOVA OU COMENTE ESTE BLOCO SE QUISER MANTER O HISTÓRICO NO FIRESTORE
+        // const docsToDelete = await getDocs(chatCollectionRef);
+        // const deletePromises = docsToDelete.docs.map(docToDelete => deleteDoc(doc(db, chatCollectionRef.path, docToDelete.id)));
+        // await Promise.all(deletePromises);
+        // ❌ FIM DO BLOCO A REMOVER
+
+        await startInitialConversation(currentUser);
+        newSessionContainer.classList.add('hidden');
+    } catch (error) {
+        console.error("Erro ao iniciar nova sessão:", error);
+        showError("Não foi possível iniciar uma nova sessão. Tente novamente mais tarde.");
+    } finally {
+        loadingIndicator.classList.add('hidden');
+    }
+}
+// Corrigindo a definição de personalizeQuestion
+// A função personalizeQuestion está correta e lida com null/undefined,
+// mas vamos garantir que os parâmetros passados para ela sejam strings válidas.
+function personalizeQuestion(question, tipoMalaria, listaSintomas, medicacaoNome, comorbidadePrincipal, dataControle) {
+    // ⚠️ Alteramos o nome do parâmetro de 'listaComorbidades' para 'comorbidadePrincipal' 
+    //    para espelhar a variável usada na chamada em startInitialConversation.
+    
+    const personalizedQuestion = { 
+        ...question,
+        options: [...(question.options || [])] 
+    }; 
+    let text = personalizedQuestion.text;
+
+    // 1. Substituições dos Placeholders Comuns (USANDO REGEX GLOBAL 'g')
+    // Garantindo que todos os valores sejam strings antes do replace
+    text = text.replace(/\[TIPO_MALARIA\]/g, tipoMalaria || 'Malária');
+    
+    // CORREÇÃO: Usar listaSintomas como string, garantindo 'sintomas' como fallback
+    text = text.replace(/\[SINTOMAS_LIST\]/g, listaSintomas.toLowerCase()); 
+    
+    // CORREÇÃO: comorbidadePrincipal já é tratada para ser uma string na lógica abaixo
+    text = text.replace(/\[COMORBIDADE_PRINCIPAL\]/g, comorbidadePrincipal);
+    
+    // CORREÇÃO: medicacaoNome já é tratada para ser uma string na lógica abaixo
+    text = text.replace(/\[MEDICACAO_NOME\]/g, medicacaoNome); 
+    
+    text = text.replace(/\[DATA_CONTROLE\]/g, dataControle || 'data não definida');
+    
+    // (Opcional, mas limpa o texto da Q7 se for a original)
+    text = text.replace(/\(Se aplicável\)\s*/, '').trim(); 
+    
+    personalizedQuestion.text = text;
+    return personalizedQuestion;
+}
+
+function calcularIdade(dataNascimentoString) {
+    // Note: Esta função deve estar definida antes de ser chamada.
+    const dataNascimento = new Date(dataNascimentoString);
+    const hoje = new Date();
+    
+    let idade = hoje.getFullYear() - dataNascimento.getFullYear();
+    
+    const mesAtual = hoje.getMonth();
+    const diaAtual = hoje.getDate();
+    const mesNasc = dataNascimento.getMonth();
+    const diaNasc = dataNascimento.getDate();
+    
+    // Ajusta a idade se o aniversário deste ano ainda não ocorreu
+    if (mesAtual < mesNasc || (mesAtual === mesNasc && diaAtual < diaNasc)) {
+        idade--;
+    }
+    
+    return idade;
+}
+
+async function startInitialConversation(user) {
+    chatContainer.innerHTML = ''; // <--- ADICIONE ESTA LINHA AQUI
+    const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+
+    conversationStep = 0;
+    userResponses = {};
+    isSessionActive = true; 
+    resetInactivityTimer(); 
+
+    
+    // Remove botões remanescentes de qualquer sessão anterior
+    chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+
+
+    if (!userProfileSnap.exists()) {
+        formModal.classList.remove('hidden');
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        isSessionActive = false;
+    } else {
+        userProfileData = userProfileSnap.data();
+
+        // 🚨 NOVO: Incluir o array de check-ins registrados (ex: ['D3', 'D7'])
+        // Se não existir, usa um array vazio
+        userProfileData.registeredCheckins = userProfileData.registeredCheckins || []; 
+        // 🚨 NOVO: FIM
+
+const dataDiagnosticoISO = userProfileData.dataDiagnostico;
+
+// 1. Calcular o Dia de Check-in
+let checkinDayTag = '';
+if (dataDiagnosticoISO) {
+    checkinDayTag = calculateCheckinDay(dataDiagnosticoISO);
+} else {
+    checkinDayTag = "D?";
+}
+
+// 2. Atualizar o elemento HTML na tela (VERSÃO GRANDE - Apenas o D+n)
+const checkinDayIndicatorLg = document.getElementById('checkin-day-indicator-lg');
+if (checkinDayIndicatorLg) {
+    checkinDayIndicatorLg.textContent = checkinDayTag; 
+}
+
+// 3. Atualizar o elemento HTML na tela (VERSÃO PEQUENA - Texto completo e centralizado)
+const checkinDayIndicatorSm = document.getElementById('checkin-day-indicator-sm');
+if (checkinDayIndicatorSm) {
+    // Injeta o texto completo na versão pequena, aproveitando o w-full text-center no HTML
+    checkinDayIndicatorSm.textContent = `Você está preenchendo o Check-in de ${checkinDayTag}.`; 
+}
+
+// 2. Atualizar o elemento HTML na tela
+const checkinDayIndicator = document.getElementById('checkin-day-indicator');
+if (checkinDayIndicator) {
+    // 💡 Ajuste para injetar APENAS o dia (ex: "D5" ou "Dia Desconhecido")
+    checkinDayIndicator.textContent = checkinDayTag; 
+}
+
+        if (!userProfileData.consentido) {
+            tcleModal.classList.remove('hidden');
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            isSessionActive = false;
+            return; 
+        }
+
+        // Se chegou até aqui, o consentimento foi dado e o perfil existe.
+        // O checkin_status/daily_status é usado para pegar o ÚLTIMO RESUMO.
+        const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
+        const checkinSnap = await getDoc(checkinRef);
+
+        
+        // ====================================================================
+        // --- 1. PREPARAÇÃO DINÂMICA DE DADOS ---
+        // ====================================================================
+        const nome = userProfileData.nomeCompleto || user.displayName.split(' ')[0];
+        const tipoMalaria = userProfileData.tipoMalaria || "tipo de malária não especificado";
+        
+        // Data Diagnóstico
+        const dataDiagnostico = userProfileData.dataDiagnostico 
+            ? new Date(userProfileData.dataDiagnostico + 'T00:00:00').toLocaleDateString('pt-BR') 
+            : "data não informada";
+
+        // ====================================================================
+        // 🔑 CÁLCULO DA IDADE (Mantido)
+        // ====================================================================
+        let idade;
+        const dataNascimentoDB = userProfileData.dataNascimento; 
+        
+        if (dataNascimentoDB) {
+            // Assumindo que a função calcularIdade está definida globalmente
+            idade = calcularIdade(dataNascimentoDB); 
+        } else {
+            idade = "idade não informada";
+        }
+        
+        
+        // ====================================================================
+        // 🔑 SINTOMAS (Mantido)
+        // ====================================================================
+        const sintomasArray = userProfileData.sintomasApresentados || []; 
+        const outrosSintomas = userProfileData.outrosSintomas ? `, Outros: ${userProfileData.outrosSintomas}` : '';
+        let listaSintomas; 
+        
+        if (sintomasArray.length > 0 || outrosSintomas.trim().length > 0) {
+            const sintomasPrincipais = sintomasArray.filter(s => s);
+            listaSintomas = (sintomasPrincipais.join(', ') + outrosSintomas).trim().replace(/^,/, '').trim();
+        } else {
+            listaSintomas = 'nenhum sintoma principal registrado';
+        }
+
+
+        // ====================================================================
+        // 🔑 MEDICAÇÃO (Mantido)
+        // ====================================================================
+        const medicacaoArray = userProfileData.medicacao || []; 
+        const medicacaoOutra = userProfileData.medicacaoOutraDescricao || ""; 
+        let medicacaoNome;
+        
+        const medicaçõesPrincipais = medicacaoArray.filter(m => m);
+        const temMedPrincipal = medicaçõesPrincipais.length > 0;
+        const temMedOutra = medicacaoOutra.trim().length > 0;
+        
+        if (temMedPrincipal || temMedOutra) {
+            let listaFormatada = '';
+            if (temMedPrincipal) {
+                // Assumindo que Intl.ListFormat está disponível
+                const listFormatter = new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' });
+                listaFormatada = listFormatter.format(medicaçõesPrincipais);
+            }
+
+            if (temMedPrincipal && temMedOutra) {
+                medicacaoNome = `${listaFormatada} (e mais: ${medicacaoOutra})`;
+            } else if (temMedPrincipal) {
+                medicacaoNome = listaFormatada;
+            } else if (temMedOutra) {
+                medicacaoNome = medicacaoOutra;
+            }
+        } else {
+            medicacaoNome = "Medicação não informada";
+        }
+
+
+        // ====================================================================
+        // 🔑 COMORBIDADES (Mantido)
+        // ====================================================================
+        const comorbidadesData = userProfileData.comorbidades;
+
+        const comorbidadesArray = Array.isArray(comorbidadesData)
+            ? comorbidadesData
+            : comorbidadesData
+            ? [String(comorbidadesData)]
+            : [];
+
+        let listaComorbidades = '';
+        let comorbidadePrincipal = '';
+
+        const comorbidadesLimpas = comorbidadesArray
+            .map(c => typeof c === 'string' ? c.trim() : '')
+            .filter(c => c && c !== 'Nenhuma das opções acima');
+
+        const temComorbidadeParaPerguntar = comorbidadesLimpas.length > 0;
+
+        if (temComorbidadeParaPerguntar) {
+            const listFormatter = new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' });
+            listaComorbidades = listFormatter.format(comorbidadesLimpas);
+            comorbidadePrincipal = listaComorbidades; 
+        } else {
+            listaComorbidades = "Nenhuma condição crônica pré-existente foi relatada.";
+            comorbidadePrincipal = "sua condição crônica"; 
+        }
+
+
+        // Orientação Recebida
+        const recebeuOrientacoes = userProfileData.recebeuOrientacoes;
+        const statusOrientacoes = recebeuOrientacoes 
+            ? 'Sim, você confirmou que recebeu orientações.' 
+            : '**ATENÇÃO!** Você confirmou NÃO ter recebido orientações. Se precisar de informações, avise-nos.';
+
+        // Data de Controle (para Pergunta 10)
+        // Assumindo que calculateNextControlDate está definido globalmente
+        const dataControle = calculateNextControlDate(userProfileData.dataDiagnostico); 
+
+        // ====================================================================
+        // --- 2. PERSONALIZAÇÃO DE TODAS AS PERGUNTAS DINÂMICAS ---
+        // ====================================================================
+        
+        const questionsForCheckin = [...dailyQuestions]; // Copia o array original
+
+        // LÓGICA DE SUBSTITUIÇÃO DA PERGUNTA DE COMORBIDADE (Q7)
+        const Q3_INDEX = 2; 
+        
+        // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido globalmente
+        if (!temComorbidadeParaPerguntar) {
+            questionsForCheckin[Q3_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
+        }
+        
+        const personalizedDailyQuestions = questionsForCheckin.map((question, index) => {
+            // Lógica de numeração... (mantida)
+            let q_text = question.text;
+            
+            // ... (Seu código de ajuste de numeração está mantido aqui) ...
+            if (index === Q3_INDEX && q_text.startsWith('3.')) {
+                
+            } else if (index === Q3_INDEX && !q_text.startsWith('3.')) {
+                q_text = `3. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
+            } else if (index !== Q3_INDEX && q_text.startsWith(`${index + 1}.`)) {
+                
+            } else {
+                q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
+            }
+            // Fim da lógica de numeração
+
+            // Assumindo que personalizeQuestion está definido globalmente
+            const personalizedQ = personalizeQuestion(
+                { ...question, text: q_text },
+                tipoMalaria, 
+                listaSintomas, 
+                medicacaoNome, 
+                comorbidadePrincipal, 
+                dataControle
+            );
+            return personalizedQ;
+        });
+        
+        window.activeQuestions = personalizedDailyQuestions;
+
+        // ====================================================================
+        // 🚨 ADAPTAÇÃO: CARREGAMENTO DINÂMICO DOS CARDS/TRACKER
+        // ====================================================================
+        if (userProfileData && userProfileData.dataDiagnostico) { 
+            // Calcula o status dos cards usando a data de diagnóstico e os check-ins registrados
+            const controlDates = calculateAllControlDates(
+                userProfileData.dataDiagnostico, 
+                userProfileData.registeredCheckins
+            );
+            // Renderiza o tracker no DOM
+            renderCheckinTracker(controlDates);
+        } else {
+            console.warn("Data de diagnóstico ausente. O tracker de check-in não será renderizado.");
+        }
+        // ====================================================================
+        
+        
+        // --- 3. Lógica de Mensagens e Início do Questionário ---
+        
+if (checkinSnap.exists()) {
+    const checkinData = checkinSnap.data(); 
+    const lastSummary = checkinData.summary;
+    
+    // ⭐️ CORREÇÃO AQUI: Puxe do campo 'lastCheckin'
+    const formattedSummaryTime = formatTimestamp(checkinData.lastCheckin);
+    
+    const timeDisplay = formattedSummaryTime ? ` (${formattedSummaryTime})` : '';
+
+    // Sua mensagem agora incluirá a data e hora formatadas do lastCheckin
+    const summaryMessage = `Olá, ${nome}! 👋 Que bom te ver de volta. Aqui está um resumo da sua última sessão${timeDisplay}: \n\n${lastSummary}`;
+            await addDoc(chatCollectionRef, { text: summaryMessage, isUser: false, timestamp: serverTimestamp() });
+            
+            // Envia a primeira pergunta do NOVO array
+            await displayQuestionWithButtons(personalizedDailyQuestions[0]);
+
+        } else {
+            // LÓGICA DE PRIMEIRO CHECK-IN COM RESUMO PERSONALIZADO
+            
+            // Criação da Mensagem de Resumo
+            const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. Eu sou a Inteligência Artificial da Malária e serei sua assistente de monitoramento diário.
+
+Seus dados iniciais indicam que você foi:
+- Diagnosticado com Malária do tipo *${tipoMalaria}* em ${dataDiagnostico}.
+- Possui ${idade} de idade.
+- Sintomas Reportados: ${listaSintomas}.
+- Condições Crônicas (Comorbidades): ${listaComorbidades}.
+- Medicação Prescrita: Você está em tratamento com ${medicacaoNome}.
+- Orientação Médica: ${statusOrientacoes}
+
+Lembre-se: O monitoramento diário é vital para sua recuperação. Vamos começar seu primeiro check-in.`;
+
+            await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
+            
+            // Envia a primeira pergunta do NOVO array
+            await displayQuestionWithButtons(personalizedDailyQuestions[0]);
+        }
+    }
+}
+
+// A função startFreshSession permanece inalterada, pois ela já chama startInitialConversation.
+async function startFreshSession(user) {
+    loadingIndicator.classList.remove('hidden');
+    try {
+        // 1. Remove a limpeza do DOM daqui, será feito em startInitialConversation
+        conversationStep = 0;
+        userResponses = {};
+        isSessionActive = false; 
+
+        // ... (Limpa o histórico do Firestore se necessário, mas está comentado) ...
+        
+        // 3. Inicia a conversa
+        await startInitialConversation(user); 
+    } catch (error) {
+        console.error("Erro ao iniciar sessão limpa:", error);
+        showError("Não foi possível reiniciar a sessão. Tente novamente mais tarde.");
+    } finally {
+        loadingIndicator.classList.add('hidden');
+    }
+}
+// A função que preenche o TCLE DEVE estar definida em seu código, 
+// e vamos chamá-la de 'populateTcleWithData'.
+// (Você precisará garantir que esta função exista no seu escopo)
+
+async function handleFormSubmission() {
+    // Nota: Removido o 'event.preventDefault()' pois o listener não o usa, 
+    // mas se o botão estiver dentro de um <form>, adicione-o.
+
+    if (!currentUser) {
+        showError("Erro: Usuário não autenticado.");
+        return;
+    }
+
+    // LISTA DE CAMPOS OBRIGATÓRIOS (mantida)
+    const requiredFields = [
+        'dataNascimento', 'sexo', 'corRaca', 'escolaridade', 'contato', 'cep', 'endereco', 'numero',
+        'tipoMalaria', 'dataDiagnostico', 'unidadeAtendimento', 'sivep'
+    ];
+    
+    // Verifica se todos os campos estão preenchidos (mantido)
+    const isFormValid = requiredFields.every(id => {
+        const element = document.getElementById(id);
+        if (element.tagName === 'SELECT') {
+            return element.value !== "";
+        }
+        return element.value.trim() !== '';
+    });
+
+    if (!isFormValid) {
+        showError("Por favor, preencha todos os campos obrigatórios do formulário para continuar.");
+        return;
+    }
+
+    // =========================================================================
+    // --- 1. COLETA DE DADOS DINÂMICOS (ADAPTAÇÃO AQUI) ---
+    // =========================================================================
+
+    // 🔑 ADAPTAÇÃO DA MEDICAÇÃO: Coleta todos os checkboxes marcados (Array)
+    const medicacao = Array.from(document.querySelectorAll('input[name="medicacao"]:checked')).map(cb => {
+        return cb.value.trim();
+    });
+    
+    // 🔑 ADAPTAÇÃO DA MEDICAÇÃO: Coleta o texto livre do campo 'Outra medicação'
+    const medicacaoOutraDescricao = document.getElementById('medicacaoOutraDescricao').value.trim();
+    
+    // Comorbidades: Coleta os valores do checkbox (Array)
+    const comorbidades = Array.from(document.querySelectorAll('input[name="comorbidade"]:checked')).map(cb => {
+        return cb.value.trim();
+    }); 
+    
+    // =========================================================================
+    // --- 2. OBJETO formData ATUALIZADO ---
+    // =========================================================================
+    const formData = {
+        // Campos Pessoais (mantidos)
+        nomeCompleto: document.getElementById('nomeCompleto').value,
+        dataNascimento: document.getElementById('dataNascimento').value, // YYYY-MM-DD
+        sexo: document.getElementById('sexo').value,
+        corRaca: document.getElementById('corRaca').value,
+        escolaridade: document.getElementById('escolaridade').value,
+        contato: document.getElementById('contato').value,
+        rg: document.getElementById('rg').value,
+        cpf: document.getElementById('cpf').value,
+        sivep: document.getElementById('sivep').value,
+
+        
+        // Campos de Endereço (mantidos)
+        cep: document.getElementById('cep').value,
+        cidade: document.getElementById('cidade').value,
+        estado: document.getElementById('estado').value,
+        endereco: document.getElementById('endereco').value,
+        numero: document.getElementById('numero').value,
+        complemento: document.getElementById('complemento').value,
+
+        // Campos de Diagnóstico e Tratamento (mantidos)
+        tipoMalaria: document.getElementById('tipoMalaria').value,
+        dataDiagnostico: document.getElementById('dataDiagnostico').value,
+        unidadeAtendimento: document.getElementById('unidadeAtendimento').value,
+        
+        // 🔑 ADAPTADO: Agora medicacao é um array (campo 'medicacao')
+        medicacao: medicacao, 
+        // 🔑 ADAPTADO: Campo de texto livre
+        medicacaoOutraDescricao: medicacaoOutraDescricao,
+        
+        recebeuOrientacoes: document.getElementById('recebeuOrientacoes').checked,
+
+        viajouAreaRisco: document.getElementById('viajouAreaRisco').checked,
+
+        // Comorbidades
+        comorbidades: comorbidades, 
+
+        consentido: false // Mantém o status inicial do consentimento
+    };
+
+    try {
+        // --- ETAPA 1: SALVAR NO FIRESTORE (mantido) ---
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        await setDoc(userProfileRef, {
+            uid: currentUser.uid, 
+            email: currentUser.email, 
+            displayName: document.getElementById('nomeCompleto').value, 
+            createdAt: serverTimestamp(), 
+            ...formData
+        });
+        
+        // Garante que o nome exibido na tela de chat está atualizado (mantido)
+        userNameElem.textContent = `Olá, ${formData.nomeCompleto || currentUser.email}!`; 
+
+        // ----------------------------------------------------------------------
+        // --- ETAPA 2: PREENCHER E EXIBIR O TCLE COM OS DADOS RECÉM-SALVOS ---
+        // ----------------------------------------------------------------------
+        
+        // Passamos o formData diretamente, sem a necessidade de um novo getDoc()
+        populateTcleWithData(formData); 
+        
+        // Oculta o modal de cadastro e exibe o TCLE
+        formModal.classList.add('hidden');
+        tcleModal.classList.remove('hidden');
+
+    } catch (error) {
+        console.error("Erro ao salvar dados do formulário:", error);
+        showError("Não foi possível salvar seus dados. Tente novamente.");
+    }
+}
+
+/**
+ * Preenche os campos do modal TCLE com os dados do usuário.
+ * * @param {object} userData O objeto de dados do usuário (o 'formData' que foi salvo).
+ */
+function populateTcleWithData(userData) {
+    const nomeCompleto = userData.nomeCompleto || '[Nome não registrado]';
+    const rg = userData.rg || '[RG não registrado]';
+    const cpf = userData.cpf || '[CPF não registrado]';
+    const endereco = userData.endereco || '[Endereço não registrado]';
+    const numero = userData.numero || '[Numero não registrado]';
+    const cidade = userData.cidade || '[Cidade não registrada]';
+    const estado = userData.estado || '[Estado não registrado]';
+    const dataNascimentoInput = userData.dataNascimento; // Espera YYYY-MM-DD
+    
+    // Formata a data de nascimento para DD/MM/AAAA
+    let dataNascimentoFormatada = '[Data não fornecida]';
+    if (dataNascimentoInput) {
+        const parts = dataNascimentoInput.split('-'); // [Ano, Mês, Dia]
+        if (parts.length === 3) {
+            dataNascimentoFormatada = `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/AAAA
+        }
+    }
+
+    // Obtém os elementos <span> no modal do TCLE (IDs definidas no HTML)
+    const tcleNomeElement = document.getElementById('tcle-nome-paciente');
+    const tclergElement = document.getElementById('tcle-rg');
+    const tclecpfElement = document.getElementById('tcle-cpf');
+    const tcleenderecoElement = document.getElementById('tcle-endereco');
+    const tclenumeroElement = document.getElementById('tcle-numero');
+    const tclecidadeElement = document.getElementById('tcle-cidade');
+    const tcleestadoElement = document.getElementById('tcle-estado');
+    const tcleNascElement = document.getElementById('tcle-data-nascimento');
+    
+    // Insere os valores nos elementos
+    if (tcleNomeElement) {
+        tcleNomeElement.textContent = nomeCompleto;
+    }
+    if (tclergElement) {
+        tclergElement.textContent = rg;
+    }         
+    if (tclecpfElement) {
+        tclecpfElement.textContent = cpf;
+    }    
+    if (tcleenderecoElement) {
+        tcleenderecoElement.textContent = endereco;
+    }
+     if (tclenumeroElement) {
+        tclenumeroElement.textContent = numero;
+    }  
+    if (tclecidadeElement) {
+        tclecidadeElement.textContent = cidade;
+    }
+    if (tcleestadoElement) {
+        tcleestadoElement.textContent = estado;
+    } 
+    if (tcleNascElement) {
+        tcleNascElement.textContent = dataNascimentoFormatada;
+    }
+    
+    // Você pode adicionar mais campos aqui se necessário (ex: CPF, RG)
+}
+
+tcleConsentCheckbox.addEventListener('change', () => {
+    if (tcleConsentCheckbox.checked) {
+        tcleParticiparBtn.disabled = false;
+        tcleParticiparBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        tcleParticiparBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'focus:ring-indigo-500');
+    } else {
+        tcleParticiparBtn.disabled = true;
+        tcleParticiparBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+        tcleParticiparBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'focus:ring-indigo-500');
+    }
+});
+
+tcleParticiparBtn.addEventListener('click', async () => {
+    // 1. VERIFICAÇÃO INICIAL
+    if (!tcleConsentCheckbox.checked) {
+        showError("Você deve concordar com o Termo de Consentimento para participar.");
+        return;
+    }
+
+    try {
+        // 2. BUSCA DO CONTEÚDO PARA PDF (Agora deve funcionar!)
+        const tcleContent = document.getElementById('tcle-content-lgpd'); 
+        const originalMaxHeight = tcleContent.style.maxHeight;
+        const originalOverflow = tcleContent.style.overflowY;
+
+        tcleContent.style.maxHeight = 'none'; // Permite que a div cresça
+        tcleContent.style.overflowY = 'visible'; // Garante que todo o conteúdo é capturado
+        
+        // Verificação de segurança (embora o HTML corrigido deva resolver)
+        if (!tcleContent) {
+            throw new Error("Conteúdo do TCLE não pode ser encontrado. Verifique o ID no HTML.");
+        }
+        
+        // 3. GERAÇÃO E DOWNLOAD DO PDF
+        const options = {
+            margin: 10,
+            filename: 'TCLE_Consentido_' + new Date().toISOString().slice(0, 10) + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        // Aguarda a geração e o download do arquivo. Se falhar, vai para o catch.
+        await html2pdf().from(tcleContent).set(options).save();
+
+        tcleContent.style.maxHeight = originalMaxHeight;
+        tcleContent.style.overflowY = originalOverflow;
+        
+        // 4. REGISTRO NO FIREBASE (SÓ OCORRE SE O DOWNLOAD ACIMA FOI BEM-SUCEDIDO)
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
+
+        // 5. FINALIZAÇÃO DA INTERAÇÃO
+        tcleModal.classList.add('hidden');
+        await startInitialConversation(currentUser);
+
+    } catch (error) {
+        // Este catch pega erros tanto do PDF quanto do Firebase
+        console.error("Erro no processo de consentimento/download:", error);
+        showError("Não foi possível registrar seu consentimento ou baixar o termo. Tente novamente.");
+    }
+});
+
+googleSigninBtn.onclick = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+    } catch (error) {
+        console.error("Erro no login com Google:", error);
+        showError("Falha ao entrar com Google. Tente novamente.");
+    }
+};
+
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        
+        preloadFormData(user); 
+
+        // Atualiza o nome do usuário no cabeçalho
+        userNameElem.textContent = `Olá, ${user.displayName || user.email}!`; 
+
+        loginScreen.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+            loginScreen.classList.add('hidden');
+            chatScreen.classList.remove('hidden');
+            chatScreen.classList.add('opacity-100');
+            
+            // Força o reinício da sessão (apaga o histórico e inicia a 1ª pergunta/modal)
+            startFreshSession(user); 
+            
+            listenForMessages(user); 
+        }, 500);
+    } else {
+        currentUser = null;
+        // Ao deslogar, limpa quaisquer botões que possam estar na tela
+        chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+        
+        chatScreen.classList.remove('opacity-100');
+        chatScreen.classList.add('opacity-0');
+        loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        isSessionActive = false;
+        clearTimeout(inactivityTimer);
+    }
+});
+
+function listenForMessages(user) {
+    if (!user) return;
+    const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
+    const q = query(chatCollectionRef, orderBy("timestamp", "asc"));
+
+    onSnapshot(q, (snapshot) => {
+        resetInactivityTimer();
+        
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                displayMessage(data.text, data.isUser, data.timestamp);
+            }
+        });
+    });
+}
+
+
+// Event listener para o botão Salvar do formulário
+saveFormBtn.addEventListener('click', handleFormSubmission);
+
+// Event listener para o botão de Envio (Send)
+sendBtn.addEventListener('click', () => sendMessage());
+
+// Event listener para o Enter no input
+messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+
+// Event listener para o botão Nova Sessão
+newSessionBtn.addEventListener('click', startNewSession);
+
+// ==========================================================
+// FUNÇÕES DE MÁSCARA E RESTRIÇÃO
+// ==========================================================
+
+/**
+ * Aplica a máscara de CPF (000.000.000-00).
+ * @param {string} value - O valor do input.
+ * @returns {string} O valor formatado.
+ */
+
+function maskPhone(value) {
+    value = value.replace(/\D/g, ""); // 1. Remove tudo que não é dígito
+    value = value.slice(0, 11); // 2. Limita a 11 dígitos (DDD + 9 digitos)
+
+    if (value.length > 10) {
+        // Celular com 9º dígito: (99) 9 9999-9999
+        value = value.replace(/^(\d{2})(\d{1})(\d{4})(\d{4}).*/, "($1) $2 $3-$4");
+    } else if (value.length > 6) {
+        // Fixo ou Celular Antigo (10 digitos): (99) 9999-9999
+        value = value.replace(/^(\d{2})(\d{4})(\d{4}).*/, "($1) $2-$3");
+    } else if (value.length > 2) {
+        // Digitando o DDD: (99) 999...
+        value = value.replace(/^(\d{2})(\d+)/, "($1) $2");
+    } else if (value.length > 0) {
+        // Digitando o primeiro dígito: (9...
+        value = value.replace(/^(\d+)/, "($1");
+    }
+    return value;
+}
+
+function maskCPF(value) {
+    // 1. Remove tudo que não é dígito
+    value = value.replace(/\D/g, ""); 
+    
+    // 2. Aplica a máscara
+    value = value.replace(/(\d{3})(\d)/, "$1.$2");
+    value = value.replace(/(\d{3})(\d)/, "$1.$2");
+    value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    
+    return value;
+}
+
+/**
+ * NOVA FUNÇÃO: Máscara para CEP no formato 00000-000
+ */
+function maskCEP(value) {
+    // 1. Remove tudo que não é dígito
+    value = value.replace(/\D/g, ""); 
+    
+    // 2. Limita a 8 dígitos (tamanho do CEP)
+    value = value.slice(0, 8); 
+    
+    // 3. Aplica a máscara: 5 dígitos e um traço, seguidos pelos 3 finais
+    value = value.replace(/^(\d{5})(\d+)/, "$1-$2");
+
+    return value;
+}
+
+
+/**
+ * Filtra a entrada do usuário para remover caracteres indesejados e aplicar máscara.
+ * @param {Event} event - O evento de input.
+ * @param {function | null} maskFunction - A função de máscara a ser aplicada.
+ */
+function restrictToNumbers(event, maskFunction = null) {
+    const input = event.target;
+    let value = input.value;
+    
+    // Filtra: remove tudo que não for dígito.
+    const sanitizedValue = value.replace(/[^0-9]/g, ''); 
+    
+    // Se uma função de máscara for fornecida, aplica a máscara
+    if (maskFunction) {
+        // Usa o valor original (que pode ter pontos/traços da máscara)
+        input.value = maskFunction(value); 
+    } else {
+        // Se não houver máscara (RG), usa o valor apenas com dígitos
+        input.value = sanitizedValue; 
+    }
+}
+
+
+// ==========================================================
+// APLICAÇÃO DOS FILTROS E MÁSCARAS AO CARREGAR A PÁGINA
+// ==========================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const rgInput = document.getElementById('rg');
+    const cpfInput = document.getElementById('cpf');
+    const contatoInput = document.getElementById('contato'); 
+    const cepInput = document.getElementById('cep'); // <-- Novo elemento
+
+    
+    // 1. RG: PERMITIR APENAS NÚMEROS
+    if (rgInput) {
+        rgInput.addEventListener('input', (event) => restrictToNumbers(event)); 
+        rgInput.maxLength = 15; 
+        rgInput.type = 'tel'; 
+        rgInput.inputmode = 'numeric';
+    }
+    
+    // 2. CONTATO: Com máscara de telefone 
+    if (contatoInput) {
+        contatoInput.addEventListener('input', (event) => restrictToNumbers(event, maskPhone));
+        contatoInput.maxLength = 15; // (XX) X XXXX-XXXX tem 15 caracteres
+        contatoInput.type = 'tel';
+        contatoInput.inputmode = 'numeric';
+    }
+    
+    // 3. CPF: COM MÁSCARA
+    if (cpfInput) {
+        cpfInput.addEventListener('input', (event) => restrictToNumbers(event, maskCPF));
+        cpfInput.maxLength = 14; // 11 dígitos + 3 pontos + 1 traço = 14
+        cpfInput.type = 'tel'; 
+        cpfInput.inputmode = 'numeric';
+    }
+
+    // 4. CEP: COM MÁSCARA (00000-000)
+    if (cepInput) {
+        // Chama restrictToNumbers passando a função maskCEP
+        cepInput.addEventListener('input', (event) => restrictToNumbers(event, maskCEP));
+        cepInput.maxLength = 9; // 8 dígitos + 1 traço = 9
+        cepInput.type = 'tel'; 
+        cepInput.inputmode = 'numeric';
+    }
+});
+</script>
+</body>
+
+</html>
