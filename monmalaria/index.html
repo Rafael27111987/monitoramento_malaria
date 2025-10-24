@@ -593,7 +593,8 @@ const firebaseConfig = {
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGEBUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGINGSENDERID,
     appId: import.meta.env.VITE_FIREBASE_APPID,
-    measurementId: import.meta.env.VITE_FIREBASE_MESSAGINGSENDERID
+    // CORREÇÃO AQUI: DEVE USAR MEASUREMENTID
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENTID 
 };
 
 // Chave de API do Gemini, nunca a exponha.
@@ -2715,5 +2716,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 </body>
+
 
 </html>
