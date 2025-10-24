@@ -587,14 +587,13 @@ import { getFirestore, collection, addDoc, query, updateDoc, orderBy, onSnapshot
 
 // Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGEBUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGINGSENDERID,
-    appId: import.meta.env.VITE_FIREBASE_APPID,
-    // CORREÇÃO AQUI: DEVE USAR MEASUREMENTID
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENTID 
+    apiKey: "AIzaSyCEW-C1FavyFqjabMjmS-JVo2fLXHNt5Yg",
+    authDomain: "meuaplicativosaude.firebaseapp.com",
+    projectId: "meuaplicativosaude",
+    storageBucket: "meuaplicativosaude.firebasestorage.app",
+    messagingSenderId: "547845597696",
+    appId: "1:547845597696:web:7942056f2d48601fa086e5",
+    measurementId: "G-MYE47X3LNH"
 };
 
 // Chave de API do Gemini, nunca a exponha.
@@ -2717,7 +2716,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 
-
 </html>
-
-
