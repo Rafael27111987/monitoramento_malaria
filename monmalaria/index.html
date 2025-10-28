@@ -2498,8 +2498,7 @@ tcleParticiparBtn.addEventListener('click', async () => {
         tcleContent.style.overflowY = originalOverflow;
         
         // 4. REGISTRO NO FIREBASE (SÓ OCORRE SE O DOWNLOAD ACIMA FOI BEM-SUCEDIDO)
-        const docId = currentUser.email.replace(/\./g, ',');
-        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${docId}`);
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
 
         // 5. FINALIZAÇÃO DA INTERAÇÃO
