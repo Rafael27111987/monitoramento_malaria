@@ -434,9 +434,16 @@ body {
                 
                 <div class="grid grid-cols-1 mt-4">
                     <div>
-                        <label for="dataDiagnostico" class="block text-xs font-semibold text-gray-700">Data do Diagnóstico</label>
-                        <input type="date" id="dataDiagnostico" required class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm">
-                    </div>
+    <label for="dataDiagnostico" class="block text-xs font-semibold text-gray-700">
+        Data do Diagnóstico
+    </label>
+    <input 
+        type="date" 
+        id="dataDiagnostico" 
+        required 
+        class="mt-1 block w-full p-2.5 border border-yellow-300 rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm"
+    >
+</div>
                 </div>
                 
 <div class="mt-4">
@@ -445,7 +452,7 @@ body {
         <option value="" disabled selected>Selecione a Unidade de Atendimento</option>
         <option value="UPA SUL">UPA SUL</option>
         <option value="UPA LESTE">UPA LESTE</option>
-        <option value="UB ANA ADELAIDE">UBS ANA ADELAIDE</option>
+        <option value="UBS ANA ADELAIDE">UBS ANA ADELAIDE</option>
         <option value="CEPEM">CEPEM</option>
         <option value="CEMETRON">CEMETRON</option>
     </select>
@@ -827,7 +834,7 @@ const dailyQuestions = [
 ];
 
 const Q_ALTERNATIVA_SEM_COMORBIDADE = {
-    text: "3. Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas outras perguntas?",
+    text: "3. Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado na pergunta anterior?",
     type: "select", 
     options: [
         "Sim", 
@@ -959,9 +966,9 @@ function calculateNextControlDate(firstConsultationDateString) {
         
         // Verifica se o controle é hoje
         if (controlDate.getTime() === today.getTime()) {
-            return `HOJE (Dia D+${nextControl.day}, ${formattedDate})`;
+            return `HOJE (Dia ${nextControl.day}, ${formattedDate})`;
         } else {
-            return `Dia D+${nextControl.day} (${formattedDate})`;
+            return `Dia ${nextControl.day} (${formattedDate})`;
         }
     }
 
@@ -2081,7 +2088,7 @@ if (checkinDayIndicator) {
             }
 
             if (temMedPrincipal && temMedOutra) {
-                medicacaoNome = `${listaFormatada} (e mais: ${medicacaoOutra})`;
+                medicacaoNome = `${listaFormatada} e mais: ${medicacaoOutra})`;
             } else if (temMedPrincipal) {
                 medicacaoNome = listaFormatada;
             } else if (temMedOutra) {
@@ -2491,7 +2498,8 @@ tcleParticiparBtn.addEventListener('click', async () => {
         tcleContent.style.overflowY = originalOverflow;
         
         // 4. REGISTRO NO FIREBASE (SÓ OCORRE SE O DOWNLOAD ACIMA FOI BEM-SUCEDIDO)
-        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        const docId = currentUser.email.replace(/\./g, ',');
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${docId}`);
         await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
 
         // 5. FINALIZAÇÃO DA INTERAÇÃO
@@ -2667,7 +2675,6 @@ function restrictToNumbers(event, maskFunction = null) {
         input.value = sanitizedValue; 
     }
 }
-
 
 // ==========================================================
 // APLICAÇÃO DOS FILTROS E MÁSCARAS AO CARREGAR A PÁGINA
