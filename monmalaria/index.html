@@ -1288,13 +1288,10 @@ function resetInactivityTimer() {
     }
 }
 
+// userProfileData deve estar acessível globalmente, como indicado no seu código original.
+
 async function endSession() {
     if (!currentUser) return;
-
-    // A sessão é encerrada por inatividade. O bloco que checava a conclusão do
-    // questionário e chamava o modal de avaliação foi removido, pois a avaliação
-    // agora é uma pergunta integrada e a inatividade deve sempre resultar
-    // no encerramento e não em um modal.
 
     // 1. VERIFICAÇÃO DE ESTADO
     if (!isSessionActive) return; // Se a sessão já estava inativa, não faz nada
@@ -1308,13 +1305,50 @@ async function endSession() {
     chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
 
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/chat_messages`);
-    const endMessage = "Sessão encerrada por inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, clique no botão Iniciar Sessão! Alertamos que as respostas são realizadas por meio de Inteligência Artificial e caso persista os sintomas procure ajuda médica imediatamente!";
+    
+    // Variável para controlar se o check-in foi registrado
+    let checkinRegistrado = false;
+    
+    // 3. LÓGICA DE VERIFICAÇÃO DO CHECK-IN DIÁRIO
+    if (userProfileData && userProfileData.dataDiagnostico) {
+        // Usa a mesma função para obter o rótulo do dia
+        const todayRegistrationLabel = getTodayControlLabel(userProfileData.dataDiagnostico); 
+
+        if (todayRegistrationLabel) {
+            const registeredCheckins = userProfileData.registeredCheckins || [];
+
+            // Checa se o rótulo do dia já está na lista
+            if (registeredCheckins.includes(todayRegistrationLabel)) {
+                checkinRegistrado = true;
+            }
+        }
+    }
+
+    // 4. MENSAGEM FINAL
+    let endMessage = "Sessão encerrada por inatividade. ";
+    
+    if (checkinRegistrado) {
+        // Se o check-in já foi feito, a inatividade não impede o registro.
+        endMessage += "O seu check-in diário já havia sido registrado. Você pode iniciar uma nova sessão para tirar dúvidas ou volte amanhã para um novo acompanhamento.";
+    } else {
+        // Se o check-in NÃO foi feito, a inatividade impediu o registro.
+        endMessage += "O **check-in diário não foi registrado** devido à inatividade. Caso queira responder novamente para fins de acompanhamento da evolução clínica, registro diário ou esclarecer dúvidas acerca do tratamento da Malária, clique no botão **Iniciar Sessão**!";
+    }
+    
+    endMessage += " Alertamos que as respostas são realizadas por meio de Inteligência Artificial e caso persista os sintomas procure ajuda médica imediatamente!";
 
     await addDoc(chatCollectionRef, { text: endMessage, isUser: false, timestamp: serverTimestamp() });
+    
     conversationStep = -1; // Estado de sessão encerrada
-    newSessionContainer.classList.remove('hidden'); // Mostra o botão
-}
 
+    // 5. EXIBIÇÃO CONDICIONAL DO BOTÃO
+    // O botão "Iniciar Sessão" só aparece se o check-in diário não foi registrado
+    if (!checkinRegistrado) {
+        newSessionContainer.classList.remove('hidden'); // Mostra o botão
+    } else {
+        newSessionContainer.classList.add('hidden'); // Garante que o botão está oculto
+    }
+}
 // Função para gerar uma resposta do chatbot usando a API Gemini
 
 // Função para gerar uma resposta de reconhecimento com a API Gemini
@@ -2724,4 +2758,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 </html>
+
 
