@@ -2207,7 +2207,7 @@ async function startInitialConversation(user) {
         // --- 2. PERSONALIZAÇÃO DE TODAS AS PERGUNTAS DINÂMICAS (Mantida) ---
         // ====================================================================
         
-        const Q3_INDEX = 3; 
+        const Q4_INDEX = 3; 
         
         // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido globalmente
         if (!temComorbidadeParaPerguntar) {
@@ -2219,11 +2219,11 @@ async function startInitialConversation(user) {
             let q_text = question.text;
             
             // ... (Seu código de ajuste de numeração está mantido aqui) ...
-            if (index === Q3_INDEX && q_text.startsWith('4.')) {
+            if (index === Q4_INDEX && q_text.startsWith('4.')) {
                 
-            } else if (index === Q3_INDEX && !q_text.startsWith('4.')) {
-                q_text = `3. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
-            } else if (index !== Q3_INDEX && q_text.startsWith(`${index + 1}.`)) {
+            } else if (index === Q4_INDEX && !q_text.startsWith('4.')) {
+                q_text = `4. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
+            } else if (index !== Q4_INDEX && q_text.startsWith(`${index + 1}.`)) {
                 
             } else {
                 q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
