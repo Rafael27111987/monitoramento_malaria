@@ -2221,14 +2221,20 @@ const personalizedDailyQuestions = questionsForCheckin.map((question, index) => 
     const questionNumber = index + 1; // 1, 2, 3, 4, 5, ...
     let q_text = question.text;
     
+    // -----------------------------------------------------------------
+    // ✅ CORREÇÃO: Lógica de Renumeração Simples e Robusta
+    // -----------------------------------------------------------------
+    
     // 1. Remove qualquer numeração existente (ex: "3. Texto" -> "Texto")
-    // Isso garante que tanto as perguntas originais quanto a alternativa (se houver) sejam limpas.
+    // Isso é feito com uma expressão regular para limpar o prefixo de número
     q_text = q_text.replace(/^[0-9]+\.\s*/, '').trim(); 
     
     // 2. Aplica a nova numeração correta (ex: "4. Texto")
     q_text = `${questionNumber}. ${q_text}`;
     
-    // 3. Substitui os placeholders na pergunta
+    // -----------------------------------------------------------------
+    
+    // Assumindo que personalizeQuestion está definida globalmente
     const personalizedQ = personalizeQuestion(
         { ...question, text: q_text },
         tipoMalaria, 
