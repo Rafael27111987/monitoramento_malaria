@@ -857,7 +857,7 @@ const dailyQuestions = [
 // 🚨 Q_ALTERNATIVA_SEM_COMORBIDADE TAMBÉM PRECISA SER RENUMERADA (AGORA É Q4 ALTERNATIVA)
 // ----------------------------------------------------------------------------------
 const Q_ALTERNATIVA_SEM_COMORBIDADE = {
-    text: "4. Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas perguntas anteriores?",
+    text: "Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas perguntas anteriores?",
     type: "select", 
     options: [
         "Sim", 
@@ -2204,28 +2204,27 @@ async function startInitialConversation(user) {
         // --- 2. PERSONALIZAÇÃO DE TODAS AS PERGUNTAS DINÂMICAS (Mantida) ---
         // ====================================================================
         
-        const questionsForCheckin = [...dailyQuestions]; // Copia o array original
-
-        // LÓGICA DE SUBSTITUIÇÃO DA PERGUNTA DE COMORBIDADE (Q3)
-        const Q4_INDEX = 3; 
-   if (!temComorbidadeParaPerguntar) {
-       questionsForCheckin[Q4_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
-   }
+        const Q3_INDEX = 3; 
+        
+        // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido globalmente
+        if (!temComorbidadeParaPerguntar) {
+            questionsForCheckin[Q3_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
+        }
         
         const personalizedDailyQuestions = questionsForCheckin.map((question, index) => {
-            // ... (Lógica de numeração mantida) ...
+            // Lógica de numeração... (mantida)
             let q_text = question.text;
             
-            if (index === Q3_INDEX && q_text.startsWith('3.')) {
+            // ... (Seu código de ajuste de numeração está mantido aqui) ...
+            if (index === Q3_INDEX && q_text.startsWith('4.')) {
                 
-            } else if (index === Q3_INDEX && !q_text.startsWith('3.')) {
+            } else if (index === Q3_INDEX && !q_text.startsWith('4.')) {
                 q_text = `3. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
             } else if (index !== Q3_INDEX && q_text.startsWith(`${index + 1}.`)) {
                 
             } else {
                 q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
             }
-            
             // Fim da lógica de numeração
 
             // Assumindo que personalizeQuestion está definido globalmente
