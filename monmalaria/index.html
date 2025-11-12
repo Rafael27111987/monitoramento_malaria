@@ -2033,15 +2033,18 @@ async function startInitialConversation(user) {
         return;
     } else {
         userProfileData = userProfileSnap.data();
-
+        const questionsForCheckin = [...dailyQuestions]; // <--- Mova esta linha para cima!
         // 🚨 NOVO: Checagem de Consentimento
         if (!userProfileData.consentido) {
-            loadingIndicator.classList.add('hidden'); // Remove loading se for pro modal
+            loadingIndicator.classList.add('hidden');
             tcleModal.classList.remove('hidden');
             messageInput.disabled = true;
             sendBtn.disabled = true;
             isSessionActive = false;
-            return; 
+            
+            // O erro 'ReferenceError' pode estar vindo daqui, se o código que dispara o download/consentimento 
+            // no botão estiver chamando alguma função que usa 'questionsForCheckin' ANTES dela ser definida.
+            return; // Se retornar aqui, a variável não foi definida para o resto do código.
         }
 
         // ----------------------------------------------------------------------
