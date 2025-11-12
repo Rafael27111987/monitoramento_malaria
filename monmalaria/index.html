@@ -602,6 +602,8 @@ const firebaseConfig = {
     appId: "1:547845597696:web:7942056f2d48601fa086e5",
     measurementId: "G-MYE47X3LNH"
 };
+firebaseConfig.appId = "meuappsaude";
+
 
 // Chave de API do Gemini, nunca a exponha.
 // A chave 'geminiApiKey' não é mais necessária aqui!
@@ -758,8 +760,11 @@ const dailyQuestions = [
             "Muito Pior (Piora acentuada)"
         ]
     },
+    // ----------------------------------------------------------------------------------
+    // 🚨 NOVA PERGUNTA 2: SINTOMAS COMUNS (O antigo grupo 1)
+    // ----------------------------------------------------------------------------------
     {
-        text: "2. Nas últimas 24 horas, você apresentou algum dos sintomas abaixo?",
+        text: "2. Nas últimas 24h, você apresentou algum dos seguintes **sintomas comuns** da Malária ou efeitos colaterais leves?",
         type: "multi-select",
         options: [
             "Febre (sensação de febre)",
@@ -773,26 +778,41 @@ const dailyQuestions = [
             "Diarréia",
             "Tontura (vertigem)",
             "Sonolência Excessiva",
+        ]
+    },
+    // ----------------------------------------------------------------------------------
+    // 🚨 NOVA PERGUNTA 3: SINAIS DE ALARME (O antigo grupo 2, agora destacado)
+    // ----------------------------------------------------------------------------------
+    {
+        text: "3. Você apresentou algum **SINAL DE ALARME** que indica urgência médica? (Selecione todos que se aplicam)",
+        type: "multi-select",
+        options: [
             "Confusão Mental",
+            "Convulsões ou Perda de Consciência",
             "Sangramentos incomuns (nariz, gengivas, urina ou fezes)",
             "Falta de ar",
             "Dor intensa no peito/abdômen",
             "Urina muito escura ou avermelhada",
             "Icterícia (Cor amarelada nos olhos/pele)",
-            "Convulsões ou Perda de Consciência",
             "Diminuição da Urina (ou não urinar)",
         ]
     },
+    // ----------------------------------------------------------------------------------
+    // 🚨 ANTIGA PERGUNTA 3 (COMORBIDADE), AGORA PERGUNTA 4
+    // ----------------------------------------------------------------------------------
     {
-        text: "3. Em relação à(s) sua(s) condição(ões) crônica(s) ([COMORBIDADE_PRINCIPAL]), **você percebeu alguma descompensação ou sintoma novo relacionado a ela(s) hoje?**",
+        text: "4. Em relação à(s) sua(s) condição(ões) crônica(s) ([COMORBIDADE_PRINCIPAL]), **você percebeu alguma descompensação ou sintoma novo relacionado a ela(s) hoje?**",
         type: "select", 
         options: [
             "Sim", 
             "Não",
         ]
     },
+    // ----------------------------------------------------------------------------------
+    // AS DEMAIS PERGUNTAS SÃO RENUMERADAS (Q5, Q6, Q7, Q8, Q9)
+    // ----------------------------------------------------------------------------------
     {
-        text: "4. Você tomou sua medicação ([MEDICACAO_NOME]) rigorosamente nos horários indicados pelo Médico(a)?",
+        text: "5. Você tomou sua medicação ([MEDICACAO_NOME]) rigorosamente nos horários indicados pelo Médico(a)?",
         type: "select",
         options: [
             "Sim", 
@@ -800,15 +820,15 @@ const dailyQuestions = [
         ],
     },
     {
-        text: "5. Desde a última dose do medicamento para Malária, você apresentou alguma reação adversa nova ou percebeu piora acentuada dos sintomas da Malária?",
-    type: "select", 
-    options: [
-        "Sim", 
-        "Não",
-    ],
+        text: "6. Desde a última dose do medicamento para Malária, você apresentou alguma reação adversa nova ou percebeu piora acentuada dos sintomas da Malária?",
+        type: "select", 
+        options: [
+            "Sim", 
+            "Não",
+        ],
     },
     {
-        text: "6. Você procurou ou recebeu atendimento em alguma Unidade de Saúde (UBS, UPA, Hospital) nas últimas 24h?",
+        text: "7. Você procurou ou recebeu atendimento em alguma Unidade de Saúde (UBS, UPA, Hospital) nas últimas 24h?",
         type: "select",
         options: [
             "Sim", // Indica que procurou ajuda externa/profissional
@@ -816,7 +836,7 @@ const dailyQuestions = [
         ],
     },
     {
-        text: "7. Você usou algum outro medicamento (analgésico, antibiótico, fitoterápico, etc.) que NÃO faz parte do seu tratamento contra Malária?",
+        text: "8. Você usou algum outro medicamento (analgésico, antibiótico, fitoterápico, etc.) que NÃO faz parte do seu tratamento contra Malária?",
         type: "select",
         options: [
             "Sim", 
@@ -824,7 +844,7 @@ const dailyQuestions = [
         ],
     },
     {
-        text: "8. Você pretende comparecer ao exame de Gota Espessa de controle na data recomendada ([DATA_CONTROLE]) ou em outra data próxima?",
+        text: "9. Você pretende comparecer ao exame de Gota Espessa de controle na data recomendada ([DATA_CONTROLE]) ou em outra data próxima?",
         type: "select",
         options: [
             "Sim",
@@ -833,8 +853,11 @@ const dailyQuestions = [
     },
 ];
 
+// ----------------------------------------------------------------------------------
+// 🚨 Q_ALTERNATIVA_SEM_COMORBIDADE TAMBÉM PRECISA SER RENUMERADA (AGORA É Q4 ALTERNATIVA)
+// ----------------------------------------------------------------------------------
 const Q_ALTERNATIVA_SEM_COMORBIDADE = {
-    text: "3. Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado na pergunta anterior?",
+    text: "4. Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas perguntas anteriores?",
     type: "select", 
     options: [
         "Sim", 
@@ -1719,94 +1742,65 @@ function getFormattedTimeFromTimestamp(timestamp) {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
+// VARIÁVEL GLOBAL PARA ARMAZENAR O RESUMO ATÉ O PASSO FINAL (RATING)
+// window.lastGeneratedSummary
+
 async function generateSummary(user) {
+    // 1. Bloqueio e Configuração Inicial
     isWaitingForSummary = true;
     messageInput.disabled = true;
     sendBtn.disabled = true;
     clearTimeout(inactivityTimer);
-
     loadingIndicator.classList.remove('hidden'); 
-
-    const formattedDate = getFormattedDate();
+    
+    // Removido getFormattedDate() pois não é usado aqui.
     
     const currentResponses = userResponses || {}; 
-
     chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
     
-    // ==========================================================
-    // 🚨 PASSO 1: BUSCAR RELATÓRIO ANTERIOR E HORÁRIO ATUAL
-    // ==========================================================
-    let previousSummary = '';
-    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
-
-    try {
-        const checkinSnap = await getDoc(checkinRef);
-        
-        if (checkinSnap.exists()) {
-            const data = checkinSnap.data(); 
-
-            if (data.summary) {
-                previousSummary = data.summary;
-            }
-        }
-    } catch (error) {
-        console.error("Erro ao buscar relatório anterior:", error);
-    }
-    
-    // NOVO/REFORÇO: Formata as respostas atuais do paciente para inclusão no prompt.
+    // Montagem do texto das respostas
     let currentResponsesText = "";
-    const responseKeys = Object.keys(currentResponses); 
-    const allQuestions = window.activeQuestions.length > 0 ? window.activeQuestions : dailyQuestions; // Use dailyQuestions ou o ativo
+    const responseKeys = Object.keys(currentResponses); 
+    // Garante que usa o array de perguntas personalizado, se existir, senão o padrão
+    const allQuestions = window.activeQuestions && window.activeQuestions.length > 0 ? window.activeQuestions : dailyQuestions;
 
-    if (responseKeys.length > 0) {
-        responseKeys.sort((a, b) => parseInt(a) - parseInt(b)).forEach(key => { // AQUI: ParseInt para garantir a ordem numérica
-            const questionIndex = parseInt(key); // Índice 0-based
-            const responseValue = currentResponses[key];
-            
-            // 🚨 CORREÇÃO: Pegar o texto completo da pergunta
-            const questionText = allQuestions[questionIndex] ? allQuestions[questionIndex].text : `Pergunta ${questionIndex + 1}`;
-            
-            // Formato mais legível e explícito para a IA:
-            currentResponsesText += `Pergunta ${questionIndex + 1} (${questionText}): **${responseValue}**\n`;
-        });
-    }
-
-    // Texto base para a seção de Comparação
-    let analysisPrompt = '';
+    if (responseKeys.length > 0) {
+        // Ordena chaves numericamente e formata
+        responseKeys.sort((a, b) => parseInt(a) - parseInt(b)).forEach(key => { 
+            const questionIndex = parseInt(key); // Índice 0-based
+            const responseValue = currentResponses[key];
+            
+            const questionText = allQuestions[questionIndex] ? allQuestions[questionIndex].text : `Pergunta ${questionIndex + 1} (Texto Indisponível)`;
+            
+            // Formato mais legível e explícito para a IA:
+            currentResponsesText += `Pergunta ${questionIndex + 1} (${questionText}): **${responseValue}**\n`;
+        });
+    }
 
     // Lista de sintomas que indicam URGÊNCIA/GRAVIDADE
     const SINAIS_DE_ALARME = "Convulsões ou Perda de Consciência, Confusão Mental, Sangramentos incomuns, Falta de ar, Dor intensa no peito/abdômen, Urina muito escura ou avermelhada, Icterícia (Cor amarelada nos olhos/pele) ou Diminuição da Urina";
 
-if (previousSummary) {
-        // Cenário 1: Há Relatório Anterior (3 Parágrafos)
-        analysisPrompt = `
-        **1º Parágrafo (Evolução e Sintomas de Alerta):**
-        Com base na resposta à Pergunta 1 e no "Relatório Anterior", comece com uma análise comparativa concisa (melhora, piora ou estabilidade geral). **Liste OBRIGATORIAMENTE todos os sintomas relatados na Pergunta 2 (Q2).** **DESTAQUE E CHAME DE SINAL DE ALARME** se houver a presença de qualquer um dos seguintes: ${SINAIS_DE_ALARME}, ou se a resposta à Pergunta 3 for "Sim" (descompensação de comorbidade/mal-estar).
-
-        **2º Parágrafo (Conduta e Controle de Cura):**
-        Descreva a conduta do paciente: adesão à medicação (Q4), reação adversa (Q5), busca por ajuda externa (Q6) e automedicação (Q7). Inclua o status da comorbidade/mal-estar (Q3) e a intenção de realizar o exame de Gota Espessa de controle (Q8).
-
-        **3º Parágrafo (Recomendações e Esclarecimento Final):**
-        Forneça recomendações claras e objetivas. A recomendação deve ser de **URGÊNCIA MÉDICA IMEDIATA** se houver sinais de gravidade (mencionados no 1º parágrafo). Caso contrário, oriente sobre a continuidade do tratamento e a importância da hidratação. **ESCLAREÇA OBRIGATORIAMENTE** que esta mensagem é gerada por Inteligência Artificial com base nas respostas e **não substitui o parecer médico**.
-        `;
-    } else {
-        // Cenário 2: Primeiro Monitoramento (3 Parágrafos)
-        analysisPrompt = `
-        **1º Parágrafo (Sintomas de Alerta):**
-        **Liste OBRIGATORIAMENTE todos os sintomas relatados na Pergunta 2 (Q2).** **DESTAQUE E CHAME DE SINAL DE ALARME** se houver a presença de qualquer um dos seguintes: ${SINAIS_DE_ALARME}, ou se a resposta à Pergunta 3 for "Sim" (descompensação de comorbidade/mal-estar). Avalie o quadro estritamente com base nas respostas.
-
-        **2º Parágrafo (Conduta e Controle de Cura):**
-        Descreva a conduta do paciente: adesão à medicação (Q4), reação adversa (Q5), busca por ajuda externa (Q6) e automedicação (Q7). Inclua o status da comorbidade/mal-estar (Q3) e a intenção de realizar o exame de Gota Espessa de controle (Q8).
-
-        **3º Parágrafo (Recomendações e Esclarecimento Final):**
-        Forneça recomendações claras e objetivas. A recomendação deve ser de **URGÊNCIA MÉDICA IMEDIATA** se houver sinais de gravidade (mencionados no 1º parágrafo). Caso contrário, oriente sobre a continuidade do tratamento e a importância da hidratação. **ESCLAREÇA OBRIGATORIAMENTE** que esta mensagem é gerada por Inteligência Artificial com base nas respostas e **não substitui o parecer médico**.
-        `;
-    }
+    // 2. Estrutura do Prompt (Cenário Único: SEM Resumo Anterior)
+const analysisPrompt = `
+    **1º Parágrafo (Sintomas de Alerta):**
+    **Liste OBRIGATORIAMENTE todos os sintomas relatados na Pergunta 2 (sintomas comuns) E na Pergunta 3 (sinais de alarme).** **DESTAQUE E CHAME DE SINAL DE ALARME** se o paciente tiver relatado qualquer sintoma na **Pergunta 3 (Q3)**, ou se a resposta à **Pergunta 4 (Q4)** (descompensação de comorbidade/mal-estar) for "Sim". 
     
-    // ==========================================================
-    // 🚨 PASSO 2: MONTAGEM DO PROMPT
-    // ==========================================================
+    Avalie o quadro estritamente com base nas respostas.
 
+    **2º Parágrafo (Conduta e Controle de Cura):**
+    Descreva a conduta do paciente:
+    - Adesão à medicação (**Q5** - Antiga Q4)
+    - Reação adversa (**Q6** - Antiga Q5)
+    - Busca por ajuda externa (**Q7** - Antiga Q6)
+    - Automedicação (**Q8** - Antiga Q7)
+    
+    Inclua o status da comorbidade/mal-estar (**Q4** - Antiga Q3) e a intenção de realizar o exame de Gota Espessa de controle (**Q9** - Antiga Q8).
+
+    **3º Parágrafo (Recomendações e Esclarecimento Final):**
+    Forneça recomendações claras e objetivas. A recomendação deve ser de **URGÊNCIA MÉDICA IMEDIATA** se houver sinais de gravidade (presença de sintomas na Q3, descompensação na Q4, ou piora acentuada na Q6). Caso contrário, oriente sobre a continuidade do tratamento e a importância da hidratação. **ESCLAREÇA OBRIGATORIAMENTE** que esta mensagem é gerada por Inteligência Artificial com base nas respostas e **não substitui o parecer médico**.
+`;
+    
+    // 3. Montagem do Prompt Final
     const summaryPrompt = `
     Gere um relatório conciso de **no máximo 3 parágrafos curtos** para o paciente, seguindo as instruções abaixo. Não use títulos de seção no relatório final.
 
@@ -1815,8 +1809,6 @@ if (previousSummary) {
     **RESPOSTAS DO PACIENTE (Base para a Análise):**
     ${currentResponsesText}
     ---
-    ${previousSummary ? `**Relatório Anterior (Base para Comparação):**\n${previousSummary}\n---` : ''}
-
     **ESTRUTURA DESEJADA PARA O RELATÓRIO FINAL:**
     ${analysisPrompt}
     `;
@@ -1824,34 +1816,51 @@ if (previousSummary) {
     try {
         const botResponse = await getGeminiResponse(summaryPrompt);
 
-        // Salva o resumo (o novo) no status do check-in
-        await setDoc(checkinRef, { lastCheckin: serverTimestamp(), summary: botResponse }, { merge: true });
+        // 🚨 CORREÇÃO ESSENCIAL 1: Armazena o resumo para ser salvo DEPOIS do rating
+        window.lastGeneratedSummary = botResponse; 
+
+        // 🚨 CORREÇÃO ESSENCIAL 2: REMOVIDA A PERSISTÊNCIA DE DADOS (setDoc) AQUI.
+        // O salvamento de 'summary' + 'responses' + 'rating' será em finalizeSessionAfterRating.
 
         const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
         
         // 1. Adiciona o relatório detalhado ao chat
         await addDoc(chatCollectionRef, { text: "✨ Relatório Detalhado:\n" + botResponse, isUser: false, timestamp: serverTimestamp() });
         
-        loadingIndicator.classList.add('hidden'); // Esconde o indicador após o relatório
+        loadingIndicator.classList.add('hidden');
         
-        // 2. 🚨 NOVO: CHAMA A PERGUNTA DE AVALIAÇÃO (RATING)
-        
-        // Define o 'conversationStep' para o índice da avaliação (logo após o questionário)
+        // 2. Chama a Pergunta de Avaliação (RATING)
         conversationStep = dailyQuestions.length; 
-        
         await displayQuestionWithButtons(RATING_QUESTION); 
-        
-        // **A finalização (registro e mensagem final) ocorrerá após a submissão do rating.**
 
     } catch (error) {
-        console.error("Erro ao gerar ou salvar o resumo:", error);
+        console.error("Erro ao gerar o relatório:", error);
         showError("Ocorreu um erro ao gerar o relatório detalhado. Por favor, tente iniciar uma nova sessão.");
-        
         loadingIndicator.classList.add('hidden');
-
     }
-    // O bloco finally foi removido/simplificado, pois o estado final do chat 
-    // é tratado por finalizeSessionAfterRating APÓS a avaliação.
+}
+
+async function saveDailyCheckin(user, summary, responses, rating) {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkins_diarios`, today);
+
+    // Salva o check-in do dia.
+    await setDoc(checkinRef, {
+        summary: summary,
+        responses: responses,
+        rating: rating,
+        timestamp: serverTimestamp(),
+        checkinDate: today,
+        checkinComplete: true // Sinaliza que o processo foi concluído
+    });
+    
+    // Opcional: Atualiza o último check-in no documento principal (para rastreamento rápido)
+    const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
+    await updateDoc(userProfileRef, { 
+        lastCheckinDate: today,
+        lastCheckinSummary: summary,
+        updatedAt: serverTimestamp() 
+    });
 }
 
 // userProfileData, currentUser, firebaseConfig, getTodayControlLabel,
@@ -1861,9 +1870,22 @@ async function finalizeSessionAfterRating(user, ratingValue) {
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
     let finalInstructionMessage = "";
 
-    // A resposta do rating já foi salva no chat/userResponses pela função processRatingSubmission.
+    // 1. Persiste o check-in completo (respostas, resumo e rating) na data de hoje.
+    // userResponses e summary precisam ser variáveis globais ou passadas para cá.
+    // Assumindo que o resumo está em uma variável global chamada lastGeneratedSummary
+    const summary = window.lastGeneratedSummary || "Relatório não gerado.";
+    
+    // A lógica de registro no userProfileData.registeredCheckins é mantida,
+    // mas a persistência do resumo é movida para a nova função.
+    
+    // CHAMA A NOVA FUNÇÃO DE PERSISTÊNCIA COMPLETA
+    try {
+        await saveDailyCheckin(user, summary, userResponses, ratingValue);
+    } catch (e) {
+        console.error("Falha ao salvar o check-in diário:", e);
+    }
 
-    // 1. Lógica de Registro (MOVIDA DO SENDMESSAGE PARA CÁ)
+    // 2. Lógica de Registro (mantida para atualizar o 'registeredCheckins')
     if (!userProfileData || !userProfileData.dataDiagnostico) {
         console.error("userProfileData ou dataDiagnostico ausente. Não foi possível registrar o check-in.");
         finalInstructionMessage = "Ocorreu um problema ao registrar seu check-in. Por favor, entre em contato com o suporte.";
@@ -1871,6 +1893,7 @@ async function finalizeSessionAfterRating(user, ratingValue) {
         const todayRegistrationLabel = getTodayControlLabel(userProfileData.dataDiagnostico);
 
         if (todayRegistrationLabel) {
+            // ... (lógica de registro D+N para updateDoc e renderCheckinTracker é mantida) ...
             let registeredCheckins = userProfileData.registeredCheckins || [];
 
             if (!registeredCheckins.includes(todayRegistrationLabel)) {
@@ -1880,32 +1903,28 @@ async function finalizeSessionAfterRating(user, ratingValue) {
                 const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
                 await updateDoc(userProfileRef, { registeredCheckins: registeredCheckins });
 
-                // 2. Atualiza o Tracker Visual
                 const controlDates = calculateAllControlDates(userProfileData.dataDiagnostico, registeredCheckins);
                 renderCheckinTracker(controlDates);
 
-                // 3. Cria a mensagem de confirmação e instrução única
                 finalInstructionMessage = `✅ **Check-in de ${todayRegistrationLabel} concluído e registrado!** Seu plano de acompanhamento foi atualizado acima. Agora, aproveite a oportunidade para tirar dúvidas gerais sobre o tratamento da Malária com a nossa Inteligência Artificial. Digite sua pergunta no campo abaixo, e eu responderei! Caso não queira realizar pergunta, feche a página ou aguarde o encerramento de sua sesão que será após 3 minutos de inatividade. Obrigado!`;
             } else {
                 finalInstructionMessage = "Tudo certo! Seus dados foram registrados com sucesso. Agora, aproveite a oportunidade para tirar dúvidas gerais sobre o tratamento da Malária com a nossa Inteligência Artificial. Digite sua pergunta no campo abaixo, e eu responderei! Caso não queira realizar pergunta, feche a página ou aguarde o encerramento de sua sesão que será após 3 minutos de inatividade. Obrigado!";
             }
         } else {
-            // Se o questionário foi concluído, mas NÃO é um dia de controle agendado (D+X)
-            finalInstructionMessage = "Questionário de acompanhamento concluído e salvo com sucesso! Não é um dia de visita programada, mas seus dados foram registrados. Agora, aproveite a oportunidade para tirar dúvidas gerais sobre o tratamento da Malária com a nossa Inteligência Artificial. Digite sua pergunta no campo abaixo, e eu responderei! Caso não queira realizar pergunta, feche a página ou aguarde o encerramento de sua sesão que será após 3 minutos de inatividade. Obrigado!";
+             finalInstructionMessage = "Questionário de acompanhamento concluído e salvo com sucesso! Não é um dia de visita programada, mas seus dados foram registrados. Agora, aproveite a oportunidade para tirar dúvidas gerais sobre o tratamento da Malária com a nossa Inteligência Artificial. Digite sua pergunta no campo abaixo, e eu responderei! Caso não queira realizar pergunta, feche a página ou aguarde o encerramento de sua sesão que será após 3 minutos de inatividade. Obrigado!";
         }
     }
 
-    // 4. Adiciona a mensagem final (APÓS o Rating)
+    // 3. Adiciona a mensagem final (APÓS o Rating)
     if (finalInstructionMessage) {
         await addDoc(chatCollectionRef, { text: finalInstructionMessage, isUser: false, timestamp: serverTimestamp() });
     }
     
-    // 5. Habilita o modo Bate-papo
+    // 4. Habilita o modo Bate-papo
     isWaitingForSummary = false;
     messageInput.disabled = false; 
     sendBtn.disabled = false;
     newSessionContainer.classList.add('hidden'); 
-    // Garante que o modo chat está ativo e fora do questionário.
     conversationStep = dailyQuestions.length + 1; 
     resetInactivityTimer();
 }
@@ -1990,7 +2009,7 @@ function calcularIdade(dataNascimentoString) {
 }
 
 async function startInitialConversation(user) {
-    chatContainer.innerHTML = ''; // <--- ADICIONE ESTA LINHA AQUI
+    chatContainer.innerHTML = ''; // <--- ADICIONADO: Limpa o chat
     const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
     const userProfileSnap = await getDoc(userProfileRef);
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
@@ -1999,56 +2018,25 @@ async function startInitialConversation(user) {
     userResponses = {};
     isSessionActive = true; 
     resetInactivityTimer(); 
+    loadingIndicator.classList.remove('hidden'); // Adiciona loading no início
 
-    
     // Remove botões remanescentes de qualquer sessão anterior
     chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
 
 
     if (!userProfileSnap.exists()) {
+        loadingIndicator.classList.add('hidden'); // Remove loading se for pro modal
         formModal.classList.remove('hidden');
         messageInput.disabled = true;
         sendBtn.disabled = true;
         isSessionActive = false;
+        return;
     } else {
         userProfileData = userProfileSnap.data();
 
-        // 🚨 NOVO: Incluir o array de check-ins registrados (ex: ['D3', 'D7'])
-        // Se não existir, usa um array vazio
-        userProfileData.registeredCheckins = userProfileData.registeredCheckins || []; 
-        // 🚨 NOVO: FIM
-
-const dataDiagnosticoISO = userProfileData.dataDiagnostico;
-
-// 1. Calcular o Dia de Check-in
-let checkinDayTag = '';
-if (dataDiagnosticoISO) {
-    checkinDayTag = calculateCheckinDay(dataDiagnosticoISO);
-} else {
-    checkinDayTag = "D?";
-}
-
-// 2. Atualizar o elemento HTML na tela (VERSÃO GRANDE - Apenas o D+n)
-const checkinDayIndicatorLg = document.getElementById('checkin-day-indicator-lg');
-if (checkinDayIndicatorLg) {
-    checkinDayIndicatorLg.textContent = checkinDayTag; 
-}
-
-// 3. Atualizar o elemento HTML na tela (VERSÃO PEQUENA - Texto completo e centralizado)
-const checkinDayIndicatorSm = document.getElementById('checkin-day-indicator-sm');
-if (checkinDayIndicatorSm) {
-    // Injeta o texto completo na versão pequena, aproveitando o w-full text-center no HTML
-    checkinDayIndicatorSm.textContent = `Você está preenchendo o Check-in de ${checkinDayTag}.`; 
-}
-
-// 2. Atualizar o elemento HTML na tela
-const checkinDayIndicator = document.getElementById('checkin-day-indicator');
-if (checkinDayIndicator) {
-    // 💡 Ajuste para injetar APENAS o dia (ex: "D5" ou "Dia Desconhecido")
-    checkinDayIndicator.textContent = checkinDayTag; 
-}
-
+        // 🚨 NOVO: Checagem de Consentimento
         if (!userProfileData.consentido) {
+            loadingIndicator.classList.add('hidden'); // Remove loading se for pro modal
             tcleModal.classList.remove('hidden');
             messageInput.disabled = true;
             sendBtn.disabled = true;
@@ -2056,14 +2044,74 @@ if (checkinDayIndicator) {
             return; 
         }
 
-        // Se chegou até aqui, o consentimento foi dado e o perfil existe.
-        // O checkin_status/daily_status é usado para pegar o ÚLTIMO RESUMO.
-        const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkin_status/daily_status`);
-        const checkinSnap = await getDoc(checkinRef);
+        // ----------------------------------------------------------------------
+        // 🚨 NOVO BLOCO: CHECAGEM DE CHECK-IN DIÁRIO CONCLUÍDO
+        // ----------------------------------------------------------------------
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const checkinTodayRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkins_diarios`, today);
+        const checkinTodaySnap = await getDoc(checkinTodayRef);
+        
+        // Se o check-in de hoje foi concluído
+        if (checkinTodaySnap.exists() && checkinTodaySnap.data().checkinComplete) {
+            loadingIndicator.classList.add('hidden');
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            isSessionActive = false;
+            
+            // 1. Envia mensagem de bloqueio
+            const finalMessage = "⚠️ **O check-in de hoje já foi concluído e registrado.** Você só pode registrar um check-in por dia. Se precisar de ajuda ou tiver dúvidas, clique em **Iniciar nova sessão (Chat Livre)** abaixo.";
+            await addDoc(chatCollectionRef, { text: finalMessage, isUser: false, timestamp: serverTimestamp() });
+
+            // 2. Exibe o botão de nova sessão (para o Chat Livre)
+            newSessionContainer.classList.remove('hidden'); 
+            conversationStep = -1; // Define o passo para o modo de reinício/chat livre.
+
+            // Retorna, impedindo o início do questionário.
+            return; 
+        }
+        // ----------------------------------------------------------------------
+        // FIM DO NOVO BLOCO DE CHECAGEM
+        // ----------------------------------------------------------------------
+        
+        
+        // 🚨 NOVO: Incluir o array de check-ins registrados (ex: ['D3', 'D7'])
+        userProfileData.registeredCheckins = userProfileData.registeredCheckins || []; 
+
+        const dataDiagnosticoISO = userProfileData.dataDiagnostico;
+
+        // 1. Calcular o Dia de Check-in
+        let checkinDayTag = '';
+        if (dataDiagnosticoISO) {
+            // Assumindo que calculateCheckinDay está definido
+            checkinDayTag = calculateCheckinDay(dataDiagnosticoISO); 
+        } else {
+            checkinDayTag = "D?";
+        }
+
+        // 2. Atualizar o elemento HTML na tela (VERSÃO GRANDE - Apenas o D+n)
+        const checkinDayIndicatorLg = document.getElementById('checkin-day-indicator-lg');
+        if (checkinDayIndicatorLg) {
+            checkinDayIndicatorLg.textContent = checkinDayTag; 
+        }
+
+        // 3. Atualizar o elemento HTML na tela (VERSÃO PEQUENA - Texto completo e centralizado)
+        const checkinDayIndicatorSm = document.getElementById('checkin-day-indicator-sm');
+        if (checkinDayIndicatorSm) {
+            checkinDayIndicatorSm.textContent = `Você está preenchendo o Check-in de ${checkinDayTag}.`; 
+        }
+
+        // 2. Atualizar o elemento HTML na tela (referência genérica)
+        const checkinDayIndicator = document.getElementById('checkin-day-indicator');
+        if (checkinDayIndicator) {
+            checkinDayIndicator.textContent = checkinDayTag; 
+        }
+
+        // O checkinRef antigo (daily_status) e checkinSnap (resumo) NÃO SÃO MAIS USADOS AQUI.
+        // A checagem diária já foi feita acima.
 
         
         // ====================================================================
-        // --- 1. PREPARAÇÃO DINÂMICA DE DADOS ---
+        // --- 1. PREPARAÇÃO DINÂMICA DE DADOS (Mantida) ---
         // ====================================================================
         const nome = userProfileData.nomeCompleto || user.displayName.split(' ')[0];
         const tipoMalaria = userProfileData.tipoMalaria || "tipo de malária não especificado";
@@ -2073,12 +2121,9 @@ if (checkinDayIndicator) {
             ? new Date(userProfileData.dataDiagnostico + 'T00:00:00').toLocaleDateString('pt-BR') 
             : "data não informada";
 
-        // ====================================================================
-        // 🔑 CÁLCULO DA IDADE (Mantido)
-        // ====================================================================
+        // CÁLCULO DA IDADE (Mantido)
         let idade;
         const dataNascimentoDB = userProfileData.dataNascimento; 
-        
         if (dataNascimentoDB) {
             // Assumindo que a função calcularIdade está definida globalmente
             idade = calcularIdade(dataNascimentoDB); 
@@ -2086,14 +2131,10 @@ if (checkinDayIndicator) {
             idade = "idade não informada";
         }
         
-        
-        // ====================================================================
-        // 🔑 SINTOMAS (Mantido)
-        // ====================================================================
+        // SINTOMAS (Mantido)
         const sintomasArray = userProfileData.sintomasApresentados || []; 
         const outrosSintomas = userProfileData.outrosSintomas ? `, Outros: ${userProfileData.outrosSintomas}` : '';
         let listaSintomas; 
-        
         if (sintomasArray.length > 0 || outrosSintomas.trim().length > 0) {
             const sintomasPrincipais = sintomasArray.filter(s => s);
             listaSintomas = (sintomasPrincipais.join(', ') + outrosSintomas).trim().replace(/^,/, '').trim();
@@ -2101,14 +2142,10 @@ if (checkinDayIndicator) {
             listaSintomas = 'nenhum sintoma principal registrado';
         }
 
-
-        // ====================================================================
-        // 🔑 MEDICAÇÃO (Mantido)
-        // ====================================================================
+        // MEDICAÇÃO (Mantido)
         const medicacaoArray = userProfileData.medicacao || []; 
         const medicacaoOutra = userProfileData.medicacaoOutraDescricao || ""; 
         let medicacaoNome;
-        
         const medicaçõesPrincipais = medicacaoArray.filter(m => m);
         const temMedPrincipal = medicaçõesPrincipais.length > 0;
         const temMedOutra = medicacaoOutra.trim().length > 0;
@@ -2116,13 +2153,11 @@ if (checkinDayIndicator) {
         if (temMedPrincipal || temMedOutra) {
             let listaFormatada = '';
             if (temMedPrincipal) {
-                // Assumindo que Intl.ListFormat está disponível
                 const listFormatter = new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' });
                 listaFormatada = listFormatter.format(medicaçõesPrincipais);
             }
-
             if (temMedPrincipal && temMedOutra) {
-                medicacaoNome = `${listaFormatada} e mais: ${medicacaoOutra})`;
+                medicacaoNome = `${listaFormatada} e mais: ${medicacaoOutra}`; // Corrigido parênteses
             } else if (temMedPrincipal) {
                 medicacaoNome = listaFormatada;
             } else if (temMedOutra) {
@@ -2132,25 +2167,18 @@ if (checkinDayIndicator) {
             medicacaoNome = "Medicação não informada";
         }
 
-
-        // ====================================================================
-        // 🔑 COMORBIDADES (Mantido)
-        // ====================================================================
+        // COMORBIDADES (Mantido)
         const comorbidadesData = userProfileData.comorbidades;
-
         const comorbidadesArray = Array.isArray(comorbidadesData)
             ? comorbidadesData
             : comorbidadesData
             ? [String(comorbidadesData)]
             : [];
-
         let listaComorbidades = '';
         let comorbidadePrincipal = '';
-
         const comorbidadesLimpas = comorbidadesArray
             .map(c => typeof c === 'string' ? c.trim() : '')
             .filter(c => c && c !== 'Nenhuma das opções acima');
-
         const temComorbidadeParaPerguntar = comorbidadesLimpas.length > 0;
 
         if (temComorbidadeParaPerguntar) {
@@ -2161,7 +2189,6 @@ if (checkinDayIndicator) {
             listaComorbidades = "Nenhuma condição crônica pré-existente foi relatada.";
             comorbidadePrincipal = "sua condição crônica"; 
         }
-
 
         // Orientação Recebida
         const recebeuOrientacoes = userProfileData.recebeuOrientacoes;
@@ -2174,24 +2201,21 @@ if (checkinDayIndicator) {
         const dataControle = calculateNextControlDate(userProfileData.dataDiagnostico); 
 
         // ====================================================================
-        // --- 2. PERSONALIZAÇÃO DE TODAS AS PERGUNTAS DINÂMICAS ---
+        // --- 2. PERSONALIZAÇÃO DE TODAS AS PERGUNTAS DINÂMICAS (Mantida) ---
         // ====================================================================
         
         const questionsForCheckin = [...dailyQuestions]; // Copia o array original
 
-        // LÓGICA DE SUBSTITUIÇÃO DA PERGUNTA DE COMORBIDADE (Q7)
-        const Q3_INDEX = 2; 
-        
-        // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido globalmente
-        if (!temComorbidadeParaPerguntar) {
-            questionsForCheckin[Q3_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
-        }
+        // LÓGICA DE SUBSTITUIÇÃO DA PERGUNTA DE COMORBIDADE (Q3)
+        const Q4_INDEX = 3; 
+   if (!temComorbidadeParaPerguntar) {
+       questionsForCheckin[Q4_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
+   }
         
         const personalizedDailyQuestions = questionsForCheckin.map((question, index) => {
-            // Lógica de numeração... (mantida)
+            // ... (Lógica de numeração mantida) ...
             let q_text = question.text;
             
-            // ... (Seu código de ajuste de numeração está mantido aqui) ...
             if (index === Q3_INDEX && q_text.startsWith('3.')) {
                 
             } else if (index === Q3_INDEX && !q_text.startsWith('3.')) {
@@ -2201,6 +2225,7 @@ if (checkinDayIndicator) {
             } else {
                 q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
             }
+            
             // Fim da lógica de numeração
 
             // Assumindo que personalizeQuestion está definido globalmente
@@ -2218,7 +2243,7 @@ if (checkinDayIndicator) {
         window.activeQuestions = personalizedDailyQuestions;
 
         // ====================================================================
-        // 🚨 ADAPTAÇÃO: CARREGAMENTO DINÂMICO DOS CARDS/TRACKER
+        // 🚨 ADAPTAÇÃO: CARREGAMENTO DINÂMICO DOS CARDS/TRACKER (Mantida)
         // ====================================================================
         if (userProfileData && userProfileData.dataDiagnostico) { 
             // Calcula o status dos cards usando a data de diagnóstico e os check-ins registrados
@@ -2234,45 +2259,29 @@ if (checkinDayIndicator) {
         // ====================================================================
         
         
-        // --- 3. Lógica de Mensagens e Início do Questionário ---
+        // --- 3. Lógica de Mensagens e Início do Questionário (APENAS BOAS-VINDAS) ---
         
-if (checkinSnap.exists()) {
-    const checkinData = checkinSnap.data(); 
-    const lastSummary = checkinData.summary;
-    
-    // ⭐️ CORREÇÃO AQUI: Puxe do campo 'lastCheckin'
-    const formattedSummaryTime = formatTimestamp(checkinData.lastCheckin);
-    
-    const timeDisplay = formattedSummaryTime ? ` (${formattedSummaryTime})` : '';
-
-    // Sua mensagem agora incluirá a data e hora formatadas do lastCheckin
-    const summaryMessage = `Olá, ${nome}! 👋 Que bom te ver de volta. Aqui está um resumo da sua última sessão${timeDisplay}: \n\n${lastSummary}`;
-            await addDoc(chatCollectionRef, { text: summaryMessage, isUser: false, timestamp: serverTimestamp() });
-            
-            // Envia a primeira pergunta do NOVO array
-            await displayQuestionWithButtons(personalizedDailyQuestions[0]);
-
-        } else {
-            // LÓGICA DE PRIMEIRO CHECK-IN COM RESUMO PERSONALIZADO
+        // 🚨 REMOVIDA A LÓGICA DE checkinSnap.exists()
+        // O fluxo agora sempre será o de primeiro check-in, já que o check-in do dia foi bloqueado acima.
             
-            // Criação da Mensagem de Resumo
-            const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. Eu sou a Inteligência Artificial da Malária e serei sua assistente de monitoramento diário.
+        // Criação da Mensagem de Resumo/Boas-Vindas
+        const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. Eu sou a Inteligência Artificial da Malária e serei sua assistente de monitoramento diário.
 
 Seus dados iniciais indicam que você foi:
 - Diagnosticado com Malária do tipo *${tipoMalaria}* em ${dataDiagnostico}.
 - Possui ${idade} de idade.
-- Sintomas Reportados: ${listaSintomas}.
 - Condições Crônicas (Comorbidades): ${listaComorbidades}.
 - Medicação Prescrita: Você está em tratamento com ${medicacaoNome}.
 - Orientação Médica: ${statusOrientacoes}
 
-Lembre-se: O monitoramento diário é vital para sua recuperação. Vamos começar seu primeiro check-in.`;
+Lembre-se: O monitoramento diário é vital para sua recuperação. Vamos começar seu check-in.`;
 
-            await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
-            
-            // Envia a primeira pergunta do NOVO array
-            await displayQuestionWithButtons(personalizedDailyQuestions[0]);
-        }
+        await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
+        
+        // Envia a primeira pergunta do NOVO array
+        await displayQuestionWithButtons(personalizedDailyQuestions[0]);
+        
+        loadingIndicator.classList.add('hidden'); // Remove loading após iniciar a conversa
     }
 }
 
@@ -2756,7 +2765,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 
-
 </html>
-
-
