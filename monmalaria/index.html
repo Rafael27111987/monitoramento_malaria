@@ -2211,7 +2211,7 @@ async function startInitialConversation(user) {
         
         // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido globalmente
         if (!temComorbidadeParaPerguntar) {
-            questionsForCheckin[Q3_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
+            questionsForCheckin[Q4_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
         }
         
         const personalizedDailyQuestions = questionsForCheckin.map((question, index) => {
@@ -2766,5 +2766,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 </body>
+
 
 </html>
