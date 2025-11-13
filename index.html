@@ -123,6 +123,18 @@ body {
     </div>
 </header>
 
+<div id="preAuthScreen" class="hidden">
+    <h2>Bem-vindo(a) ao Monitoramento Malária</h2>
+    <p>Por favor, selecione sua opção:</p>
+    
+    <button id="pacientLoginBtn">Entrar (Sou Paciente)</button>
+    
+    <hr>
+    
+    <p>Se você é um servidor e precisa cadastrar um novo paciente:</p>
+    <button id="openCadastroBtn">Cadastrar Novo Paciente (Servidor)</button>
+</div>
+
 <div id="checkinTrackerContainer" 
     class="py-1 bg-gray-100 border border-gray-200 mb-2 
            overflow-x-auto overflow-y-hidden transition-all duration-150 
@@ -297,7 +309,6 @@ body {
                     <label for="email" class="block text-xs font-semibold text-gray-700">E-mail (Não Editável)</label>
                     <input type="email" 
                         id="email" 
-                        disabled 
                         placeholder="E-mail da conta Google" 
                         class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm bg-gray-100 text-gray-500 text-sm">
                 </div>
@@ -590,7 +601,21 @@ body {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, updateDoc, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, 
+    collection, 
+    addDoc, 
+    query, 
+    updateDoc, 
+    orderBy, 
+    onSnapshot, 
+    serverTimestamp, 
+    getDocs, 
+    doc, 
+    setDoc, 
+    getDoc, 
+    deleteDoc, 
+    where, 
+ } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
 const firebaseConfig = {
@@ -1642,6 +1667,54 @@ function calculateAllControlDates(firstConsultationDateString, registeredDates =
     });
 }
 
+function openCadastroModal() {
+    preAuthScreen.classList.add('hidden'); 
+    formModal.classList.remove('hidden'); // Abre o formulário
+    
+    // Configura o chat como inativo, pois estamos no modo de cadastro
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    isSessionActive = false;
+    loadingIndicator.classList.add('hidden');
+}
+
+
+async function checkAppStatus() {
+    loadingIndicator.classList.add('hidden');
+    
+    const user = auth.currentUser; 
+
+    if (user) {
+        // Usuário logado:
+        preAuthScreen.classList.add('hidden');
+        // Garantimos que a tela de login original está oculta ao iniciar o chat
+        loginScreen.classList.add('hidden'); 
+        await startInitialConversation(user); 
+        
+    } else {
+        // Usuário DESLOGADO: Mostra a tela de opções (preAuthScreen)
+        
+        // 🚨 NOVO: Oculta a tela de login padrão
+        loginScreen.classList.add('hidden'); 
+
+        // 🚨 CHAVE: Exibe a tela de pré-autenticação
+        preAuthScreen.classList.remove('hidden');
+        
+        // Garante que o chat está desabilitado
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+    }
+}
+
+// ----------------------------------------------------------------------
+// 🚨 NOVO: Atualize seu listener de autenticação para usar checkAppStatus
+// ----------------------------------------------------------------------
+
+// Seu código principal deve chamar:
+// onAuthStateChanged(auth, checkAppStatus); 
+// document.getElementById('pacientLoginBtn').addEventListener('click', () => { /* Chamar seu método de signInWithPopup */ });
+document.getElementById('openCadastroBtn').addEventListener('click', openCadastroModal);
+
 /**
  * Renderiza o Check-in Tracker no DOM (Requer o elemento com id="checkinDaysList").
  * @param {Array<Object>} controlDates - O resultado de calculateAllControlDates.
@@ -2008,10 +2081,13 @@ function calcularIdade(dataNascimentoString) {
     return idade;
 }
 
+// A função startInitialConversation foi completamente reescrita
+// para implementar a lógica de busca do perfil pelo email se o UID não for encontrado.
+
 async function startInitialConversation(user) {
-    chatContainer.innerHTML = ''; // <--- ADICIONADO: Limpa o chat
+    chatContainer.innerHTML = ''; // Limpa o chat
     const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
-    const userProfileSnap = await getDoc(userProfileRef);
+    let userProfileSnap = await getDoc(userProfileRef);
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
 
     conversationStep = 0;
@@ -2023,248 +2099,274 @@ async function startInitialConversation(user) {
     // Remove botões remanescentes de qualquer sessão anterior
     chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
 
+    let userProfileData = null;
 
+    // --------------------------------------------------------------------------
+    // 🚨 NOVO FLUXO 1: CHECAGEM DE VÍNCULO DO PERFIL (UID) OU BUSCA PELO EMAIL
+    // --------------------------------------------------------------------------
     if (!userProfileSnap.exists()) {
-        loadingIndicator.classList.add('hidden'); // Remove loading se for pro modal
-        formModal.classList.remove('hidden');
+        
+        // Tenta encontrar um cadastro pré-existente feito pelo servidor usando o email
+        const profilesRef = collection(db, `artifacts/${firebaseConfig.appId}/profiles`);
+        // O campo no Firestore deve ser o email que o paciente usou para fazer login (user.email)
+        const q = query(profilesRef, where("emailAssociado", "==", user.email)); 
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            // ❌ NADA ENCONTRADO: O paciente logou, mas não foi cadastrado.
+            loadingIndicator.classList.add('hidden');
+            
+            // 🚨 CORREÇÃO PRINCIPAL AQUI: Não abre o formModal. Mostra erro e desloga/redireciona.
+            const errorMessage = `
+                ❌ **Vínculo Não Encontrado.** Parece que seu perfil ainda não foi cadastrado por um servidor. 
+                Por favor, peça a um servidor para te cadastrar através da opção 
+                "Cadastrar Novo Paciente (Servidor)" na tela inicial.
+            `;
+            
+            // Envia mensagem de erro para o chat (se a tela de chat estiver visível)
+            await addDoc(chatCollectionRef, { text: errorMessage, isUser: false, timestamp: serverTimestamp() });
+            
+            // Desabilita o chat
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            isSessionActive = false;
+            
+            // Tenta deslogar o usuário para forçar o retorno à tela de Pré-Autenticação
+            try {
+                // Assume que 'signOut' e 'auth' estão definidos globalmente
+                await signOut(auth); 
+            } catch (e) {
+                console.error("Erro ao deslogar após não encontrar perfil:", e);
+                // Se não conseguir deslogar, apenas garante que a tela de opções aparece
+                preAuthScreen.classList.remove('hidden'); 
+            }
+
+            return; // Sai da função
+        }
+
+        // CADASTRO ENCONTRADO (Feito pelo servidor): CRIA O VÍNCULO COM O UID DO PACIENTE
+        const docSnap = querySnapshot.docs[0];
+        const serverData = docSnap.data();
+        
+        // Prepara os dados para salvar no local do UID
+        const { emailAssociado, ...restOfData } = serverData; // Extrai o campo temporário
+        userProfileData = {
+            ...restOfData,
+            uid: user.uid,
+            email: user.email,
+            displayName: serverData.nomeCompleto || user.displayName,
+            // Mantém 'consentido' como está (false se foi o primeiro cadastro)
+        };
+        
+        // 1. Salva o perfil no local do UID (cria o vínculo)
+        await setDoc(userProfileRef, userProfileData);
+        
+        // 2. Remove o perfil do local temporário /profiles/{cpf} (Limpeza)
+        await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/profiles`, docSnap.id)); 
+        
+        // O fluxo continua abaixo com o userProfileData recém-vinculado.
+
+    } else {
+        // PERFIL JÁ VINCULADO: Apenas carrega os dados
+        userProfileData = userProfileSnap.data();
+    }
+    
+    // --------------------------------------------------------------------------
+    // 🚨 NOVO FLUXO 2: CHECAGEM DE CONSENTIMENTO (TCLE)
+    // --------------------------------------------------------------------------
+    if (!userProfileData.consentido) {
+        loadingIndicator.classList.add('hidden');
+        
+        // Preenche e exibe o TCLE (que deve ser aceito pelo paciente)
+        populateTcleWithData(userProfileData); 
+        tcleModal.classList.remove('hidden');
+        
         messageInput.disabled = true;
         sendBtn.disabled = true;
         isSessionActive = false;
-        return;
+        return; 
+    }
+
+    // --------------------------------------------------------------------------
+    // 🚨 FLUXO 3: INÍCIO DO CHAT (PERFIL VINCULADO E CONSENTIDO)
+    // --------------------------------------------------------------------------
+    
+    // A partir daqui, userProfileData está carregado e consentido.
+    const questionsForCheckin = [...dailyQuestions];
+    
+    // ----------------------------------------------------------------------
+    // BLOCO DE CHECAGEM DE CHECK-IN DIÁRIO CONCLUÍDO (Mantido)
+    // ----------------------------------------------------------------------
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const checkinTodayRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkins_diarios`, today);
+    const checkinTodaySnap = await getDoc(checkinTodayRef);
+    
+    // Se o check-in de hoje foi concluído
+    if (checkinTodaySnap.exists() && checkinTodaySnap.data().checkinComplete) {
+        loadingIndicator.classList.add('hidden');
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        isSessionActive = false;
+        
+        const finalMessage = "⚠️ **O check-in de hoje já foi concluído e registrado.** Você só pode registrar um check-in por dia. Se precisar de ajuda ou tiver dúvidas, clique em **Iniciar nova sessão (Chat Livre)** abaixo.";
+        await addDoc(chatCollectionRef, { text: finalMessage, isUser: false, timestamp: serverTimestamp() });
+
+        newSessionContainer.classList.remove('hidden'); 
+        conversationStep = -1;
+        return; 
+    }
+    // ----------------------------------------------------------------------
+    
+    userProfileData.registeredCheckins = userProfileData.registeredCheckins || []; 
+
+    // ====================================================================
+    // --- 1. PREPARAÇÃO DINÂMICA DE DADOS (Mantida) ---
+    // ====================================================================
+    const nome = userProfileData.nomeCompleto || user.displayName.split(' ')[0];
+    const tipoMalaria = userProfileData.tipoMalaria || "tipo de malária não especificado";
+    
+    // Data Diagnóstico
+    const dataDiagnostico = userProfileData.dataDiagnostico 
+        ? new Date(userProfileData.dataDiagnostico + 'T00:00:00').toLocaleDateString('pt-BR') 
+        : "data não informada";
+
+    // CÁLCULO DA IDADE (Mantido)
+    let idade;
+    const dataNascimentoDB = userProfileData.dataNascimento; 
+    if (dataNascimentoDB) {
+        idade = calcularIdade(dataNascimentoDB); // Assumindo que calcularIdade está definido
     } else {
-        userProfileData = userProfileSnap.data();
+        idade = "idade não informada";
+    }
+    
+    // SINTOMAS (Mantido)
+    const sintomasArray = userProfileData.sintomasApresentados || []; 
+    const outrosSintomas = userProfileData.outrosSintomas ? `, Outros: ${userProfileData.outrosSintomas}` : '';
+    let listaSintomas; 
+    if (sintomasArray.length > 0 || outrosSintomas.trim().length > 0) {
+        const sintomasPrincipais = sintomasArray.filter(s => s);
+        listaSintomas = (sintomasPrincipais.join(', ') + outrosSintomas).trim().replace(/^,/, '').trim();
+    } else {
+        listaSintomas = 'nenhum sintoma principal registrado';
+    }
 
-        // 🚨 NOVO: Checagem de Consentimento
-        if (!userProfileData.consentido) {
-            loadingIndicator.classList.add('hidden'); // Remove loading se for pro modal
-            tcleModal.classList.remove('hidden');
-            messageInput.disabled = true;
-            sendBtn.disabled = true;
-            isSessionActive = false;
-            return; 
-        }
-
-        // ----------------------------------------------------------------------
-        // 🚨 NOVO BLOCO: CHECAGEM DE CHECK-IN DIÁRIO CONCLUÍDO
-        // ----------------------------------------------------------------------
-        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-        const checkinTodayRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkins_diarios`, today);
-        const checkinTodaySnap = await getDoc(checkinTodayRef);
-        
-        // Se o check-in de hoje foi concluído
-        if (checkinTodaySnap.exists() && checkinTodaySnap.data().checkinComplete) {
-            loadingIndicator.classList.add('hidden');
-            messageInput.disabled = true;
-            sendBtn.disabled = true;
-            isSessionActive = false;
-            
-            // 1. Envia mensagem de bloqueio
-            const finalMessage = "⚠️ **O check-in de hoje já foi concluído e registrado.** Você só pode registrar um check-in por dia. Se precisar de ajuda ou tiver dúvidas, clique em **Iniciar nova sessão (Chat Livre)** abaixo.";
-            await addDoc(chatCollectionRef, { text: finalMessage, isUser: false, timestamp: serverTimestamp() });
-
-            // 2. Exibe o botão de nova sessão (para o Chat Livre)
-            newSessionContainer.classList.remove('hidden'); 
-            conversationStep = -1; // Define o passo para o modo de reinício/chat livre.
-
-            // Retorna, impedindo o início do questionário.
-            return; 
-        }
-        // ----------------------------------------------------------------------
-        // FIM DO NOVO BLOCO DE CHECAGEM
-        // ----------------------------------------------------------------------
-        
-        
-        // 🚨 NOVO: Incluir o array de check-ins registrados (ex: ['D3', 'D7'])
-        userProfileData.registeredCheckins = userProfileData.registeredCheckins || []; 
-
-        const dataDiagnosticoISO = userProfileData.dataDiagnostico;
-
-        // 1. Calcular o Dia de Check-in
-        let checkinDayTag = '';
-        if (dataDiagnosticoISO) {
-            // Assumindo que calculateCheckinDay está definido
-            checkinDayTag = calculateCheckinDay(dataDiagnosticoISO); 
-        } else {
-            checkinDayTag = "D?";
-        }
-
-        // 2. Atualizar o elemento HTML na tela (VERSÃO GRANDE - Apenas o D+n)
-        const checkinDayIndicatorLg = document.getElementById('checkin-day-indicator-lg');
-        if (checkinDayIndicatorLg) {
-            checkinDayIndicatorLg.textContent = checkinDayTag; 
-        }
-
-        // 3. Atualizar o elemento HTML na tela (VERSÃO PEQUENA - Texto completo e centralizado)
-        const checkinDayIndicatorSm = document.getElementById('checkin-day-indicator-sm');
-        if (checkinDayIndicatorSm) {
-            checkinDayIndicatorSm.textContent = `Você está preenchendo o Check-in de ${checkinDayTag}.`; 
-        }
-
-        // 2. Atualizar o elemento HTML na tela (referência genérica)
-        const checkinDayIndicator = document.getElementById('checkin-day-indicator');
-        if (checkinDayIndicator) {
-            checkinDayIndicator.textContent = checkinDayTag; 
-        }
-
-        // O checkinRef antigo (daily_status) e checkinSnap (resumo) NÃO SÃO MAIS USADOS AQUI.
-        // A checagem diária já foi feita acima.
-
-        
-        // ====================================================================
-        // --- 1. PREPARAÇÃO DINÂMICA DE DADOS (Mantida) ---
-        // ====================================================================
-        const nome = userProfileData.nomeCompleto || user.displayName.split(' ')[0];
-        const tipoMalaria = userProfileData.tipoMalaria || "tipo de malária não especificado";
-        
-        // Data Diagnóstico
-        const dataDiagnostico = userProfileData.dataDiagnostico 
-            ? new Date(userProfileData.dataDiagnostico + 'T00:00:00').toLocaleDateString('pt-BR') 
-            : "data não informada";
-
-        // CÁLCULO DA IDADE (Mantido)
-        let idade;
-        const dataNascimentoDB = userProfileData.dataNascimento; 
-        if (dataNascimentoDB) {
-            // Assumindo que a função calcularIdade está definida globalmente
-            idade = calcularIdade(dataNascimentoDB); 
-        } else {
-            idade = "idade não informada";
-        }
-        
-        // SINTOMAS (Mantido)
-        const sintomasArray = userProfileData.sintomasApresentados || []; 
-        const outrosSintomas = userProfileData.outrosSintomas ? `, Outros: ${userProfileData.outrosSintomas}` : '';
-        let listaSintomas; 
-        if (sintomasArray.length > 0 || outrosSintomas.trim().length > 0) {
-            const sintomasPrincipais = sintomasArray.filter(s => s);
-            listaSintomas = (sintomasPrincipais.join(', ') + outrosSintomas).trim().replace(/^,/, '').trim();
-        } else {
-            listaSintomas = 'nenhum sintoma principal registrado';
-        }
-
-        // MEDICAÇÃO (Mantido)
-        const medicacaoArray = userProfileData.medicacao || []; 
-        const medicacaoOutra = userProfileData.medicacaoOutraDescricao || ""; 
-        let medicacaoNome;
-        const medicaçõesPrincipais = medicacaoArray.filter(m => m);
-        const temMedPrincipal = medicaçõesPrincipais.length > 0;
-        const temMedOutra = medicacaoOutra.trim().length > 0;
-        
-        if (temMedPrincipal || temMedOutra) {
-            let listaFormatada = '';
-            if (temMedPrincipal) {
-                const listFormatter = new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' });
-                listaFormatada = listFormatter.format(medicaçõesPrincipais);
-            }
-            if (temMedPrincipal && temMedOutra) {
-                medicacaoNome = `${listaFormatada} e mais: ${medicacaoOutra}`; // Corrigido parênteses
-            } else if (temMedPrincipal) {
-                medicacaoNome = listaFormatada;
-            } else if (temMedOutra) {
-                medicacaoNome = medicacaoOutra;
-            }
-        } else {
-            medicacaoNome = "Medicação não informada";
-        }
-
-        // COMORBIDADES (Mantido)
-        const comorbidadesData = userProfileData.comorbidades;
-        const comorbidadesArray = Array.isArray(comorbidadesData)
-            ? comorbidadesData
-            : comorbidadesData
-            ? [String(comorbidadesData)]
-            : [];
-        let listaComorbidades = '';
-        let comorbidadePrincipal = '';
-        const comorbidadesLimpas = comorbidadesArray
-            .map(c => typeof c === 'string' ? c.trim() : '')
-            .filter(c => c && c !== 'Nenhuma das opções acima');
-        const temComorbidadeParaPerguntar = comorbidadesLimpas.length > 0;
-
-        if (temComorbidadeParaPerguntar) {
+    // MEDICAÇÃO (Mantido)
+    const medicacaoArray = userProfileData.medicacao || []; 
+    const medicacaoOutra = userProfileData.medicacaoOutraDescricao || ""; 
+    let medicacaoNome;
+    const medicaçõesPrincipais = medicacaoArray.filter(m => m);
+    const temMedPrincipal = medicaçõesPrincipais.length > 0;
+    const temMedOutra = medicacaoOutra.trim().length > 0;
+    
+    if (temMedPrincipal || temMedOutra) {
+        let listaFormatada = '';
+        if (temMedPrincipal) {
             const listFormatter = new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' });
-            listaComorbidades = listFormatter.format(comorbidadesLimpas);
-            comorbidadePrincipal = listaComorbidades; 
-        } else {
-            listaComorbidades = "Nenhuma condição crônica pré-existente foi relatada.";
-            comorbidadePrincipal = "sua condição crônica"; 
+            listaFormatada = listFormatter.format(medicaçõesPrincipais);
         }
-
-        // Orientação Recebida
-        const recebeuOrientacoes = userProfileData.recebeuOrientacoes;
-        const statusOrientacoes = recebeuOrientacoes 
-            ? 'Sim, você confirmou que recebeu orientações.' 
-            : '**ATENÇÃO!** Você confirmou NÃO ter recebido orientações. Se precisar de informações, avise-nos.';
-
-        // Data de Controle (para Pergunta 10)
-        // Assumindo que calculateNextControlDate está definido globalmente
-        const dataControle = calculateNextControlDate(userProfileData.dataDiagnostico); 
-
-        // ====================================================================
-        // --- 2. PERSONALIZAÇÃO DE TODAS AS PERGUNTAS DINÂMICAS (Mantida) ---
-        // ====================================================================
-        
-        const Q3_INDEX = 3; 
-        
-        // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido globalmente
-        if (!temComorbidadeParaPerguntar) {
-            questionsForCheckin[Q3_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
+        if (temMedPrincipal && temMedOutra) {
+            medicacaoNome = `${listaFormatada} e mais: ${medicacaoOutra}`; 
+        } else if (temMedPrincipal) {
+            medicacaoNome = listaFormatada;
+        } else if (temMedOutra) {
+            medicacaoNome = medicacaoOutra;
         }
+    } else {
+        medicacaoNome = "Medicação não informada";
+    }
+
+    // COMORBIDADES (Mantido)
+    const comorbidadesData = userProfileData.comorbidades;
+    const comorbidadesArray = Array.isArray(comorbidadesData)
+        ? comorbidadesData
+        : comorbidadesData
+        ? [String(comorbidadesData)]
+        : [];
+    let listaComorbidades = '';
+    let comorbidadePrincipal = '';
+    const comorbidadesLimpas = comorbidadesArray
+        .map(c => typeof c === 'string' ? c.trim() : '')
+        .filter(c => c && c !== 'Nenhuma das opções acima');
+    const temComorbidadeParaPerguntar = comorbidadesLimpas.length > 0;
+
+    if (temComorbidadeParaPerguntar) {
+        const listFormatter = new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' });
+        listaComorbidades = listFormatter.format(comorbidadesLimpas);
+        comorbidadePrincipal = listaComorbidades; 
+    } else {
+        listaComorbidades = "Nenhuma condição crônica pré-existente foi relatada.";
+        comorbidadePrincipal = "sua condição crônica"; 
+    }
+
+    // Orientação Recebida
+    const recebeuOrientacoes = userProfileData.recebeuOrientacoes;
+    const statusOrientacoes = recebeuOrientacoes 
+        ? 'Sim, você confirmou que recebeu orientações.' 
+        : '**ATENÇÃO!** Você confirmou NÃO ter recebido orientações. Se precisar de informações, avise-nos.';
+
+    // Data de Controle (para Pergunta 10)
+    const dataControle = calculateNextControlDate(userProfileData.dataDiagnostico); // Assumindo que calculateNextControlDate está definido
+
+    // ====================================================================
+    // --- 2. PERSONALIZAÇÃO DE TODAS AS PERGUNTAS DINÂMICAS (Mantida) ---
+    // ====================================================================
+    
+    const Q4_INDEX = 3; 
+    
+    if (!temComorbidadeParaPerguntar) {
+        questionsForCheckin[Q4_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE; // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido
+    }
+    
+    const personalizedDailyQuestions = questionsForCheckin.map((question, index) => {
+        // Lógica de numeração... (mantida)
+        let q_text = question.text;
         
-        const personalizedDailyQuestions = questionsForCheckin.map((question, index) => {
-            // Lógica de numeração... (mantida)
-            let q_text = question.text;
+        if (index === Q4_INDEX && q_text.startsWith('4.')) {
             
-            // ... (Seu código de ajuste de numeração está mantido aqui) ...
-            if (index === Q3_INDEX && q_text.startsWith('4.')) {
-                
-            } else if (index === Q3_INDEX && !q_text.startsWith('4.')) {
-                q_text = `3. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
-            } else if (index !== Q3_INDEX && q_text.startsWith(`${index + 1}.`)) {
-                
-            } else {
-                q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
-            }
-            // Fim da lógica de numeração
-
-            // Assumindo que personalizeQuestion está definido globalmente
-            const personalizedQ = personalizeQuestion(
-                { ...question, text: q_text },
-                tipoMalaria, 
-                listaSintomas, 
-                medicacaoNome, 
-                comorbidadePrincipal, 
-                dataControle
-            );
-            return personalizedQ;
-        });
-        
-        window.activeQuestions = personalizedDailyQuestions;
-
-        // ====================================================================
-        // 🚨 ADAPTAÇÃO: CARREGAMENTO DINÂMICO DOS CARDS/TRACKER (Mantida)
-        // ====================================================================
-        if (userProfileData && userProfileData.dataDiagnostico) { 
-            // Calcula o status dos cards usando a data de diagnóstico e os check-ins registrados
-            const controlDates = calculateAllControlDates(
-                userProfileData.dataDiagnostico, 
-                userProfileData.registeredCheckins
-            );
-            // Renderiza o tracker no DOM
-            renderCheckinTracker(controlDates);
-        } else {
-            console.warn("Data de diagnóstico ausente. O tracker de check-in não será renderizado.");
-        }
-        // ====================================================================
-        
-        
-        // --- 3. Lógica de Mensagens e Início do Questionário (APENAS BOAS-VINDAS) ---
-        
-        // 🚨 REMOVIDA A LÓGICA DE checkinSnap.exists()
-        // O fluxo agora sempre será o de primeiro check-in, já que o check-in do dia foi bloqueado acima.
+        } else if (index === Q4_INDEX && !q_text.startsWith('4.')) {
+            q_text = `4. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
+        } else if (index !== Q4_INDEX && q_text.startsWith(`${index + 1}.`)) {
             
-        // Criação da Mensagem de Resumo/Boas-Vindas
-        const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. Eu sou a Inteligência Artificial da Malária e serei sua assistente de monitoramento diário.
+        } else {
+            q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
+        }
+        // Fim da lógica de numeração
+
+        // Assumindo que personalizeQuestion está definido globalmente
+        const personalizedQ = personalizeQuestion(
+            { ...question, text: q_text },
+            tipoMalaria, 
+            listaSintomas, 
+            medicacaoNome, 
+            comorbidadePrincipal, 
+            dataControle
+        );
+        return personalizedQ;
+    });
+    
+    window.activeQuestions = personalizedDailyQuestions;
+
+    // ====================================================================
+    // 🚨 ADAPTAÇÃO: CARREGAMENTO DINÂMICO DOS CARDS/TRACKER (Mantida)
+    // ====================================================================
+    if (userProfileData && userProfileData.dataDiagnostico) { 
+        // Calcula o status dos cards usando a data de diagnóstico e os check-ins registrados
+        const controlDates = calculateAllControlDates( // Assumindo que calculateAllControlDates está definido
+            userProfileData.dataDiagnostico, 
+            userProfileData.registeredCheckins
+        );
+        // Renderiza o tracker no DOM
+        renderCheckinTracker(controlDates); // Assumindo que renderCheckinTracker está definido
+    } else {
+        console.warn("Data de diagnóstico ausente. O tracker de check-in não será renderizado.");
+    }
+    // ====================================================================
+    
+    
+    // --- 3. Lógica de Mensagens e Início do Questionário (Mantida) ---
+    
+    // Criação da Mensagem de Resumo/Boas-Vindas
+    const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. Eu sou a Inteligência Artificial da Malária e serei sua assistente de monitoramento diário.
 
 Seus dados iniciais indicam que você foi:
 - Diagnosticado com Malária do tipo *${tipoMalaria}* em ${dataDiagnostico}.
@@ -2275,52 +2377,44 @@ Seus dados iniciais indicam que você foi:
 
 Lembre-se: O monitoramento diário é vital para sua recuperação. Vamos começar seu check-in.`;
 
-        await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
-        
-        // Envia a primeira pergunta do NOVO array
-        await displayQuestionWithButtons(personalizedDailyQuestions[0]);
-        
-        loadingIndicator.classList.add('hidden'); // Remove loading após iniciar a conversa
-    }
+    await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
+    
+    // Envia a primeira pergunta do NOVO array
+    await displayQuestionWithButtons(personalizedDailyQuestions[0]); // Assumindo que displayQuestionWithButtons está definido
+    
+    loadingIndicator.classList.add('hidden'); // Remove loading após iniciar a conversa
 }
 
 // A função startFreshSession permanece inalterada, pois ela já chama startInitialConversation.
 async function startFreshSession(user) {
-    loadingIndicator.classList.remove('hidden');
-    try {
-        // 1. Remove a limpeza do DOM daqui, será feito em startInitialConversation
-        conversationStep = 0;
-        userResponses = {};
-        isSessionActive = false; 
+    loadingIndicator.classList.remove('hidden');
+    try {
+        // 1. Remove a limpeza do DOM daqui, será feito em startInitialConversation
+        conversationStep = 0;
+        userResponses = {};
+        isSessionActive = false; 
 
-        // ... (Limpa o histórico do Firestore se necessário, mas está comentado) ...
-        
-        // 3. Inicia a conversa
-        await startInitialConversation(user); 
-    } catch (error) {
+        // ... (Limpa o histórico do Firestore se necessário, mas está comentado) ...
+        
+        // 3. Inicia a conversa
+        await startInitialConversation(user); 
+    } catch (error) {
         console.error("Erro ao iniciar sessão limpa:", error);
-        showError("Não foi possível reiniciar a sessão. Tente novamente mais tarde.");
+        showError("Não foi possível reiniciar a sessão. Tente novamente mais tarde."); // Assumindo que showError está definido
     } finally {
         loadingIndicator.classList.add('hidden');
     }
 }
-// A função que preenche o TCLE DEVE estar definida em seu código, 
-// e vamos chamá-la de 'populateTcleWithData'.
-// (Você precisará garantir que esta função exista no seu escopo)
+
+
+// A função handleFormSubmission foi modificada para salvar o perfil em /profiles/{cpf}
+// e adicionar instruções específicas ao servidor na tela do TCLE.
 
 async function handleFormSubmission() {
-    // Nota: Removido o 'event.preventDefault()' pois o listener não o usa, 
-    // mas se o botão estiver dentro de um <form>, adicione-o.
-
-    if (!currentUser) {
-        showError("Erro: Usuário não autenticado.");
-        return;
-    }
-
     // LISTA DE CAMPOS OBRIGATÓRIOS (mantida)
     const requiredFields = [
         'dataNascimento', 'sexo', 'corRaca', 'escolaridade', 'contato', 'cep', 'endereco', 'numero',
-        'tipoMalaria', 'dataDiagnostico', 'unidadeAtendimento', 'sivep'
+        'tipoMalaria', 'dataDiagnostico', 'unidadeAtendimento', 'sivep', 'cpf', 'email' // 'email' é o emailAssociado
     ];
     
     // Verifica se todos os campos estão preenchidos (mantido)
@@ -2337,19 +2431,19 @@ async function handleFormSubmission() {
         return;
     }
 
-    // =========================================================================
-    // --- 1. COLETA DE DADOS DINÂMICOS (ADAPTAÇÃO AQUI) ---
-    // =========================================================================
-
-    // 🔑 ADAPTAÇÃO DA MEDICAÇÃO: Coleta todos os checkboxes marcados (Array)
+    // 1. COLETAR E VALIDAR CHAVE PRIMÁRIA (CPF)
+    const cpf = document.getElementById('cpf').value.replace(/\D/g, ''); 
+    if (cpf.length !== 11) {
+        showError("Por favor, preencha um CPF válido com 11 dígitos.");
+        return;
+    }
+    
+    // Coleta dos dados dinâmicos (Medicação e Comorbidades)
     const medicacao = Array.from(document.querySelectorAll('input[name="medicacao"]:checked')).map(cb => {
         return cb.value.trim();
     });
-    
-    // 🔑 ADAPTAÇÃO DA MEDICAÇÃO: Coleta o texto livre do campo 'Outra medicação'
     const medicacaoOutraDescricao = document.getElementById('medicacaoOutraDescricao').value.trim();
     
-    // Comorbidades: Coleta os valores do checkbox (Array)
     const comorbidades = Array.from(document.querySelectorAll('input[name="comorbidade"]:checked')).map(cb => {
         return cb.value.trim();
     }); 
@@ -2358,19 +2452,21 @@ async function handleFormSubmission() {
     // --- 2. OBJETO formData ATUALIZADO ---
     // =========================================================================
     const formData = {
-        // Campos Pessoais (mantidos)
+        // Campos Pessoais
         nomeCompleto: document.getElementById('nomeCompleto').value,
-        dataNascimento: document.getElementById('dataNascimento').value, // YYYY-MM-DD
+        dataNascimento: document.getElementById('dataNascimento').value, 
         sexo: document.getElementById('sexo').value,
         corRaca: document.getElementById('corRaca').value,
         escolaridade: document.getElementById('escolaridade').value,
         contato: document.getElementById('contato').value,
         rg: document.getElementById('rg').value,
-        cpf: document.getElementById('cpf').value,
+        cpf: cpf, // CPF limpo
         sivep: document.getElementById('sivep').value,
-
         
-        // Campos de Endereço (mantidos)
+        // 🚨 CAMPO CHAVE para vínculo do Paciente
+        emailAssociado: document.getElementById('email').value.trim(),
+
+        // Campos de Endereço
         cep: document.getElementById('cep').value,
         cidade: document.getElementById('cidade').value,
         estado: document.getElementById('estado').value,
@@ -2378,50 +2474,71 @@ async function handleFormSubmission() {
         numero: document.getElementById('numero').value,
         complemento: document.getElementById('complemento').value,
 
-        // Campos de Diagnóstico e Tratamento (mantidos)
+        // Campos de Diagnóstico e Tratamento
         tipoMalaria: document.getElementById('tipoMalaria').value,
         dataDiagnostico: document.getElementById('dataDiagnostico').value,
         unidadeAtendimento: document.getElementById('unidadeAtendimento').value,
         
-        // 🔑 ADAPTADO: Agora medicacao é um array (campo 'medicacao')
         medicacao: medicacao, 
-        // 🔑 ADAPTADO: Campo de texto livre
         medicacaoOutraDescricao: medicacaoOutraDescricao,
         
         recebeuOrientacoes: document.getElementById('recebeuOrientacoes').checked,
-
         viajouAreaRisco: document.getElementById('viajouAreaRisco').checked,
-
-        // Comorbidades
         comorbidades: comorbidades, 
 
-        consentido: false // Mantém o status inicial do consentimento
+        consentido: false, // Mantém o status inicial do consentimento
+        
+        // Campo para indicar que o cadastro foi feito pelo servidor
+        cadastradoPorServidor: true,
     };
 
     try {
-        // --- ETAPA 1: SALVAR NO FIRESTORE (mantido) ---
-        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+        // --- ETAPA 1: SALVAR NO FIRESTORE EM UMA COLEÇÃO SEPARADA (/profiles) ---
+        const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/profiles/${cpf}`);
         await setDoc(userProfileRef, {
-            uid: currentUser.uid, 
-            email: currentUser.email, 
-            displayName: document.getElementById('nomeCompleto').value, 
             createdAt: serverTimestamp(), 
             ...formData
         });
         
-        // Garante que o nome exibido na tela de chat está atualizado (mantido)
-        userNameElem.textContent = `Olá, ${formData.nomeCompleto || currentUser.email}!`; 
+        // A atualização do userNameElem não faz sentido se o usuário não está logado,
+        // mas é mantida caso você queira usá-la em outro fluxo.
+        // userNameElem.textContent = `Olá, ${formData.nomeCompleto || formData.emailAssociado}!`; 
 
         // ----------------------------------------------------------------------
-        // --- ETAPA 2: PREENCHER E EXIBIR O TCLE COM OS DADOS RECÉM-SALVOS ---
+        // --- ETAPA 2: PREENCHER E EXIBIR O TCLE COM INSTRUÇÕES PARA O SERVIDOR ---
         // ----------------------------------------------------------------------
         
-        // Passamos o formData diretamente, sem a necessidade de um novo getDoc()
+        // Assumindo que tcleConsentText e acceptTcleBtn são os IDs corretos.
+        const tcleConsentText = document.getElementById('tcleConsentText');
+        const acceptTcleBtn = document.getElementById('acceptTcleBtn'); 
+        
         populateTcleWithData(formData); 
         
         // Oculta o modal de cadastro e exibe o TCLE
         formModal.classList.add('hidden');
         tcleModal.classList.remove('hidden');
+
+        // 🚨 MODIFICAÇÃO CHAVE: Instruções para o servidor (usuário deslogado)
+        if (!auth.currentUser) {
+            // Atualiza o texto do TCLE com a instrução clara.
+            tcleConsentText.innerHTML = `
+                ⚠️ **CADASTRO CONCLUÍDO POR TERCEIRO** ⚠️
+                O Termo de Consentimento Informado (TCLE) abaixo deve ser lido e aceito
+                pessoalmente pelo paciente. 
+                <br><br>
+                **Próxima Etapa:** Por favor, instrua o paciente **${formData.nomeCompleto}** a fazer login com o e-mail:
+                **${formData.emailAssociado}** para iniciar a sessão e aceitar o TCLE.
+                <br><br>
+                <span style="font-size: 0.8em; color: gray;">Feche este modal para finalizar o cadastro como servidor.</span>
+            `;
+            // O servidor não pode aceitar o TCLE pelo paciente, então o botão é desabilitado.
+            acceptTcleBtn.disabled = true;
+        } else {
+            // Se, por algum motivo, um usuário logado chamar esta função, ele pode aceitar.
+            // Isso assume que o `auth.currentUser` aqui seria o próprio paciente ou um operador 
+            // que tem permissão para iniciar o TCLE do paciente logado.
+            acceptTcleBtn.disabled = false;
+        }
 
     } catch (error) {
         console.error("Erro ao salvar dados do formulário:", error);
@@ -2565,39 +2682,45 @@ googleSigninBtn.onclick = async () => {
 };
 
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-        
-        preloadFormData(user); 
+// A função de listener de mensagens (listenForMessages) deve permanecer fora
+// do checkAppStatus, sendo chamada apenas quando o usuário está logado.
 
+onAuthStateChanged(auth, (user) => {
+    // 1. Atualiza o status global do usuário
+    currentUser = user; 
+    
+    // 2. Transição de telas (Lógica simplificada e centralizada)
+    if (user) {
+        // Usuário LOGADO: Prepara a tela de chat/aplicação
+        loginScreen.classList.add('hidden', 'opacity-0', 'pointer-events-none');
+        chatScreen.classList.remove('hidden');
+        chatScreen.classList.add('opacity-100');
+        
         // Atualiza o nome do usuário no cabeçalho
         userNameElem.textContent = `Olá, ${user.displayName || user.email}!`; 
 
-        loginScreen.classList.add('opacity-0', 'pointer-events-none');
-        setTimeout(() => {
-            loginScreen.classList.add('hidden');
-            chatScreen.classList.remove('hidden');
-            chatScreen.classList.add('opacity-100');
-            
-            // Força o reinício da sessão (apaga o histórico e inicia a 1ª pergunta/modal)
-            startFreshSession(user); 
-            
-            listenForMessages(user); 
-        }, 500);
-    } else {
-        currentUser = null;
-        // Ao deslogar, limpa quaisquer botões que possam estar na tela
-        chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
+        // Inicia o listener de mensagens (só pode ser feito após o login)
+        listenForMessages(user);
         
+    } else {
+        // Usuário DESLOGADO: Prepara a tela de login
         chatScreen.classList.remove('opacity-100');
-        chatScreen.classList.add('opacity-0');
+        chatScreen.classList.add('opacity-0', 'hidden'); // Oculta a tela de chat
         loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+
+        // Limpa estados e timers
+        chatContainer.querySelectorAll('.response-buttons').forEach(btn => btn.remove());
         messageInput.disabled = true;
         sendBtn.disabled = true;
         isSessionActive = false;
         clearTimeout(inactivityTimer);
     }
+    
+    // 3. 🚨 NOVO FLUXO PRINCIPAL: Chama a função de controle para verificar
+    //    se deve mostrar o formulário (se estiver deslogado) ou o chat (se logado).
+    //    A lógica de iniciar a conversa, checar o formulário/vínculo, e exibir o 
+    //    `preAuthScreen` quando deslogado está dentro de `checkAppStatus()`.
+    checkAppStatus();
 });
 
 function listenForMessages(user) {
@@ -2763,5 +2886,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 </body>
+
 
 </html>
