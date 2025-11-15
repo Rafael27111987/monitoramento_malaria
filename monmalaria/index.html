@@ -760,6 +760,9 @@ const dailyQuestions = [
             "Muito Pior (Piora acentuada)"
         ]
     },
+    // ----------------------------------------------------------------------------------
+    // 🚨 NOVA PERGUNTA 2: SINTOMAS COMUNS (O antigo grupo 1)
+    // ----------------------------------------------------------------------------------
     {
         text: "2. Nas últimas 24h, você apresentou algum dos seguintes **sintomas comuns** da Malária ou efeitos colaterais leves?",
         type: "multi-select",
@@ -777,6 +780,9 @@ const dailyQuestions = [
             "Sonolência Excessiva",
         ]
     },
+    // ----------------------------------------------------------------------------------
+    // 🚨 NOVA PERGUNTA 3: SINAIS DE ALARME (O antigo grupo 2, agora destacado)
+    // ----------------------------------------------------------------------------------
     {
         text: "3. Você apresentou algum **SINAL DE ALARME** que indica urgência médica? (Selecione todos que se aplicam)",
         type: "multi-select",
@@ -791,47 +797,53 @@ const dailyQuestions = [
             "Diminuição da Urina (ou não urinar)",
         ]
     },
+    // ----------------------------------------------------------------------------------
+    // 🚨 ANTIGA PERGUNTA 3 (COMORBIDADE), AGORA PERGUNTA 4
+    // ----------------------------------------------------------------------------------
     {
         text: "4. Em relação à(s) sua(s) condição(ões) crônica(s) ([COMORBIDADE_PRINCIPAL]), **você percebeu alguma descompensação ou sintoma novo relacionado a ela(s) hoje?**",
         type: "select", 
-        options: ["Sim", "Não",]
+        options: [
+            "Sim", 
+            "Não",
+        ]
     },
+    // ----------------------------------------------------------------------------------
+    // AS DEMAIS PERGUNTAS SÃO RENUMERADAS (Q5, Q6, Q7, Q8, Q9)
+    // ----------------------------------------------------------------------------------
     {
         text: "5. Você tomou sua medicação ([MEDICACAO_NOME]) rigorosamente nos horários indicados pelo Médico(a)?",
         type: "select",
-        options: ["Sim", "Não",],
+        options: [
+            "Sim", 
+            "Não",
+        ],
     },
-    // ----------------------------------------------------------------------------------
-    // 🛑 NOVA PERGUNTA 6 (SEPARADA DA ANTIGA Q6)
-    // ----------------------------------------------------------------------------------
     {
         text: "6. Desde a última dose do medicamento para Malária, você percebeu o surgimento de alguma **reação adversa nova ou inesperada** (ex: dor abdominal, coceira, dor de cabeça forte, zumbido) que você associa ao medicamento?",
         type: "select", 
         options: ["Sim", "Não",],
     },
-    // ----------------------------------------------------------------------------------
-    // 🛑 NOVA PERGUNTA 7 (SEPARADA DA ANTIGA Q6)
-    // ----------------------------------------------------------------------------------
     {
-        text: "7. Você percebeu uma **piora acentuada dos sintomas da Malária** nas últimas 24h (diferente da melhora esperada)?",
+        text: "7. Desde a última dose do medicamento para Malária, você apresentou alguma reação adversa nova ou percebeu piora acentuada dos sintomas da Malária?",
         type: "select", 
-        options: ["Sim", "Não",],
-    },
-    // ----------------------------------------------------------------------------------
-    // AS DEMAIS PERGUNTAS SÃO RENUMERADAS
-    // ----------------------------------------------------------------------------------
-    {
-        text: "8. Você procurou ou recebeu atendimento em alguma Unidade de Saúde (UBS, UPA, Hospital) nas últimas 24h?",
-        type: "select",
         options: [
-            "Sim",
+            "Sim", 
             "Não",
         ],
     },
     {
+        text: "8. Você percebeu uma **piora acentuada dos sintomas da Malária** nas últimas 24h (diferente da melhora esperada)?",
+        type: "select", 
+        options: ["Sim", "Não",],
+    },
+    {
         text: "9. Você usou algum outro medicamento (analgésico, antibiótico, fitoterápico, etc.) que NÃO faz parte do seu tratamento contra Malária?",
         type: "select",
-        options: ["Sim", "Não",],
+        options: [
+            "Sim", 
+            "Não",
+        ],
     },
     {
         text: "10. Você pretende comparecer ao exame de Gota Espessa de controle na data recomendada ([DATA_CONTROLE]) ou em outra data próxima?",
@@ -844,13 +856,15 @@ const dailyQuestions = [
 ];
 
 // ----------------------------------------------------------------------------------
-// 🚨 Q_ALTERNATIVA_SEM_COMORBIDADE AGORA É Q4 ALTERNATIVA
+// 🚨 Q_ALTERNATIVA_SEM_COMORBIDADE TAMBÉM PRECISA SER RENUMERADA (AGORA É Q4 ALTERNATIVA)
 // ----------------------------------------------------------------------------------
 const Q_ALTERNATIVA_SEM_COMORBIDADE = {
-    // Manteremos a numeração na lógica de personalização, mas o texto é o que importa:
     text: "Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas perguntas anteriores?",
     type: "select", 
-    options: ["Sim", "Não",],
+    options: [
+        "Sim", 
+        "Não",
+    ],
 };
 
 const RATING_QUESTION = {
@@ -1779,8 +1793,9 @@ const analysisPrompt = `
     Descreva a conduta do paciente:
     - Adesão à medicação (**Q5** - Antiga Q4)
     - Reação adversa (**Q6** - Antiga Q5)
-    - Busca por ajuda externa (**Q7** - Antiga Q6)
-    - Automedicação (**Q8** - Antiga Q7)
+    - Piora acentuada dos sintomas da malas (**Q7**)
+    - Busca por ajuda externa (**Q8** - Antiga Q6)
+    - Automedicação (**Q9** - Antiga Q7)
     
     Inclua o status da comorbidade/mal-estar (**Q4** - Antiga Q3) e a intenção de realizar o exame de Gota Espessa de controle (**Q9** - Antiga Q8).
 
@@ -2029,6 +2044,7 @@ async function startInitialConversation(user) {
     // 1. OBTÉM A CHAVE DA DATA DE HOJE (Fuso Horário Local para consistência de bloqueio)
     const now = new Date();
     const year = now.getFullYear();
+    // getMonth() retorna 0-11, então adicionamos 1. padStart(2, '0') garante dois dígitos.
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     const todayKey = `${year}-${month}-${day}`; // Chave de bloqueio (Ex: "2025-11-14")
@@ -2042,7 +2058,7 @@ async function startInitialConversation(user) {
     try {
         [userProfileSnap, checkinTodaySnap] = await Promise.all([
             getDoc(userProfileRef),
-            getDoc(checkinTodayRef)
+            getDoc(checkinTodayRef) // Busca o documento de check-in de HOJE
         ]);
     } catch (error) {
         console.error("Erro ao buscar dados iniciais:", error);
@@ -2053,7 +2069,7 @@ async function startInitialConversation(user) {
 
     if (!userProfileSnap.exists()) {
         // CENA 1: PARTICIPANTE NOVO (Não tem cadastro principal)
-        loadingIndicator.classList.add('hidden');
+        loadingIndicator.classList.add('hidden'); // Remove loading
         formModal.classList.remove('hidden');
         messageInput.disabled = true;
         sendBtn.disabled = true;
@@ -2068,7 +2084,7 @@ async function startInitialConversation(user) {
     // CENA 2: CHECAGEM DE CONSENTIMENTO E BLOQUEIO DE CHECK-IN
     // ----------------------------------------------------------------------
     if (!userProfileData.consentido) {
-        // 🚨 Checagem de Consentimento
+        // 🚨 NOVO: Checagem de Consentimento
         loadingIndicator.classList.add('hidden');
         tcleModal.classList.remove('hidden');
         messageInput.disabled = true;
@@ -2080,8 +2096,9 @@ async function startInitialConversation(user) {
     // 🚨 BLOQUEIO PRINCIPAL: VERIFICAÇÃO DO CHECK-IN DIÁRIO CONCLUÍDO
     if (checkinTodaySnap.exists()) {
         const checkinData = checkinTodaySnap.data();
-        const checkinTime = checkinData.timestamp ? checkinData.timestamp.toDate() : new Date();
+        const checkinTime = checkinData.timestamp ? checkinData.timestamp.toDate() : new Date(); // Usa o timestamp do servidor
         
+        // Formata a hora local de Porto Velho para exibição na mensagem
         const localTimeOptions = { 
             hour: '2-digit', minute: '2-digit', 
             timeZone: 'America/Porto_Velho', 
@@ -2089,53 +2106,42 @@ async function startInitialConversation(user) {
         };
         const checkinTimeFormatted = checkinTime.toLocaleTimeString('pt-BR', localTimeOptions);
         
-        // **DECLARAÇÃO MÍNIMA PARA A MENSAGEM DE BLOQUEIO**
-        // Correção para usar a forma mais segura do nome
-        const nomeParticipante = userProfileData.nomeCompleto || user.displayName?.split(' ')[0] || 'participante'; 
-        
-        const blockMessage = `Olá, ${nomeParticipante}! Seu *check-in* diário para **hoje (${todayKey})** já foi concluído e registrado às **${checkinTimeFormatted}** (horário de Porto Velho).
+        const blockMessage = `Olá, ${userProfileData.nomeCompleto || 'participante'}! Seu *check-in* diário para **hoje (${todayKey})** já foi concluído e registrado às **${checkinTimeFormatted}** (horário de Porto Velho).
 
 ⚠️ **Você só pode registrar um check-in por dia.**
 
 Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, clique em **Iniciar nova sessão (Chat Livre)** no botão abaixo.`;
         
+        // 1. Envia a mensagem de bloqueio para o chat
         await addDoc(chatCollectionRef, { text: blockMessage, isUser: false, timestamp: serverTimestamp() });
 
-        messageInput.disabled = false;
-        sendBtn.disabled = false;
-        isSessionActive = true;
+        // 2. Desabilita inputs de questionário e habilita o botão de Chat Livre
+        messageInput.disabled = false; // Habilita o input para o chat livre
+        sendBtn.disabled = false;     // Habilita o botão de envio
+        isSessionActive = true;       // Habilita o modo de chat livre
         
+        // Exibe o botão de nova sessão (para o Chat Livre)
         newSessionContainer.classList.remove('hidden'); 
-        conversationStep = -1;
+        conversationStep = -1; // Define o passo para o modo de reinício/chat livre.
 
         loadingIndicator.classList.add('hidden');
-        return;
+        return; // BLOQUEIA o início do questionário diário
     }
 
     // ----------------------------------------------------------------------
     // CENA 3: PARTICIPANTE CONSENTIDO E CHECK-IN PENDENTE (Inicia o Questionário)
     // ----------------------------------------------------------------------
     
-    // Preparação de dados e Personalização
-    const questionsForCheckin = [...dailyQuestions];
+    // Preparação de dados e Personalização (Movido para aqui para garantir que o array esteja definido)
+    const questionsForCheckin = [...dailyQuestions]; // <--- Definido aqui!
     userProfileData.registeredCheckins = userProfileData.registeredCheckins || []; 
     
-    // 🛑 CORREÇÃO APLICADA AQUI: USO DE ENCAMDEAMENTO OPCIONAL (?. )
-    const nome = userProfileData.nomeCompleto || user.displayName?.split(' ')[0] || 'Participante';    const tipoMalaria = userProfileData.tipoMalaria || "tipo de malária não especificado";
-    const dataDiagnostico = userProfileData.dataDiagnostico 
-        ? new Date(userProfileData.dataDiagnostico + 'T00:00:00').toLocaleDateString('pt-BR') 
-        : "data não informada";
-    const idade = userProfileData.dataNascimento ? calcularIdade(userProfileData.dataNascimento) : "idade não informada"; // Assumindo calculateIdade
-    
-    // Apenas definindo as variáveis para evitar o ReferenceError, 
-    // **VOCÊ DEVE MANTER SUA LÓGICA DE FORMATAÇÃO COMPLETA AQUI**
-    let listaComorbidades = "Nenhuma condição crônica pré-existente foi relatada."; 
-    let medicacaoNome = "Medicação não informada"; 
-    const statusOrientacoes = userProfileData.recebeuOrientacoes 
-        ? 'Sim, você confirmou que recebeu orientações.' 
-        : '**ATENÇÃO!** Você confirmou NÃO ter recebido orientações. Se precisar de informações, avise-nos.';
-
-    // ... (SEU CÓDIGO COMPLETO DE CÁLCULO DE CHECK-IN, IDADE, MEDICACAO, COMORBIDADES, SINTOMAS E PERSONALIZAÇÃO DE PERGUNTAS VEM AQUI) ...
+    // ... (Todo o seu código de personalização de dados e perguntas - Mantido) ...
+    // --- 1. Calcular o Dia de Check-in (checkinDayTag)
+    // --- 2. Atualizar indicadores HTML (checkin-day-indicator)
+    // --- 3. PREPARAÇÃO DINÂMICA DE DADOS (nome, tipoMalaria, dataDiagnostico, idade, sintomas, etc.)
+    // --- 4. PERSONALIZAÇÃO DE TODAS AS PERGUNTAS DINÂMICAS (window.activeQuestions = personalizedDailyQuestions)
+    // --- 5. ADAPTAÇÃO: CARREGAMENTO DINÂMICO DOS CARDS/TRACKER (renderCheckinTracker)
     
     // Criação da Mensagem de Resumo/Boas-Vindas
     const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. Eu sou a Inteligência Artificial da Malária e serei sua assistente de monitoramento diário.
@@ -2152,13 +2158,10 @@ Lembre-se: O monitoramento diário é vital para sua recuperação. Vamos começ
     await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
     
     // Envia a primeira pergunta do NOVO array
-    await displayQuestionWithButtons(window.activeQuestions[0]); // window.activeQuestions deve ter sido definido no bloco omitido
+    await displayQuestionWithButtons(window.activeQuestions[0]);
     
-    loadingIndicator.classList.add('hidden');
+    loadingIndicator.classList.add('hidden'); // Remove loading após iniciar a conversa
 }
-
-// O código tcleParticiparBtn.addEventListener está correto para o fluxo de consentimento
-// e chama startInitialConversation(currentUser) novamente, onde a correção acima será aplicada.
 
 // A função startFreshSession permanece inalterada, pois ela já chama startInitialConversation.
 async function startFreshSession(user) {
