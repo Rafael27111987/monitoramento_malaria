@@ -1841,23 +1841,36 @@ const analysisPrompt = `
 }
 
 async function saveDailyCheckin(user, summary, responses, rating) {
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkins_diarios`, today);
+    // --- ALTERAÇÃO AQUI: Garante que a data seja baseada no fuso horário LOCAL ---
+    const now = new Date();
+    
+    // Extrai o ano, mês e dia no fuso horário local e formata como 'YYYY-MM-DD'
+    const year = now.getFullYear();
+    // getMonth() retorna 0-11, então adicionamos 1. padStart(2, '0') garante dois dígitos.
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    
+    const todayKey = `${year}-${month}-${day}`; // Ex: "2025-11-14" (em Porto Velho)
+    // -----------------------------------------------------------------------------
+    
+    const checkinRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/checkins_diarios`, todayKey);
 
     // Salva o check-in do dia.
     await setDoc(checkinRef, {
         summary: summary,
         responses: responses,
         rating: rating,
+        // O timestamp ainda usa serverTimestamp() para auditoria (em UTC)
         timestamp: serverTimestamp(),
-        checkinDate: today,
+        // Usamos todayKey (data local) para o campo de data e para a chave
+        checkinDate: todayKey,
         checkinComplete: true // Sinaliza que o processo foi concluído
     });
     
     // Opcional: Atualiza o último check-in no documento principal (para rastreamento rápido)
     const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
     await updateDoc(userProfileRef, { 
-        lastCheckinDate: today,
+        lastCheckinDate: todayKey, // Usa a chave de data local
         lastCheckinSummary: summary,
         updatedAt: serverTimestamp() 
     });
