@@ -2090,8 +2090,8 @@ async function startInitialConversation(user) {
         const checkinTimeFormatted = checkinTime.toLocaleTimeString('pt-BR', localTimeOptions);
         
         // **DECLARAÇÃO MÍNIMA PARA A MENSAGEM DE BLOQUEIO**
-        // Acessa o nome de forma segura para a mensagem de bloqueio
-        const nomeParticipante = userProfileData.nomeCompleto || 'participante'; 
+        // Correção para usar a forma mais segura do nome
+        const nomeParticipante = userProfileData.nomeCompleto || user.displayName?.split(' ')[0] || 'participante'; 
         
         const blockMessage = `Olá, ${nomeParticipante}! Seu *check-in* diário para **hoje (${todayKey})** já foi concluído e registrado às **${checkinTimeFormatted}** (horário de Porto Velho).
 
@@ -2120,13 +2120,8 @@ Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, cliqu
     const questionsForCheckin = [...dailyQuestions];
     userProfileData.registeredCheckins = userProfileData.registeredCheckins || []; 
     
-    // 🛑 SOLUÇÃO DO ReferenceError: INSERIR AS DECLARAÇÕES DE VARIÁVEIS AQUI
-    // ESTE É O BLOCO QUE DEVE SUBSTITUIR O SEU '// ... (Todo o seu código de personalização...) ...'
-    // Eu estou definindo valores padrão para simular a declaração, 
-    // mas você deve manter seu código completo de cálculo/formatação aqui.
-    
-    const nome = userProfileData.nomeCompleto || user.displayName.split(' ')[0]; // <--- CORREÇÃO
-    const tipoMalaria = userProfileData.tipoMalaria || "tipo de malária não especificado";
+    // 🛑 CORREÇÃO APLICADA AQUI: USO DE ENCAMDEAMENTO OPCIONAL (?. )
+    const nome = userProfileData.nomeCompleto || user.displayName?.split(' ')[0] || 'Participante';    const tipoMalaria = userProfileData.tipoMalaria || "tipo de malária não especificado";
     const dataDiagnostico = userProfileData.dataDiagnostico 
         ? new Date(userProfileData.dataDiagnostico + 'T00:00:00').toLocaleDateString('pt-BR') 
         : "data não informada";
@@ -2142,10 +2137,6 @@ Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, cliqu
 
     // ... (SEU CÓDIGO COMPLETO DE CÁLCULO DE CHECK-IN, IDADE, MEDICACAO, COMORBIDADES, SINTOMAS E PERSONALIZAÇÃO DE PERGUNTAS VEM AQUI) ...
     
-    // ATENÇÃO: Se as variáveis 'nome', 'tipoMalaria', etc., no seu código original 
-    // estavam definidas com 'let' ou 'const' DENTRO do bloco que foi omitido, 
-    // elas agora estarão disponíveis para a 'welcomeMessage'.
-
     // Criação da Mensagem de Resumo/Boas-Vindas
     const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. Eu sou a Inteligência Artificial da Malária e serei sua assistente de monitoramento diário.
 
@@ -2165,6 +2156,9 @@ Lembre-se: O monitoramento diário é vital para sua recuperação. Vamos começ
     
     loadingIndicator.classList.add('hidden');
 }
+
+// O código tcleParticiparBtn.addEventListener está correto para o fluxo de consentimento
+// e chama startInitialConversation(currentUser) novamente, onde a correção acima será aplicada.
 
 // A função startFreshSession permanece inalterada, pois ela já chama startInitialConversation.
 async function startFreshSession(user) {
