@@ -760,9 +760,6 @@ const dailyQuestions = [
             "Muito Pior (Piora acentuada)"
         ]
     },
-    // ----------------------------------------------------------------------------------
-    // 🚨 NOVA PERGUNTA 2: SINTOMAS COMUNS (O antigo grupo 1)
-    // ----------------------------------------------------------------------------------
     {
         text: "2. Nas últimas 24h, você apresentou algum dos seguintes **sintomas comuns** da Malária ou efeitos colaterais leves?",
         type: "multi-select",
@@ -780,9 +777,6 @@ const dailyQuestions = [
             "Sonolência Excessiva",
         ]
     },
-    // ----------------------------------------------------------------------------------
-    // 🚨 NOVA PERGUNTA 3: SINAIS DE ALARME (O antigo grupo 2, agora destacado)
-    // ----------------------------------------------------------------------------------
     {
         text: "3. Você apresentou algum **SINAL DE ALARME** que indica urgência médica? (Selecione todos que se aplicam)",
         type: "multi-select",
@@ -797,54 +791,50 @@ const dailyQuestions = [
             "Diminuição da Urina (ou não urinar)",
         ]
     },
-    // ----------------------------------------------------------------------------------
-    // 🚨 ANTIGA PERGUNTA 3 (COMORBIDADE), AGORA PERGUNTA 4
-    // ----------------------------------------------------------------------------------
     {
         text: "4. Em relação à(s) sua(s) condição(ões) crônica(s) ([COMORBIDADE_PRINCIPAL]), **você percebeu alguma descompensação ou sintoma novo relacionado a ela(s) hoje?**",
         type: "select", 
-        options: [
-            "Sim", 
-            "Não",
-        ]
+        options: ["Sim", "Não",]
     },
-    // ----------------------------------------------------------------------------------
-    // AS DEMAIS PERGUNTAS SÃO RENUMERADAS (Q5, Q6, Q7, Q8, Q9)
-    // ----------------------------------------------------------------------------------
     {
         text: "5. Você tomou sua medicação ([MEDICACAO_NOME]) rigorosamente nos horários indicados pelo Médico(a)?",
         type: "select",
-        options: [
-            "Sim", 
-            "Não",
-        ],
+        options: ["Sim", "Não",],
     },
+    // ----------------------------------------------------------------------------------
+    // 🛑 NOVA PERGUNTA 6 (SEPARADA DA ANTIGA Q6)
+    // ----------------------------------------------------------------------------------
     {
-        text: "6. Desde a última dose do medicamento para Malária, você apresentou alguma reação adversa nova ou percebeu piora acentuada dos sintomas da Malária?",
+        text: "6. Desde a última dose do medicamento para Malária, você percebeu o surgimento de alguma **reação adversa nova ou inesperada** (ex: dor abdominal, coceira, dor de cabeça forte, zumbido) que você associa ao medicamento?",
         type: "select", 
+        options: ["Sim", "Não",],
+    },
+    // ----------------------------------------------------------------------------------
+    // 🛑 NOVA PERGUNTA 7 (SEPARADA DA ANTIGA Q6)
+    // ----------------------------------------------------------------------------------
+    {
+        text: "7. Você percebeu uma **piora acentuada dos sintomas da Malária** nas últimas 24h (diferente da melhora esperada)?",
+        type: "select", 
+        options: ["Sim", "Não",],
+    },
+    // ----------------------------------------------------------------------------------
+    // AS DEMAIS PERGUNTAS SÃO RENUMERADAS
+    // ----------------------------------------------------------------------------------
+    {
+        text: "8. Você procurou ou recebeu atendimento em alguma Unidade de Saúde (UBS, UPA, Hospital) nas últimas 24h?",
+        type: "select",
         options: [
-            "Sim", 
+            "Sim",
             "Não",
         ],
     },
     {
-        text: "7. Você procurou ou recebeu atendimento em alguma Unidade de Saúde (UBS, UPA, Hospital) nas últimas 24h?",
+        text: "9. Você usou algum outro medicamento (analgésico, antibiótico, fitoterápico, etc.) que NÃO faz parte do seu tratamento contra Malária?",
         type: "select",
-        options: [
-            "Sim", // Indica que procurou ajuda externa/profissional
-            "Não", // Indica que não houve busca por atendimento externo
-        ],
+        options: ["Sim", "Não",],
     },
     {
-        text: "8. Você usou algum outro medicamento (analgésico, antibiótico, fitoterápico, etc.) que NÃO faz parte do seu tratamento contra Malária?",
-        type: "select",
-        options: [
-            "Sim", 
-            "Não",
-        ],
-    },
-    {
-        text: "9. Você pretende comparecer ao exame de Gota Espessa de controle na data recomendada ([DATA_CONTROLE]) ou em outra data próxima?",
+        text: "10. Você pretende comparecer ao exame de Gota Espessa de controle na data recomendada ([DATA_CONTROLE]) ou em outra data próxima?",
         type: "select",
         options: [
             "Sim",
@@ -854,15 +844,13 @@ const dailyQuestions = [
 ];
 
 // ----------------------------------------------------------------------------------
-// 🚨 Q_ALTERNATIVA_SEM_COMORBIDADE TAMBÉM PRECISA SER RENUMERADA (AGORA É Q4 ALTERNATIVA)
+// 🚨 Q_ALTERNATIVA_SEM_COMORBIDADE AGORA É Q4 ALTERNATIVA
 // ----------------------------------------------------------------------------------
 const Q_ALTERNATIVA_SEM_COMORBIDADE = {
+    // Manteremos a numeração na lógica de personalização, mas o texto é o que importa:
     text: "Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas perguntas anteriores?",
     type: "select", 
-    options: [
-        "Sim", 
-        "Não",
-    ],
+    options: ["Sim", "Não",],
 };
 
 const RATING_QUESTION = {
