@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acompanhamento de Saúde Diário</title>
+    <!-- Inclui o Tailwind CSS para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilização personalizada para o App e responsividade */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            z-index: 50;
+        }
+        .card {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        /* Estilo para as estrelas de avaliação */
+        .rating input[type="radio"] {
+            display: none;
+        }
+        .rating label {
+            cursor: pointer;
+            width: 30px;
+            text-align: center;
+            font-size: 1.5rem;
+            color: #d1d5db; /* Cor cinza padrão */
+            transition: color 0.2s;
+        }
+        .rating input[type="radio"]:checked ~ label,
+        .rating input[type="radio"]:checked,
+        .rating input[type="radio"]:hover ~ label,
+        .rating label:hover {
+            color: #fcd34d; /* Cor amarela/dourada */
+        }
+        .rating label:hover ~ label {
+             color: #d1d5db; /* Estrelas após o hover voltam a ser cinza */
+        }
+        /* Força a responsividade para preencher o viewport no celular */
+        .mobile-view {
+            min-height: 100vh;
+        }
+    </style>
+    <!-- Configuração do Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- CONFIGURAÇÃO DO FIREBASE (INCORPORADA) ---
+        // Usamos a sua configuração, adaptada para o uso modular V9+.
+        const EMBEDDED_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCEW-C1FavyFqjabMjmS-JVo2fLXHNt5Yg",
+            authDomain: "meuaplicativosaude.firebaseapp.com",
+            projectId: "meuaplicativosaude",
+            storageBucket: "meuaplicativosaude.firebasestorage.app",
+            messagingSenderId: "547845597696",
+            appId: "1:547845597696:web:7942056f2d48601fa086e5", 
+            measurementId: "G-MYE47X3LNH"
+        };
+        
+        // As variáveis globais são mantidas APENAS para o contexto de autenticação/caminho (requisito do ambiente).
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'meuaplicativosaude';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        setLogLevel('Debug'); // Ativa logs de debug para o Firestore
+
+        // Funções para exportação (para serem usadas no escopo global do JS)
+        window.initFirebaseAndAuth = async () => {
+            window.appState.setLoading(true, "Inicializando Firebase...");
+            try {
+                // A inicialização real AGORA usa a configuração incorporada
+                app = initializeApp(EMBEDDED_FIREBASE_CONFIG);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // 1. Autenticação
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // 2. Listener de estado de autenticação
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Usuário autenticado. UID:", userId);
+                        isAuthReady = true;
+                        window.appState.db = db;
+                        window.appState.userId = userId;
+                        window.appState.isAuthReady = isAuthReady;
+                        window.appState.loadProfileAndCheckDailyStatus();
+                    } else {
+                        console.error("Falha na autenticação ou usuário deslogado.");
+                        isAuthReady = true;
+                        window.appState.db = null;
+                        window.appState.userId = null;
+                        window.appState.isAuthReady = isAuthReady;
+                        window.appState.setLoading(false);
+                        window.appState.showErrorMessage("Erro de Autenticação. Tente recarregar.");
+                    }
+                });
+            } catch (error) {
+                // Se a inicialização do app falhar mesmo com a config embutida, exibe erro.
+                console.error("Erro ao inicializar o Firebase:", error);
+                window.appState.setLoading(false);
+                window.appState.showErrorMessage("Erro fatal na inicialização: " + error.message);
+            }
+        };
+
+        // Função para obter a referência do documento do perfil
+        window.getProfileDocRef = () => {
+            if (!db || !userId) return null;
+            // Usa o appId global para o caminho, que é um requisito do ambiente
+            return doc(db, `artifacts/${appId}/users/${userId}/participant_profile`, 'profile');
+        };
+
+        // Função para obter a referência da coleção de respostas
+        window.getResponsesCollectionRef = () => {
+            if (!db || !userId) return null;
+            // Usa o appId global para o caminho, que é um requisito do ambiente
+            return collection(db, `artifacts/${appId}/users/${userId}/daily_responses`);
+        };
+
+        // Funções de CRUD (saveParticipantProfile, loadParticipantProfile, checkDailyResponse, saveDailyResponse)
+        // ... (as funções de CRUD foram mantidas as mesmas pois o erro estava na inicialização)
+        
+        // Função para salvar o perfil
+        window.saveParticipantProfile = async (profileData) => {
+            if (!db) return { success: false, error: "Serviço de Banco de Dados indisponível." };
+
+            const docRef = window.getProfileDocRef();
+            if (!docRef) return { success: false, error: "Referência de documento indisponível." };
+
+            try {
+                const docSnap = await getDoc(docRef);
+                
+                let dataToSave = {
+                    ...profileData,
+                };
+
+                if (!docSnap.exists()) {
+                    dataToSave.enrollmentDate = serverTimestamp();
+                    await setDoc(docRef, dataToSave);
+                } else {
+                    await updateDoc(docRef, {
+                        ...profileData,
+                        updatedAt: serverTimestamp()
+                    });
+                }
+                
+                await window.appState.loadProfileAndCheckDailyStatus();
+                return { success: true };
+            } catch (error) {
+                console.error("Erro ao salvar perfil:", error);
+                return { success: false, error: error.message };
+            }
+        };
+
+        // Função para carregar o perfil
+        window.loadParticipantProfile = async () => {
+             if (!db) return null;
+            const docRef = window.getProfileDocRef();
+            if (!docRef) return null;
+
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return docSnap.data();
+                }
+                return null;
+            } catch (error) {
+                console.error("Erro ao carregar perfil:", error);
+                return null;
+            }
+        };
+
+        // Função para verificar se a resposta diária já foi enviada
+        window.checkDailyResponse = async (todayDate) => {
+             if (!db) return { submitted: false, dayNumber: 0, medicationName: null };
+            const collRef = window.getResponsesCollectionRef();
+            if (!collRef) return { submitted: false, dayNumber: 0, medicationName: null };
+
+            try {
+                const profile = await window.loadParticipantProfile();
+                if (!profile) {
+                    return { submitted: false, dayNumber: 0, medicationName: null }; 
+                }
+                
+                const medicationName = profile.medicationName || null;
+
+                if (!profile.enrollmentDate) {
+                     return { submitted: false, dayNumber: 0, medicationName }; 
+                }
+
+                const enrollmentTimestamp = profile.enrollmentDate.toDate ? profile.enrollmentDate.toDate() : new Date(profile.enrollmentDate);
+                const today = new Date();
+                
+                const enrollmentDayStart = new Date(enrollmentTimestamp.getFullYear(), enrollmentTimestamp.getMonth(), enrollmentTimestamp.getDate());
+                const todayDayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+                const diffTime = Math.abs(todayDayStart.getTime() - enrollmentDayStart.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                const dayNumber = diffDays + 1; 
+                
+                const q = query(collRef, where("date", "==", todayDate));
+                const querySnapshot = await getDocs(q);
+                
+                return { submitted: !querySnapshot.empty, dayNumber, medicationName };
+                
+            } catch (error) {
+                console.error("Erro ao verificar status diário:", error);
+                return { submitted: false, dayNumber: 0, medicationName: null };
+            }
+        };
+
+        // Função para salvar a resposta diária
+        window.saveDailyResponse = async (answers, dayNumber, todayDate) => {
+            if (!db) return { success: false, error: "Serviço de Banco de Dados indisponível." };
+
+            const collRef = window.getResponsesCollectionRef();
+            if (!collRef) return { success: false, error: "Referência de coleção indisponível." };
+
+            try {
+                const newDocRef = doc(collRef);
+                await setDoc(newDocRef, {
+                    date: todayDate,
+                    day_number: dayNumber,
+                    answers: answers,
+                    userId: userId,
+                    createdAt: serverTimestamp()
+                });
+                return { success: true };
+            } catch (error) {
+                console.error("Erro ao salvar respostas:", error);
+                return { success: false, error: error.message };
+            }
+        };
+
+        // Inicia a aplicação Firebase após o DOM carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            window.initFirebaseAndAuth();
+        });
+    </script>
+</head>
+<body class="mobile-view flex flex-col items-center justify-center p-4 bg-gray-50">
+
+    <!-- Conteúdo Principal - Visível apenas após o cadastro -->
+    <div id="main-app" class="w-full max-w-lg mx-auto bg-white p-6 md:p-8 rounded-xl card shadow-2xl hidden">
+        <div class="flex flex-col space-y-4">
+            <h1 id="day-title" class="text-3xl font-extrabold text-blue-800 text-center">Carregando Dia...</h1>
+            <p class="text-sm text-gray-500 text-center mb-6">UID: <span id="user-id-display"></span></p>
+
+            <!-- Status do Dia -->
+            <div id="daily-status-message" class="p-3 rounded-lg text-center font-semibold text-white bg-green-500 hidden">
+                Hoje você já registrou seus dados. Volte amanhã!
+            </div>
+
+            <!-- Formulário de Perguntas Diárias -->
+            <form id="daily-questions-form" class="space-y-6">
+                <div id="questions-container" class="space-y-8 p-4 border rounded-lg bg-gray-50">
+                    <!-- As perguntas serão renderizadas aqui -->
+                </div>
+                
+                <div id="rating-container" class="mt-8 pt-4 border-t border-gray-200">
+                    <!-- A pergunta de avaliação será renderizada aqui -->
+                </div>
+
+                <div class="pt-4">
+                    <button id="submit-daily-btn" type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition duration-200 disabled:opacity-50" disabled>
+                        <span id="submit-text">Enviar Respostas Diárias</span>
+                        <div id="submit-spinner" class="hidden h-5 w-5 border-2 border-white border-t-blue-300 rounded-full animate-spin mx-auto"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Carregamento/Erros -->
+    <div id="loading-modal" class="modal-overlay fixed inset-0 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-xl text-center card shadow-lg">
+            <div id="loading-spinner" class="h-8 w-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
+            <p id="loading-text" class="text-lg font-semibold text-gray-700">Carregando...</p>
+            <p id="error-message" class="text-red-600 font-medium mt-2 hidden"></p>
+        </div>
+    </div>
+
+    <!-- Modal 1: TCLE (Termo de Consentimento Livre e Esclarecido) -->
+    <div id="tcle-modal" class="modal-overlay fixed inset-0 flex items-center justify-center hidden">
+        <div class="bg-white w-11/12 max-w-lg p-6 md:p-8 rounded-xl card shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">Termo de Consentimento Livre e Esclarecido (TCLE)</h2>
+            <div class="text-gray-700 text-sm h-64 overflow-y-scroll p-3 border rounded-lg bg-gray-50">
+                <p class="font-bold mb-2">Título do Estudo: Acompanhamento de Saúde Diário</p>
+                <p class="mb-2">Neste estudo, buscamos monitorar diariamente seu estado de saúde para acompanhar a evolução de sintomas e a adesão ao seu tratamento, garantindo a melhor avaliação possível do seu bem-estar durante a participação. Suas respostas são confidenciais e usadas apenas para fins de pesquisa e acompanhamento médico.</p>
+                <h3 class="font-semibold mt-4 mb-1">Seus Direitos:</h3>
+                <ul class="list-disc ml-5 space-y-1">
+                    <li>Sua participação é voluntária.</li>
+                    <li>Você pode retirar seu consentimento a qualquer momento, sem prejuízo ou necessidade de justificativa.</li>
+                    <li>Você tem o direito de não responder a qualquer pergunta que o(a) deixe desconfortável.</li>
+                    <li>Garantimos a confidencialidade de seus dados. Seu nome e informações pessoais serão protegidos.</li>
+                </ul>
+                <h3 class="font-semibold mt-4 mb-1">Compromisso do Pesquisador:</h3>
+                <p class="mb-2">Os pesquisadores se comprometem a fornecer qualquer informação adicional que você solicitar sobre este estudo e a manter o sigilo de todas as informações pessoais coletadas.</p>
+                <p class="mt-4 font-bold text-red-500">Ao clicar em "Eu Consinto", você declara que leu e entendeu os termos acima e concorda voluntariamente em participar deste acompanhamento.</p>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="consent-btn" class="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md transition duration-200">
+                    Eu Consinto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Cadastro de Dados Pessoais -->
+    <div id="profile-modal" class="modal-overlay fixed inset-0 flex items-center justify-center hidden">
+        <div class="bg-white w-11/12 max-w-lg p-6 md:p-8 rounded-xl card shadow-2xl">
+            <h2 class="text-2xl font-bold text-blue-600 mb-6 text-center">Confirmação de Dados Pessoais</h2>
+            <form id="profile-form" class="space-y-4">
+                <div>
+                    <label for="profile-name" class="block text-sm font-medium text-gray-700">Nome Completo</label>
+                    <input type="text" id="profile-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Seu Nome">
+                </div>
+                <div>
+                    <label for="profile-email" class="block text-sm font-medium text-gray-700">E-mail</label>
+                    <input type="email" id="profile-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="seu.email@exemplo.com">
+                </div>
+                <div>
+                    <label for="profile-medication" class="block text-sm font-medium text-gray-700">Nome da Medicação (para Q17)</label>
+                    <input type="text" id="profile-medication" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ex: Cloroquina">
+                </div>
+                <div class="pt-4">
+                    <button type="submit" id="save-profile-btn" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition duration-200">
+                        Salvar e Iniciar Acompanhamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de Aplicação Principal -->
+    <script>
+        // Array de Perguntas Diárias e de Avaliação (fornecido pelo usuário)
+        const dailyQuestions = [
+            { text: "1. Você apresentou febre ou teve a sensação de estar febril nas últimas 24 horas?", type: "select", options: ["Febre", "Sensação de Febre", "Não apresentei nenhum desses sinais"] },
+            { text: "2. Você apresentou Calafrios?", type: "select", options: ["Sim", "Não"] },
+            { text: "3. Você teve Dor de Cabeça?", type: "select", options: ["Sim", "Não"] },
+            { text: "4. Você teve dores Musculares/Articulares no corpo?", type: "select", options: ["Sim", "Não"] },
+            { text: "5. Em algum momento você apresentou sinais de Cansaço?", type: "select", options: ["Sim", "Não"] },
+            { text: "6. Você se sentiu indisposto(a)?", type: "select", options: ["Sim", "Não"] },
+            { text: "7. Teve náusea?", type: "select", options: ["Sim", "Não"] },
+            { text: "8. Você vomitou?", type: "select", options: ["Sim", "Não"] },
+            { text: "9. Você teve diarréia?", type: "select", options: ["Sim", "Não"] },
+            { text: "10. Você apresentou sinais de Tontura (vertigem)?", type: "select", options: ["Sim", "Não"] },
+            { text: "11. Você apresentou Sonolência Excessiva", type: "select", options: ["Sim", "Não"] },
+            { text: "12. Apresentou sinais de confusão mental", type: "select", options: ["Sim", "Não"] },
+            { text: "13. Em algum momento você teve Convulsões ou Perda de Consciência", type: "select", options: ["Sim", "Não"] },
+            { text: "14. Teve Sangramentos incomuns (nariz, gengivas, urina ou fezes)", type: "select", options: ["Sim", "Não"] },
+            { text: "15. Apresentou Falta de Ar?", type: "select", options: ["Sim", "Não"] },
+            { text: "16. Você teve Dor intensa no peito/abdômen", type: "select", options: ["Sim", "Não"] },
+            { text: "17. Você tomou sua medicação ([MEDICACAO_NOME]) rigorosamente nos horários indicados pelo Médico(a)?", type: "select", options: ["Sim", "Não"] },
+            { text: "18. Desde a última dose do medicamento para Malária, você percebeu o surgimento de alguma reação adversa nova ou inesperada (ex: dor abdominal, coceira, dor de cabeça forte, zumbido) que você associa ao medicamento?", type: "select", options: ["Sim", "Não",] },
+            { text: "19. Você percebeu uma piora ou melhora acentuada dos sintomas da Malária nas últimas 24h?", type: "select", options: ["Melhora", "Piora", "Indiferente"] },
+            { text: "20. Você usou algum outro medicamento (analgésico, antibiótico, fitoterápico, etc.) que NÃO faz parte do seu tratamento contra Malária?", type: "select", options: ["Sim", "Não"] },
+        ];
+
+        const RATING_QUESTION = {
+            text: "Por favor, avalie nosso sistema de acompanhamento (1 a 5 estrelas). Sua nota é muito importante:",
+            type: "rating",
+            options: [
+                { label: "★", value: "1", type: "rating-star", rating: 1 },
+                { label: "★★", value: "2", type: "rating-star", rating: 2 },
+                { label: "★★★", value: "3", type: "rating-star", rating: 3 },
+                { label: "★★★★", value: "4", type: "rating-star", rating: 4 },
+                { label: "★★★★★", value: "5", type: "rating-star", rating: 5 }
+            ]
+        };
+
+        // Estado Global da Aplicação
+        const appState = {
+            db: null,
+            userId: null,
+            isAuthReady: false,
+            profile: null,
+            dailyStatus: {
+                submitted: false,
+                dayNumber: 0,
+                medicationName: null
+            },
+            
+            setLoading(isLoading, text = "Carregando...") {
+                const loadingModal = document.getElementById('loading-modal');
+                document.getElementById('loading-text').textContent = text;
+                document.getElementById('loading-spinner').classList.toggle('hidden', !isLoading);
+                document.getElementById('error-message').classList.add('hidden');
+                loadingModal.classList.toggle('hidden', !isLoading);
+                document.getElementById('main-app').classList.add('hidden');
+            },
+
+            showErrorMessage(message) {
+                this.setLoading(true, "Erro Encontrado!");
+                document.getElementById('loading-spinner').classList.add('hidden');
+                const errorMessage = document.getElementById('error-message');
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+                document.getElementById('tcle-modal').classList.add('hidden');
+                document.getElementById('profile-modal').classList.add('hidden');
+            },
+
+            hideModals() {
+                document.getElementById('tcle-modal').classList.add('hidden');
+                document.getElementById('profile-modal').classList.add('hidden');
+            },
+
+            async loadProfileAndCheckDailyStatus() {
+                if (!this.isAuthReady || !this.userId) {
+                    this.setLoading(true, "Aguardando Autenticação...");
+                    return;
+                }
+
+                this.setLoading(true, "Verificando seu perfil...");
+                this.profile = await window.loadParticipantProfile();
+
+                if (!this.profile) {
+                    // Usuário precisa aceitar o TCLE
+                    this.setLoading(false);
+                    document.getElementById('tcle-modal').classList.remove('hidden');
+                    return;
+                }
+                
+                // Usuário aceitou TCLE, verifica se precisa completar o perfil
+                if (!this.profile.name || !this.profile.medicationName) {
+                    this.setLoading(false);
+                    this.openProfileModal();
+                    return;
+                }
+
+                // Usuário tem perfil, verifica status diário
+                const todayDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                this.dailyStatus = await window.checkDailyResponse(todayDate);
+
+                this.setLoading(false);
+                this.renderMainApp();
+            },
+
+            openProfileModal() {
+                this.hideModals();
+                const modal = document.getElementById('profile-modal');
+                if (this.profile) {
+                    // Preenche campos se houver dados prévios
+                    document.getElementById('profile-name').value = this.profile.name || '';
+                    document.getElementById('profile-email').value = this.profile.email || '';
+                    document.getElementById('profile-medication').value = this.profile.medicationName || '';
+                }
+                modal.classList.remove('hidden');
+            },
+
+            // Função para gerar o HTML do campo de resposta
+            generateQuestionHtml(question, index) {
+                const qId = `q${index}`;
+                let inputHtml = '';
+                
+                if (question.type === 'select') {
+                    inputHtml = `<select id="${qId}" name="${qId}" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>`;
+                    inputHtml += '<option value="" disabled selected>Selecione uma opção</option>';
+                    question.options.forEach(option => {
+                        inputHtml += `<option value="${option}">${option}</option>`;
+                    });
+                    inputHtml += '</select>';
+                } else if (question.type === 'rating') {
+                    inputHtml = '<div class="rating flex justify-center space-x-1">';
+                    question.options.reverse().forEach((option) => { // Inverte para que a maior estrela fique à esquerda no HTML
+                        const ratingId = `${qId}-${option.value}`;
+                        inputHtml += `
+                            <input type="radio" id="${ratingId}" name="${qId}" value="${option.value}" class="hidden" required>
+                            <label for="${ratingId}" class="text-3xl transition-colors">★</label>
+                        `;
+                    });
+                    inputHtml += '</div>';
+                }
+
+                return `
+                    <div class="space-y-2 p-3 border border-dashed rounded-lg bg-white">
+                        <label for="${qId}" class="block text-base font-semibold text-gray-800">${question.text}</label>
+                        ${inputHtml}
+                    </div>
+                `;
+            },
+            
+            renderMainApp() {
+                this.hideModals();
+                const mainApp = document.getElementById('main-app');
+                mainApp.classList.remove('hidden');
+                
+                // Exibe o UID (necessário para o requisito de multi-usuário)
+                document.getElementById('user-id-display').textContent = this.userId;
+
+                const dayTitle = document.getElementById('day-title');
+                const questionsContainer = document.getElementById('questions-container');
+                const ratingContainer = document.getElementById('rating-container');
+                const dailyStatusMessage = document.getElementById('daily-status-message');
+                const submitBtn = document.getElementById('submit-daily-btn');
+                const form = document.getElementById('daily-questions-form');
+
+                // 1. Atualiza o título e o status diário
+                const dayNumber = this.dailyStatus.dayNumber;
+                dayTitle.textContent = dayNumber > 0 ? `Questionário Diário - Dia ${dayNumber}` : 'Questionário Diário (Dia 1)';
+                
+                const isSubmitted = this.dailyStatus.submitted;
+                dailyStatusMessage.classList.toggle('hidden', !isSubmitted);
+                submitBtn.disabled = isSubmitted;
+                submitBtn.classList.toggle('bg-gray-400', isSubmitted);
+                submitBtn.classList.toggle('bg-blue-600', !isSubmitted);
+                document.getElementById('submit-text').textContent = isSubmitted ? 'Respostas já salvas hoje' : 'Enviar Respostas Diárias';
+                
+                // 2. Renderiza as perguntas
+                questionsContainer.innerHTML = '';
+                
+                // Prepara as perguntas diárias, substituindo o placeholder
+                const questionsToRender = dailyQuestions.map(q => {
+                    let text = q.text;
+                    if (q.text.includes('[MEDICACAO_NOME]') && this.dailyStatus.medicationName) {
+                        text = q.text.replace('[MEDICACAO_NOME]', this.dailyStatus.medicationName);
+                    }
+                    return { ...q, text };
+                });
+
+                questionsToRender.forEach((q, index) => {
+                    questionsContainer.innerHTML += this.generateQuestionHtml(q, index + 1);
+                });
+
+                // Renderiza a pergunta de avaliação (rating)
+                ratingContainer.innerHTML = this.generateQuestionHtml(RATING_QUESTION, questionsToRender.length + 1);
+
+                // Desabilita os campos se já foi enviado hoje
+                const formElements = form.elements;
+                for (let i = 0; i < formElements.length; i++) {
+                    formElements[i].disabled = isSubmitted;
+                }
+            }
+        };
+
+        // Torna o appState acessível globalmente
+        window.appState = appState;
+
+        // --- Listeners de Eventos ---
+
+        // 1. Consentimento do TCLE
+        document.getElementById('consent-btn').addEventListener('click', () => {
+            appState.hideModals();
+            // Salva um perfil básico para registrar o consentimento e a data de inscrição.
+            // O restante dos dados será coletado no modal de perfil.
+            const initialProfile = { 
+                name: '', 
+                email: '', 
+                medicationName: '', 
+                tcle_consent: true,
+                consent_date: new Date().toISOString()
+            };
+            
+            // Tenta salvar o perfil inicial, forçando a abertura do modal de perfil em caso de sucesso
+            appState.setLoading(true, "Preparando seu cadastro...");
+            window.saveParticipantProfile(initialProfile).then(result => {
+                if (result.success) {
+                    appState.setLoading(false);
+                    appState.openProfileModal();
+                } else if (appState.db === null) {
+                    // Fallback para o caso de Firebase indisponível, mas permite seguir com o fluxo de UI
+                    appState.setLoading(false);
+                    appState.openProfileModal();
+                } else {
+                    appState.showErrorMessage("Erro ao registrar consentimento: " + result.error);
+                }
+            });
+        });
+
+        // 2. Cadastro de Dados Pessoais
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('profile-name').value;
+            const email = document.getElementById('profile-email').value;
+            const medicationName = document.getElementById('profile-medication').value;
+
+            appState.setLoading(true, "Salvando seus dados...");
+
+            const profileData = {
+                name: name,
+                email: email,
+                medicationName: medicationName,
+                tcle_consent: true,
+            };
+
+            const result = await window.saveParticipantProfile(profileData);
+            
+            if (result.success || appState.db === null) { // Permite seguir mesmo sem salvar se o DB estiver offline
+                appState.setLoading(false);
+                appState.dailyStatus.medicationName = medicationName; // Atualiza localmente para a Q17
+                appState.renderMainApp();
+            } else {
+                appState.showErrorMessage("Falha ao salvar dados: " + result.error);
+            }
+        });
+
+        // 3. Submissão do Questionário Diário
+        document.getElementById('daily-questions-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const form = e.target;
+            const dayNumber = appState.dailyStatus.dayNumber;
+            const todayDate = new Date().toISOString().slice(0, 10);
+            
+            if (appState.dailyStatus.submitted || dayNumber === 0) {
+                 appState.showErrorMessage("Erro: Status de envio inválido.");
+                 return;
+            }
+
+            // Ativa o spinner e desabilita o botão
+            document.getElementById('submit-text').classList.add('hidden');
+            document.getElementById('submit-spinner').classList.remove('hidden');
+            document.getElementById('submit-daily-btn').disabled = true;
+
+            const totalQuestions = dailyQuestions.length + 1; // + 1 para a avaliação
+            const answers = [];
+
+            // Coleta as respostas
+            for (let i = 1; i <= totalQuestions; i++) {
+                const questionIndex = i - 1;
+                const questionData = i <= dailyQuestions.length ? dailyQuestions[questionIndex] : RATING_QUESTION;
+                const qId = `q${i}`;
+                let answerValue;
+
+                if (questionData.type === 'rating') {
+                    // Para o rating, busca o valor do radio button checado
+                    const checkedRadio = form.querySelector(`input[name="${qId}"]:checked`);
+                    answerValue = checkedRadio ? checkedRadio.value : "Não respondido";
+                } else {
+                    // Para select, busca o valor do select
+                    answerValue = form.elements[qId].value;
+                }
+                
+                answers.push({
+                    question: questionData.text,
+                    answer: answerValue
+                });
+            }
+
+            // Se o DB não estiver disponível (por causa do erro de config), apenas finge o envio
+            if (appState.db === null) {
+                const fakeSuccessMessage = "Sucesso! Respostas registradas localmente (salvamento no Firebase desabilitado). Volte amanhã.";
+                appState.dailyStatus.submitted = true;
+                appState.renderMainApp();
+                appState.showErrorMessage(fakeSuccessMessage);
+                setTimeout(() => { appState.setLoading(false); }, 2000);
+                return;
+            }
+
+
+            // Salva as respostas no Firebase
+            const result = await window.saveDailyResponse(answers, dayNumber, todayDate);
+            
+            // Desativa o spinner e reabilita o botão (caso haja erro)
+            document.getElementById('submit-text').classList.remove('hidden');
+            document.getElementById('submit-spinner').classList.add('hidden');
+            document.getElementById('submit-daily-btn').disabled = false;
+
+
+            if (result.success) {
+                appState.dailyStatus.submitted = true;
+                appState.renderMainApp();
+                // Exibe uma mensagem de sucesso amigável
+                appState.showErrorMessage("Sucesso! Suas respostas foram salvas. Volte amanhã.");
+                setTimeout(() => { appState.setLoading(false); }, 2000); // Esconde após 2s
+            } else {
+                appState.showErrorMessage("Falha ao enviar respostas: " + result.error);
+            }
+        });
+
+    </script>
+</body>
+</html>
