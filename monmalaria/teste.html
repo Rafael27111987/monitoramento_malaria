@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acompanhamento de Saúde Diário</title>
+    <title>Acompanhamento de Saúde Diário - Google Login</title>
     <!-- Inclui o Tailwind CSS para estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -19,6 +19,20 @@
         }
         .card {
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        /* Estilo para o botão Google mais chamativo */
+        .google-btn {
+            background-color: #4285f4;
+            color: white;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .google-btn:hover {
+            background-color: #357ae8;
+            transform: translateY(-1px);
+        }
+        .google-btn:active {
+            background-color: #3367d6;
+            transform: translateY(0);
         }
         /* Estilo para as estrelas de avaliação */
         .rating input[type="radio"] {
@@ -49,96 +63,133 @@
     <!-- Configuração do Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- CONFIGURAÇÃO DO FIREBASE (INCORPORADA) ---
-        // Usamos a sua configuração, adaptada para o uso modular V9+.
-        const EMBEDDED_FIREBASE_CONFIG = {
+        // --- VARIÁVEIS DO AMBIENTE E FALLBACK DE CONFIGURAÇÃO (CORREÇÃO DO ERRO) ---
+        const DEFAULT_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCEW-C1FavyFqjabMjmS-JVo2fLXHNt5Yg",
             authDomain: "meuaplicativosaude.firebaseapp.com",
-            projectId: "meuaplicativosaude",
+            projectId: "meuaplicativosaude", // Corrigido o erro de projectId não fornecido
             storageBucket: "meuaplicativosaude.firebasestorage.app",
             messagingSenderId: "547845597696",
-            appId: "1:547845597696:web:7942056f2d48601fa086e5", 
+            appId: "1:547845597696:web:7942056f2d48601fa086e5",
             measurementId: "G-MYE47X3LNH"
         };
         
-        // As variáveis globais são mantidas APENAS para o contexto de autenticação/caminho (requisito do ambiente).
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'meuaplicativosaude';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // Usa a configuração do ambiente ou o FALLBACK
+        const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config && __firebase_config !== '{}') 
+            ? JSON.parse(__firebase_config) 
+            : DEFAULT_FIREBASE_CONFIG;
 
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
         let app, db, auth;
         let userId = null;
         let isAuthReady = false;
 
         setLogLevel('Debug'); // Ativa logs de debug para o Firestore
 
-        // Funções para exportação (para serem usadas no escopo global do JS)
-        window.initFirebaseAndAuth = async () => {
-            window.appState.setLoading(true, "Inicializando Firebase...");
+        // --- FUNÇÕES DE AUTENTICAÇÃO ---
+        
+        // Função para realizar o login inicial (Anônimo ou com Token)
+        async function initialSignIn() {
             try {
-                // A inicialização real AGORA usa a configuração incorporada
-                app = initializeApp(EMBEDDED_FIREBASE_CONFIG);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                // 1. Autenticação
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
                 }
+            } catch (error) {
+                console.error("Erro ao realizar o login inicial:", error);
+            }
+        }
 
-                // 2. Listener de estado de autenticação
+        // Função para iniciar o Login com Google
+        window.signInWithGoogle = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                // Abre a janela pop-up do Google para autenticação
+                await signInWithPopup(auth, provider);
+                // onAuthStateChanged cuidará do resto
+            } catch (error) {
+                console.error("Erro no Login com Google:", error.code, error.message);
+                window.appState.showErrorMessage(`Falha no login com Google. Tente novamente. Erro: ${error.code}`);
+            }
+        };
+
+        // Função para fazer logout
+        window.signOutUser = async () => {
+            try {
+                await signOut(auth);
+                // Volta para a tela de login
+                window.appState.showAuthModal(true);
+            } catch (error) {
+                console.error("Erro ao terminar a sessão:", error);
+                window.appState.showErrorMessage(`Erro ao sair: ${error.message}`);
+            }
+        };
+
+        // Função principal de inicialização e autenticação
+        window.initFirebaseAndAuth = async () => {
+            window.appState.setLoading(true, "Inicializando Firebase...");
+            try {
+                // Tenta inicializar com a configuração resiliente
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                await initialSignIn(); // Tenta login inicial
+
+                // Listener de estado de autenticação
                 onAuthStateChanged(auth, (user) => {
-                    if (user) {
+                    isAuthReady = true;
+                    window.appState.db = db;
+                    window.appState.auth = auth;
+                    window.appState.isAuthReady = isAuthReady;
+                    window.appState.setLoading(false); // Esconde o loading inicial
+
+                    if (user && !user.isAnonymous) {
+                        // Usuário logado com Google (persistente)
                         userId = user.uid;
-                        console.log("Usuário autenticado. UID:", userId);
-                        isAuthReady = true;
-                        window.appState.db = db;
                         window.appState.userId = userId;
-                        window.appState.isAuthReady = isAuthReady;
+                        window.appState.userEmail = user.email;
+                        console.log("Usuário autenticado. UID:", userId);
                         window.appState.loadProfileAndCheckDailyStatus();
+                    } else if (user && user.isAnonymous) {
+                         // Usuário anônimo. Deve forçar o login com Google.
+                         window.appState.showAuthModal(false);
                     } else {
-                        console.error("Falha na autenticação ou usuário deslogado.");
-                        isAuthReady = true;
-                        window.appState.db = null;
-                        window.appState.userId = null;
-                        window.appState.isAuthReady = isAuthReady;
-                        window.appState.setLoading(false);
-                        window.appState.showErrorMessage("Erro de Autenticação. Tente recarregar.");
+                        // Ninguém logado (após logout ou falha inicial)
+                        window.appState.showAuthModal(true);
                     }
                 });
             } catch (error) {
-                // Se a inicialização do app falhar mesmo com a config embutida, exibe erro.
                 console.error("Erro ao inicializar o Firebase:", error);
                 window.appState.setLoading(false);
                 window.appState.showErrorMessage("Erro fatal na inicialização: " + error.message);
             }
         };
+        
+        // --- FUNÇÕES DE CRUD DO FIRESTORE ---
 
-        // Função para obter a referência do documento do perfil
         window.getProfileDocRef = () => {
             if (!db || !userId) return null;
-            // Usa o appId global para o caminho, que é um requisito do ambiente
+            // Caminho para dados privados: artifacts/{appId}/users/{userId}/participant_profile
             return doc(db, `artifacts/${appId}/users/${userId}/participant_profile`, 'profile');
         };
 
-        // Função para obter a referência da coleção de respostas
         window.getResponsesCollectionRef = () => {
             if (!db || !userId) return null;
-            // Usa o appId global para o caminho, que é um requisito do ambiente
+            // Caminho para dados privados: artifacts/{appId}/users/{userId}/daily_responses
             return collection(db, `artifacts/${appId}/users/${userId}/daily_responses`);
         };
 
-        // Funções de CRUD (saveParticipantProfile, loadParticipantProfile, checkDailyResponse, saveDailyResponse)
-        // ... (as funções de CRUD foram mantidas as mesmas pois o erro estava na inicialização)
-        
-        // Função para salvar o perfil
         window.saveParticipantProfile = async (profileData) => {
-            if (!db) return { success: false, error: "Serviço de Banco de Dados indisponível." };
+            if (!db || !userId) return { success: false, error: "Usuário não autenticado." };
 
             const docRef = window.getProfileDocRef();
             if (!docRef) return { success: false, error: "Referência de documento indisponível." };
@@ -146,9 +197,7 @@
             try {
                 const docSnap = await getDoc(docRef);
                 
-                let dataToSave = {
-                    ...profileData,
-                };
+                let dataToSave = { ...profileData, email: window.appState.userEmail };
 
                 if (!docSnap.exists()) {
                     dataToSave.enrollmentDate = serverTimestamp();
@@ -168,9 +217,8 @@
             }
         };
 
-        // Função para carregar o perfil
         window.loadParticipantProfile = async () => {
-             if (!db) return null;
+             if (!db || !userId) return null;
             const docRef = window.getProfileDocRef();
             if (!docRef) return null;
 
@@ -186,9 +234,8 @@
             }
         };
 
-        // Função para verificar se a resposta diária já foi enviada
         window.checkDailyResponse = async (todayDate) => {
-             if (!db) return { submitted: false, dayNumber: 0, medicationName: null };
+             if (!db || !userId) return { submitted: false, dayNumber: 0, medicationName: null };
             const collRef = window.getResponsesCollectionRef();
             if (!collRef) return { submitted: false, dayNumber: 0, medicationName: null };
 
@@ -226,9 +273,8 @@
             }
         };
 
-        // Função para salvar a resposta diária
         window.saveDailyResponse = async (answers, dayNumber, todayDate) => {
-            if (!db) return { success: false, error: "Serviço de Banco de Dados indisponível." };
+            if (!db || !userId) return { success: false, error: "Usuário não autenticado." };
 
             const collRef = window.getResponsesCollectionRef();
             if (!collRef) return { success: false, error: "Referência de coleção indisponível." };
@@ -261,7 +307,10 @@
     <div id="main-app" class="w-full max-w-lg mx-auto bg-white p-6 md:p-8 rounded-xl card shadow-2xl hidden">
         <div class="flex flex-col space-y-4">
             <h1 id="day-title" class="text-3xl font-extrabold text-blue-800 text-center">Carregando Dia...</h1>
-            <p class="text-sm text-gray-500 text-center mb-6">UID: <span id="user-id-display"></span></p>
+            <p class="text-sm text-gray-500 text-center mb-6">
+                UID: <span id="user-id-display"></span> 
+                <button onclick="signOutUser()" class="ml-2 text-red-500 hover:text-red-700 text-xs font-semibold">(Sair)</button>
+            </p>
 
             <!-- Status do Dia -->
             <div id="daily-status-message" class="p-3 rounded-lg text-center font-semibold text-white bg-green-500 hidden">
@@ -294,6 +343,19 @@
             <div id="loading-spinner" class="h-8 w-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
             <p id="loading-text" class="text-lg font-semibold text-gray-700">Carregando...</p>
             <p id="error-message" class="text-red-600 font-medium mt-2 hidden"></p>
+        </div>
+    </div>
+    
+    <!-- Modal 0: Login com Google -->
+    <div id="auth-modal" class="modal-overlay fixed inset-0 flex items-center justify-center hidden">
+        <div class="bg-white w-11/12 max-w-sm p-8 rounded-xl card shadow-2xl text-center">
+            <h2 class="text-2xl font-bold text-blue-600 mb-6">Acesso Seguro</h2>
+            <p class="text-gray-600 mb-8">Faça login com sua conta Google para garantir que seus dados sejam salvos e acessíveis em qualquer dispositivo.</p>
+            <button onclick="signInWithGoogle()" 
+                    class="w-full flex items-center justify-center space-x-3 py-3 px-6 rounded-xl font-semibold google-btn shadow-lg">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png" alt="Google Logo" class="w-5 h-5 bg-white rounded-full">
+                <span>Entrar com Google</span>
+            </button>
         </div>
     </div>
 
@@ -334,7 +396,7 @@
                 </div>
                 <div>
                     <label for="profile-email" class="block text-sm font-medium text-gray-700">E-mail</label>
-                    <input type="email" id="profile-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="seu.email@exemplo.com">
+                    <input type="email" id="profile-email" disabled class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-100 sm:text-sm" placeholder="Seu Email de login">
                 </div>
                 <div>
                     <label for="profile-medication" class="block text-sm font-medium text-gray-700">Nome da Medicação (para Q17)</label>
@@ -390,7 +452,10 @@
         // Estado Global da Aplicação
         const appState = {
             db: null,
+            auth: null,
             userId: null,
+            userEmail: null, // Novo campo para o nome do Google
+            userName: null, 
             isAuthReady: false,
             profile: null,
             dailyStatus: {
@@ -409,18 +474,36 @@
             },
 
             showErrorMessage(message) {
-                this.setLoading(true, "Erro Encontrado!");
+                this.setLoading(true, "Atenção!");
                 document.getElementById('loading-spinner').classList.add('hidden');
                 const errorMessage = document.getElementById('error-message');
                 errorMessage.textContent = message;
                 errorMessage.classList.remove('hidden');
-                document.getElementById('tcle-modal').classList.add('hidden');
-                document.getElementById('profile-modal').classList.add('hidden');
+                this.hideModals();
+                document.getElementById('loading-modal').classList.remove('hidden'); // Garante que o modal de erro apareça
+                // Tempo limite para o usuário ler o erro e depois sumir
+                setTimeout(() => {
+                    document.getElementById('loading-modal').classList.add('hidden');
+                }, 5000); 
             },
 
             hideModals() {
+                document.getElementById('auth-modal').classList.add('hidden');
                 document.getElementById('tcle-modal').classList.add('hidden');
                 document.getElementById('profile-modal').classList.add('hidden');
+                document.getElementById('loading-modal').classList.add('hidden');
+            },
+            
+            showAuthModal(isLoggedOut = true) {
+                this.hideModals();
+                if (isLoggedOut) {
+                   document.getElementById('auth-modal').classList.remove('hidden');
+                } else {
+                    // Se estiver anônimo, forçamos o login com Google
+                    document.getElementById('auth-modal').classList.remove('hidden');
+                    // Oculta a mensagem de loading para mostrar o botão de login
+                    this.setLoading(false); 
+                }
             },
 
             async loadProfileAndCheckDailyStatus() {
@@ -430,10 +513,16 @@
                 }
 
                 this.setLoading(true, "Verificando seu perfil...");
+                
+                // Pega dados de perfil do Google, se disponíveis
+                const currentUser = this.auth.currentUser;
+                this.userEmail = currentUser.email;
+                this.userName = currentUser.displayName;
+
                 this.profile = await window.loadParticipantProfile();
 
-                if (!this.profile) {
-                    // Usuário precisa aceitar o TCLE
+                if (!this.profile || !this.profile.tcle_consent) {
+                    // Usuário logou pela primeira vez, precisa aceitar o TCLE
                     this.setLoading(false);
                     document.getElementById('tcle-modal').classList.remove('hidden');
                     return;
@@ -457,10 +546,17 @@
             openProfileModal() {
                 this.hideModals();
                 const modal = document.getElementById('profile-modal');
+                const emailInput = document.getElementById('profile-email');
+                const nameInput = document.getElementById('profile-name');
+
+                // Garante que o email de login do Google seja exibido (e desabilitado)
+                emailInput.value = this.userEmail || 'N/A';
+                
+                // Usa o nome do Google como valor inicial, se não houver perfil salvo
+                nameInput.value = (this.profile && this.profile.name) ? this.profile.name : this.userName || '';
+
                 if (this.profile) {
-                    // Preenche campos se houver dados prévios
-                    document.getElementById('profile-name').value = this.profile.name || '';
-                    document.getElementById('profile-email').value = this.profile.email || '';
+                    // Preenche medicationName se houver dados prévios
                     document.getElementById('profile-medication').value = this.profile.medicationName || '';
                 }
                 modal.classList.remove('hidden');
@@ -480,7 +576,8 @@
                     inputHtml += '</select>';
                 } else if (question.type === 'rating') {
                     inputHtml = '<div class="rating flex justify-center space-x-1">';
-                    question.options.reverse().forEach((option) => { // Inverte para que a maior estrela fique à esquerda no HTML
+                    // Inverte para que a maior estrela fique à esquerda no HTML
+                    question.options.reverse().forEach((option) => { 
                         const ratingId = `${qId}-${option.value}`;
                         inputHtml += `
                             <input type="radio" id="${ratingId}" name="${qId}" value="${option.value}" class="hidden" required>
@@ -541,7 +638,7 @@
                 });
 
                 // Renderiza a pergunta de avaliação (rating)
-                ratingContainer.innerHTML = this.generateQuestionHtml(RATING_QUESTION, questionsToRender.length + 1);
+                ratingContainer.innerHTML = `<label class="block text-base font-semibold text-gray-800">${RATING_QUESTION.text}</label>` + this.generateQuestionHtml(RATING_QUESTION, questionsToRender.length + 1);
 
                 // Desabilita os campos se já foi enviado hoje
                 const formElements = form.elements;
@@ -555,30 +652,25 @@
         window.appState = appState;
 
         // --- Listeners de Eventos ---
-
+        
         // 1. Consentimento do TCLE
         document.getElementById('consent-btn').addEventListener('click', () => {
             appState.hideModals();
-            // Salva um perfil básico para registrar o consentimento e a data de inscrição.
-            // O restante dos dados será coletado no modal de perfil.
+            
             const initialProfile = { 
-                name: '', 
-                email: '', 
+                name: appState.userName || '', 
+                email: appState.userEmail || '',
                 medicationName: '', 
                 tcle_consent: true,
                 consent_date: new Date().toISOString()
             };
             
-            // Tenta salvar o perfil inicial, forçando a abertura do modal de perfil em caso de sucesso
-            appState.setLoading(true, "Preparando seu cadastro...");
+            appState.setLoading(true, "Registrando consentimento...");
             window.saveParticipantProfile(initialProfile).then(result => {
                 if (result.success) {
                     appState.setLoading(false);
-                    appState.openProfileModal();
-                } else if (appState.db === null) {
-                    // Fallback para o caso de Firebase indisponível, mas permite seguir com o fluxo de UI
-                    appState.setLoading(false);
-                    appState.openProfileModal();
+                    // Passa para o cadastro de perfil
+                    appState.openProfileModal(); 
                 } else {
                     appState.showErrorMessage("Erro ao registrar consentimento: " + result.error);
                 }
@@ -590,21 +682,20 @@
             e.preventDefault();
             
             const name = document.getElementById('profile-name').value;
-            const email = document.getElementById('profile-email').value;
             const medicationName = document.getElementById('profile-medication').value;
 
             appState.setLoading(true, "Salvando seus dados...");
 
             const profileData = {
                 name: name,
-                email: email,
+                email: appState.userEmail,
                 medicationName: medicationName,
                 tcle_consent: true,
             };
 
             const result = await window.saveParticipantProfile(profileData);
             
-            if (result.success || appState.db === null) { // Permite seguir mesmo sem salvar se o DB estiver offline
+            if (result.success) {
                 appState.setLoading(false);
                 appState.dailyStatus.medicationName = medicationName; // Atualiza localmente para a Q17
                 appState.renderMainApp();
@@ -642,11 +733,9 @@
                 let answerValue;
 
                 if (questionData.type === 'rating') {
-                    // Para o rating, busca o valor do radio button checado
                     const checkedRadio = form.querySelector(`input[name="${qId}"]:checked`);
                     answerValue = checkedRadio ? checkedRadio.value : "Não respondido";
                 } else {
-                    // Para select, busca o valor do select
                     answerValue = form.elements[qId].value;
                 }
                 
@@ -655,17 +744,6 @@
                     answer: answerValue
                 });
             }
-
-            // Se o DB não estiver disponível (por causa do erro de config), apenas finge o envio
-            if (appState.db === null) {
-                const fakeSuccessMessage = "Sucesso! Respostas registradas localmente (salvamento no Firebase desabilitado). Volte amanhã.";
-                appState.dailyStatus.submitted = true;
-                appState.renderMainApp();
-                appState.showErrorMessage(fakeSuccessMessage);
-                setTimeout(() => { appState.setLoading(false); }, 2000);
-                return;
-            }
-
 
             // Salva as respostas no Firebase
             const result = await window.saveDailyResponse(answers, dayNumber, todayDate);
@@ -681,7 +759,6 @@
                 appState.renderMainApp();
                 // Exibe uma mensagem de sucesso amigável
                 appState.showErrorMessage("Sucesso! Suas respostas foram salvas. Volte amanhã.");
-                setTimeout(() => { appState.setLoading(false); }, 2000); // Esconde após 2s
             } else {
                 appState.showErrorMessage("Falha ao enviar respostas: " + result.error);
             }
