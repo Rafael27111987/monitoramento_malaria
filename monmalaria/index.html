@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitoramento da Malária em Porto Velho/RO</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
 body {
@@ -290,7 +290,7 @@ body {
                         id="nomeCompleto" 
                         placeholder="Nome da conta Google" 
                         required 
-                        class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
                 </div>
 
                 <div class="mt-4">
@@ -305,7 +305,7 @@ body {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"> 
                     <div>
                         <label for="dataNascimento" class="block text-xs font-semibold text-gray-700">Data de Nascimento</label>
-                        <input type="date" id="dataNascimento" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <input type="date" id="dataNascimento" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
                     </div>
                     <div>
                         <label for="sexo" class="block text-xs font-semibold text-gray-700">Sexo</label>
@@ -351,14 +351,12 @@ body {
                             id="contato" 
                             placeholder="" 
                             required 
-                            class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
                     </div>
-                </div>
-<div class="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4"> 
     
     <div class="col-span-1"> 
         <label for="cpf" class="block text-xs font-semibold text-gray-700">CPF</label>
-        <input type="text" id="cpf" placeholder="" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        <input type="text" id="cpf" placeholder="" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
     </div>
 
 </div>
@@ -370,7 +368,7 @@ body {
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4"> 
                     <div class="col-span-1 sm:col-span-1">
                         <label for="cep" class="block text-xs font-semibold text-gray-700">CEP</label>
-                        <input type="text" id="cep" placeholder="" maxlength="9" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <input type="text" id="cep" placeholder="" maxlength="9" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
                     </div>
                     
                     <div class="col-span-1 sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4"> 
@@ -393,11 +391,11 @@ body {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label for="numero" class="block text-xs font-semibold text-gray-700">Número</label>
-                        <input type="text" id="numero" placeholder="" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <input type="text" id="numero" placeholder="" required class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
                     </div>
                     <div>
                         <label for="complemento" class="block text-xs font-semibold text-gray-700">Complemento (Opcional)</label>
-                        <input type="text" id="complemento" placeholder="Apto, Casa, Bloco" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <input type="text" id="complemento" placeholder="Apto, Casa, Bloco" class="mt-1 block w-full p-2.5 border border-indigo-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
                     </div>
                 </div>
             </div>
@@ -513,45 +511,52 @@ body {
 
                 <div class="grid grid-cols-1 sm:grid-cols-1 gap-2">
                 
-                        <label for="hipertenso" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
-                            <input id="hipertenso" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Hipertensão (Pressão Alta)">
-                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Hipertensão (Pressão Alta)</span>
-                        </label>
-                        
-                        <label for="diabetes" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
-                            <input id="diabetes" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Diabetes (Açúcar Elevado)">
-                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Diabetes (Açúcar Elevado)</span>
-                        </label>
-                        
-                        <label for="asma_dpoc" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
-                            <input id="asma_dpoc" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Asma ou Doença Pulmonar Crônica (DPOC)">
-                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Asma ou Doença Pulmonar Crônica (DPOC)</span>
-                        </label>
-                        
-                        <label for="doenca_renal" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
-                            <input id="doenca_renal" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Doença Renal Crônica">
-                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Doença Renal Crônica</span>
-                        </label>
-                                <label for="doenca_cardiaca" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
-                            <input id="doenca_cardiaca" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Doença Cardíaca">
-                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Doença Cardíaca</span>
-                        </label>
-                    
-                        <label for="imunossupressao" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
-                            <input id="imunossupressao" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Imunossupressão (HIV, Câncer ou uso de medicamentos)">
-                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Imunossupressão (HIV, Câncer ou uso de medicamentos)</span>
-                        </label>
-                        
-                        <label for="anemia" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
-                            <input id="anemia" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Anemia Crônica ou Doença Falciforme">
-                            <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Anemia Crônica ou Doença Falciforme</span>
-                        </label>
-                        
-                        <label for="hepatite" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
-                            <input id="hepatite" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Hepatite Crônica">
-                            <span class="ml-3 block text-sm font-medium text-gray-800 peer-checked:text-red-800">Hepatite Crônica</span>
-                        </label>
-                    </div>
+<div class="space-y-3">
+    <label for="hipertenso" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+        <input id="hipertenso" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Hipertensão (Pressão Alta)">
+        <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Hipertensão (Pressão Alta)</span>
+    </label>
+    
+    <label for="diabetes" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+        <input id="diabetes" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Diabetes (Açúcar Elevado)">
+        <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Diabetes (Açúcar Elevado)</span>
+    </label>
+    
+    <label for="asma_dpoc" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+        <input id="asma_dpoc" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Asma ou Doença Pulmonar Crônica (DPOC)">
+        <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Asma ou Doença Pulmonar Crônica (DPOC)</span>
+    </label>
+    
+    <label for="doenca_renal" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+        <input id="doenca_renal" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Doença Renal Crônica">
+        <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Doença Renal Crônica</span>
+    </label>
+    
+    <label for="doenca_cardiaca" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+        <input id="doenca_cardiaca" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Doença Cardíaca">
+        <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Doença Cardíaca</span>
+    </label>
+    
+    <label for="imunossupressao" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+        <input id="imunossupressao" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Imunossupressão (HIV, Câncer ou uso de medicamentos)">
+        <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Imunossupressão (HIV, Câncer ou uso de medicamentos)</span>
+    </label>
+    
+    <label for="anemia" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+        <input id="anemia" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Anemia Crônica ou Doença Falciforme">
+        <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Anemia Crônica ou Doença Falciforme</span>
+    </label>
+    
+    <label for="hepatite" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
+        <input id="hepatite" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Hepatite Crônica">
+        <span class="ml-3 block text-sm font-medium text-gray-800 peer-checked:text-red-800">Hepatite Crônica</span>
+    </label>
+
+    <label for="nenhuma_comorbidade" class="flex items-center p-3 border border-gray-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-gray-500 has-[input:checked]:bg-gray-50 has-[input:checked]:ring-2 has-[input:checked]:ring-gray-500">
+        <input id="nenhuma_comorbidade" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-gray-600 border-gray-400 rounded focus:ring-gray-500 peer" value="Nenhuma Comorbidade">
+        <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-gray-800">Nenhuma Comorbidade</span>
+    </label>
+</div>
             </div>
         </form>
         
@@ -721,12 +726,6 @@ function preloadFormData(user) {
         // você deve ter outra função aqui que busca e preenche o restante.
 }
 
-
-// ==========================================================
-// ESTRUTURA DE PERGUNTAS COM OPÇÕES DE BOTÃO (OTIMIZADA)
-// ==========================================================
-// Array que DEVE ser carregado ANTES da função startInitialConversation
-
 const dailyQuestions = [
     { 
         text: "1. Considerando o seu diagnóstico de Malária tipo [TIPO_MALARIA], como você avalia seu estado de saúde hoje?",
@@ -825,18 +824,6 @@ const dailyQuestions = [
         ],
     },
 ];
-
-// ----------------------------------------------------------------------------------
-// 🚨 Q_ALTERNATIVA_SEM_COMORBIDADE TAMBÉM PRECISA SER RENUMERADA (AGORA É Q4 ALTERNATIVA)
-// ----------------------------------------------------------------------------------
-const Q_ALTERNATIVA_SEM_COMORBIDADE = {
-    text: "Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas perguntas anteriores?",
-    type: "select", 
-    options: [
-        "Sim", 
-        "Não",
-    ],
-};
 
 const RATING_QUESTION = {
     text: "Por favor, avalie nosso sistema de acompanhamento (1 a 5 estrelas). Sua nota é muito importante:",
@@ -1715,9 +1702,6 @@ function getFormattedTimeFromTimestamp(timestamp) {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-// VARIÁVEL GLOBAL PARA ARMAZENAR O RESUMO ATÉ O PASSO FINAL (RATING)
-// window.lastGeneratedSummary
-
 async function generateSummary(user) {
     // 1. Bloqueio e Configuração Inicial
     isWaitingForSummary = true;
@@ -2106,15 +2090,15 @@ Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, cliqu
     // ----------------------------------------------------------------------
     
     // Preparação de dados e Personalização
-    const questionsForCheckin = [...dailyQuestions];
+    // 🛑 AGORA UTILIZA O ARRAY GLOBAL 'dailyQuestions'
+    const questionsForCheckin = [...dailyQuestions]; 
     userProfileData.registeredCheckins = userProfileData.registeredCheckins || []; 
     window.activeQuestions = []; // Inicializa para ser usado na verificação final
     
     // ====================================================================
-    // --- 1. PREPARAÇÃO DINÂMICA DE DADOS (CORRIGIDA COM 'const' e 'let') ---
+    // --- 1. PREPARAÇÃO DINÂMICA DE DADOS ---
     // ====================================================================
     
-    // 🛑 CORREÇÃO PRINCIPAL: Declaração das variáveis com 'const' ou 'let'
     const nome = userProfileData.nomeCompleto || user.displayName?.split(' ')[0] || 'Participante'; 
     const tipoMalaria = userProfileData.tipoMalaria || "tipo de malária não especificado";
     
@@ -2177,36 +2161,16 @@ Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, cliqu
         medicacaoNome = "Medicação não informada";
     }
 
-    // COMORBIDADES
-    const comorbidadesData = userProfileData.comorbidades;
-    const comorbidadesArray = Array.isArray(comorbidadesData)
-        ? comorbidadesData
-        : comorbidadesData
-        ? [String(comorbidadesData)]
-        : [];
-    let listaComorbidades = '';
-    let comorbidadePrincipal = '';
-    const comorbidadesLimpas = comorbidadesArray
-        .map(c => typeof c === 'string' ? c.trim() : '')
-        .filter(c => c && c !== 'Nenhuma das opções acima');
-    const temComorbidadeParaPerguntar = comorbidadesLimpas.length > 0;
-
-    if (temComorbidadeParaPerguntar) {
-        const listFormatter = new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' });
-        listaComorbidades = listFormatter.format(comorbidadesLimpas);
-        comorbidadePrincipal = listaComorbidades; 
-    } else {
-        listaComorbidades = "Nenhuma condição crônica pré-existente foi relatada.";
-        comorbidadePrincipal = "sua condição crônica"; // Variável usada na personalização
-    }
-
+    // 🛑 REMOÇÃO COMPLETA DA LÓGICA DE COMORBIDADES (Dados e Personalização)
+    // Omitido: listaComorbidades, comorbidadePrincipal, temComorbidadeParaPerguntar.
+    
     // Orientação Recebida
     const recebeuOrientacoes = userProfileData.recebeuOrientacoes;
     const statusOrientacoes = recebeuOrientacoes 
         ? 'Sim, você confirmou que recebeu orientações.' 
         : '**ATENÇÃO!** Você confirmou NÃO ter recebido orientações. Se precisar de informações, avise-nos.';
 
-    // Data de Controle (para Pergunta 10)
+    // Data de Controle (para Pergunta 18)
     const dataControle = calculateNextControlDate(userProfileData.dataDiagnostico); 
 
     // ====================================================================
@@ -2228,33 +2192,22 @@ Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, cliqu
     }
     
     // Personalização de Perguntas
-    const Q4_INDEX = 3; 
-    
-    // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido globalmente
-    if (!temComorbidadeParaPerguntar) {
-        questionsForCheckin[Q4_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE;
-    }
     
     const personalizedDailyQuestions = questionsForCheckin.map((question, index) => {
         let q_text = question.text;
         
-        // Lógica de numeração... (ajustada para garantir consistência)
-        if (index === Q4_INDEX && q_text.startsWith('4.')) {
-            // No-op
-        } else if (index === Q4_INDEX && !q_text.startsWith('4.')) {
-            q_text = `4. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
-        } else if (index !== Q4_INDEX) {
-            q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
-        }
+        // Lógica de numeração... (garantindo que a numeração seja sequencial)
+        q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
         // Fim da lógica de numeração
 
         // Assumindo que personalizeQuestion está definido globalmente
+        // Argumentos passados: tipoMalaria, listaSintomas, medicacaoNome, dataControle.
+        // O argumento 'comorbidadePrincipal' foi removido desta chamada.
         const personalizedQ = personalizeQuestion(
             { ...question, text: q_text },
             tipoMalaria, 
             listaSintomas, 
             medicacaoNome, 
-            comorbidadePrincipal, 
             dataControle
         );
         return personalizedQ;
@@ -2275,16 +2228,16 @@ Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, cliqu
     
     // --- 3. Mensagem de Boas-Vindas e Início do Questionário ---
     
-    const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. Eu sou a Inteligência Artificial da Malária e serei sua assistente de monitoramento diário.
+    // Mensagem de boas-vindas SEM menção a Comorbidades
+    const welcomeMessage = `Olá, ${nome}! 👋 Que bom que você chegou até aqui. É um prazer tê-lo(a) conosco, vamos iniciar o seu monitoramento.
 
 Seus dados iniciais indicam que você foi:
 - Diagnosticado com Malária do tipo *${tipoMalaria}* em ${dataDiagnostico}.
 - Possui ${idade} de idade.
-- Condições Crônicas (Comorbidades): ${listaComorbidades}.
 - Medicação Prescrita: Você está em tratamento com ${medicacaoNome}.
 - Orientação Recebidada na Unidade: ${statusOrientacoes}
 
-Lembre-se: O monitoramento diário é vital para sua recuperação. Vamos começar seu check-in.`;
+`;
 
     await addDoc(chatCollectionRef, { text: welcomeMessage, isUser: false, timestamp: serverTimestamp() });
     
@@ -2541,6 +2494,16 @@ tcleParticiparBtn.addEventListener('click', async () => {
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
+        // Remove cores que html2canvas não suporta
+        tcleContent.querySelectorAll('*').forEach(el => {
+            const cs = getComputedStyle(el);
+
+            ['color', 'backgroundColor', 'borderColor'].forEach(prop => {
+                if (cs[prop] && cs[prop].includes('oklch')) {
+                    el.style[prop] = (prop === 'backgroundColor') ? '#ffffff' : '#000000';
+                }
+            });
+        });
         
         // Aguarda a geração e o download do arquivo. Se falhar, vai para o catch.
         await html2pdf().from(tcleContent).set(options).save();
@@ -2762,7 +2725,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 </body>
-
-
-
 </html>
