@@ -166,6 +166,25 @@ body {
         </div>
     </div>
 
+    <div id="conviteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 class="text-lg font-semibold mb-4 text-gray-800">
+            Você está sendo convidado para participar de um monitoramento remoto onde serão coletados dados acerca do seu estado de saúde. 
+            Você aceita participar?
+        </h2>
+
+        <div class="flex justify-end space-x-3 mt-6">
+            <button id="conviteNaoBtn" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg">
+                Não
+            </button>
+
+            <button id="conviteSimBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg">
+                Sim
+            </button>
+        </div>
+    </div>
+</div>
+
     <!-- Modal de Erro -->
     <div id="error-modal" class="hidden fixed inset-0 bg-red-900 bg-opacity-75 z-[9999] overflow-y-auto flex items-center justify-center">
         <div class="relative w-full max-w-sm mx-4 p-6 bg-white rounded-xl shadow-2xl">
@@ -446,25 +465,29 @@ body {
     </label>
     <div class="space-y-2">
         
-        <label for="med_cloroquina_primaquina" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
-    <input id="med_cloroquina_primaquina" name="medicacao" type="checkbox" value="Cloroquina+Primaquina" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
-    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Cloroquina + Primaquina</span>
+        <label for="Cloroquina (3 dias) mais Tafenoquina (dose única do primeiro dia)" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="Cloroquina (3 dias) mais Tafenoquina (dose única do primeiro dia)" name="medicacao" type="checkbox" value="Cloroquina (3 dias) mais Tafenoquina (dose única do primeiro dia)" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Cloroquina (3 dias) mais Tafenoquina (dose única do primeiro dia)</span>
 </label>
  
-<label for="med_artemeter_lumefantrina" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
-    <input id="med_artemeter_lumefantrina" name="medicacao" type="checkbox" value="Artemeter+Lumefantrina" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
-    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Artemeter + Lumefantrina (pode incluir Primaquina)</span>
+<label for="Cloroquina (3 dias) mais Primaquina (7 dias)" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="Cloroquina (3 dias) mais Primaquina (7 dias)" name="medicacao" type="checkbox" value="Cloroquina (3 dias) mais Primaquina (7 dias)" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Cloroquina (3 dias) mais Primaquina (7 dias)</span>
 </label>
  
-<label for="med_quinino" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
-    <input id="med_quinino" name="medicacao" type="checkbox" value="Quinino" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
-    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Quinino (com Doxiciclina ou Clindamicina)</span>
+<label for="Cloroquina (3 dias) + Primaquina (1x por semana; por 8 semanas)" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="Cloroquina (3 dias) + Primaquina (1x por semana; por 8 semanas)" name="medicacao" type="checkbox" value="Cloroquina (3 dias) + Primaquina (1x por semana; por 8 semanas)" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Cloroquina (3 dias) + Primaquina (1x por semana; por 8 semanas)</span>
 </label>
  
-<label for="med_tafenoquina" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
-    <input id="med_tafenoquina" name="medicacao" type="checkbox" value="Tafenoquina" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
-    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Tafenoquina (para casos específicos)</span>
-</label>        
+<label for="Artesunato-Mefloquina (02 comprimidos, 1 vez ao dia por 3 dias) mais Primaquina por 14 dias" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="Artesunato-Mefloquina (02 comprimidos, 1 vez ao dia por 3 dias) mais Primaquina por 14 dias" name="medicacao" type="checkbox" value="Artesunato-Mefloquina (02 comprimidos, 1 vez ao dia por 3 dias) mais Primaquina por 14 dias" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Artesunato-Mefloquina (02 comprimidos, 1 vez ao dia por 3 dias) mais Primaquina por 14 dias</span>
+</label>   
+<label for="Artemeter-Lumefantrina (COARTEM, 04 comprimidos, por 3 dias) mais Primaquina por 14 dias" class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-yellow-500 has-[input:checked]:bg-yellow-50 has-[input:checked]:ring-2 has-[input:checked]:ring-yellow-500">
+    <input id="Artemeter-Lumefantrina (COARTEM, 04 comprimidos, por 3 dias) mais Primaquina por 14 dias" name="medicacao" type="checkbox" value="Artemeter-Lumefantrina (COARTEM, 04 comprimidos, por 3 dias) mais Primaquina por 14 dias" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 peer">
+    <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-yellow-800">Artemeter-Lumefantrina (COARTEM, 04 comprimidos, por 3 dias) mais Primaquina por 14 dias</span>
+</label>     
         <div class="p-3 border border-yellow-300 rounded-lg bg-white shadow-sm">
             
             <div class="flex items-center">
@@ -483,35 +506,57 @@ body {
         
     </div>
 </div>
-                <div class="mt-5 space-y-3">
-                    <div class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm">
-                        <input id="recebeuOrientacoes" type="checkbox" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
-                        <label for="recebeuOrientacoes" class="ml-3 block text-sm font-medium text-gray-900">Você recebeu orientações claras sobre como tomar a medicação e os sinais de alerta?</label>
-                    </div>
-                </div>
-                <div class="mt-5 space-y-3">
-    <div class="flex items-center p-3 border border-yellow-300 rounded-lg bg-white shadow-sm">
-        
-        <input id="viajouAreaRisco" 
-            type="checkbox" 
-            class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
-        
-        <label for="viajouAreaRisco" 
-               class="ml-3 block text-sm font-medium text-gray-900">
-            Você viajou ou esteve em alguma área de mata ou com maior risco de transmissão de Malária?
+<div class="mt-5 space-y-3">
+    <div class="p-3 border border-yellow-300 rounded-lg bg-white shadow-sm mb-5">
+        <label class="block text-sm font-medium text-gray-900 mb-2">
+            Você recebeu orientações claras sobre como tomar a medicação e os sinais de alerta?
         </label>
+
+        <div class="flex items-center space-x-5">
+            <label class="flex items-center space-x-2">
+                <input type="radio" name="recebeuOrientacoes" value="sim"
+                       class="h-4 w-4 text-yellow-600 border-gray-300 focus:ring-yellow-500">
+                <span class="text-sm">Sim</span>
+            </label>
+
+            <label class="flex items-center space-x-2">
+                <input type="radio" name="recebeuOrientacoes" value="nao"
+                       class="h-4 w-4 text-yellow-600 border-gray-300 focus:ring-yellow-500">
+                <span class="text-sm">Não</span>
+            </label>
+        </div>
     </div>
 </div>
-            </div>
+<div class="mt-5 space-y-3">
+    <div class="p-3 border border-yellow-300 rounded-lg bg-white shadow-sm mb-5">
+        <label class="block text-sm font-medium text-gray-900 mb-2">
+            Você viajou ou esteve em alguma área de mata ou com maior risco de transmissão de Malária?
+        </label>
+
+        <div class="flex items-center space-x-5">
+            <label class="flex items-center space-x-2">
+                <input type="radio" name="viajouAreaRisco" value="sim"
+                       class="h-4 w-4 text-yellow-600 border-gray-300 focus:ring-yellow-500">
+                <span class="text-sm">Sim</span>
+            </label>
+
+            <label class="flex items-center space-x-2">
+                <input type="radio" name="viajouAreaRisco" value="nao"
+                       class="h-4 w-4 text-yellow-600 border-gray-300 focus:ring-yellow-500">
+                <span class="text-sm">Não</span>
+            </label>
+        </div>
+    </div>
+</div>
 
             <div class="p-4 bg-red-50 rounded-xl shadow-inner border border-red-200">
                 <h4 class="text-lg font-bold text-red-800 mb-4">3. Comorbidades (Condições Crônicas)</h4>
 
-            <p class="text-sm text-gray-600 mb-4">Marque as condições de saúde que você já possui. (Caso não tenha nenhuma, não marque nada!).</p>
+            <p class="text-sm text-gray-600 mb-4">Marque as condições de saúde que você já possui.</p>
 
                 <div class="grid grid-cols-1 sm:grid-cols-1 gap-2">
                 
-<div class="space-y-3">
+<div class="space-y-3 mb-5">
     <label for="hipertenso" class="flex items-center p-3 border border-red-300 rounded-lg bg-white shadow-sm cursor-pointer transition duration-200 hover:border-red-500 has-[input:checked]:bg-red-50 has-[input:checked]:ring-2 has-[input:checked]:ring-red-500">
         <input id="hipertenso" name="comorbidade" type="checkbox" class="peer h-4 w-4 text-red-600 border-gray-400 rounded focus:ring-red-500 peer" value="Hipertensão (Pressão Alta)">
         <span class="ml-3 block text-sm font-medium text-gray-900 peer-checked:text-red-800">Hipertensão (Pressão Alta)</span>
@@ -570,6 +615,7 @@ body {
         </div>
     </div>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <!-- Script JavaScript -->
@@ -648,6 +694,10 @@ const userNameElem = document.getElementById('user-name');
 const tcleModal = document.getElementById('tcle-modal');
 const tcleConsentCheckbox = document.getElementById('tcle-consent-checkbox');
 const tcleParticiparBtn = document.getElementById('tcle-participar-btn');
+
+const conviteModal = document.getElementById("conviteModal");
+const conviteSimBtn = document.getElementById("conviteSimBtn");
+const conviteNaoBtn = document.getElementById("conviteNaoBtn");
 
 // 1. Obtém referências aos elementos do DOM
     const cepInput = document.getElementById('cep');
@@ -742,7 +792,7 @@ const dailyQuestions = [
     // 🚨 NOVA PERGUNTA 2: SINTOMAS COMUNS (O antigo grupo 1)
     // ----------------------------------------------------------------------------------
     {
-        text: "2. Nas últimas 24h, você apresentou algum dos seguintes sintomas comuns da Malária ou efeitos colaterais leves?",
+        text: "2. Nas últimas 24h, você apresentou algum dos seguintes sintomas da Malária ou efeitos colaterais leves?",
         type: "multi-select",
         options: [
             "Febre (sensação de febre)",
@@ -756,13 +806,14 @@ const dailyQuestions = [
             "Diarréia",
             "Tontura (vertigem)",
             "Sonolência Excessiva",
+            "Não, nenhum sintoma"
         ]
     },
     // ----------------------------------------------------------------------------------
     // 🚨 NOVA PERGUNTA 3: SINAIS DE ALARME (O antigo grupo 2, agora destacado)
     // ----------------------------------------------------------------------------------
     {
-        text: "3. Você apresentou alguma das opções abaixo não descritos na perguntra anterior? (Selecione todos que se aplicam)",
+        text: "3. Você apresentou alguma das opções abaixo não descritos na pergunta anterior? (Selecione todos que se aplicam)",
         type: "multi-select",
         options: [
             "Confusão Mental",
@@ -773,6 +824,7 @@ const dailyQuestions = [
             "Urina muito escura ou avermelhada",
             "Icterícia (Cor amarelada nos olhos/pele)",
             "Diminuição da Urina (ou não urinar)",
+            "Não, nenhum problema adicional"
         ]
     },
     // ----------------------------------------------------------------------------------
@@ -1140,8 +1192,9 @@ else if (question.type === 'multi-select' && question.options) {
         const uniqueId = `multi-select-${index}`;
         
         // --- Identifica a opção de exclusão ---
-        const IS_EXCLUSIVE_OPTION = optionText.includes("Não, nenhum problema"); // ⭐️ O Novo critério
-        
+        const IS_EXCLUSIVE_OPTION =
+            optionText.includes("Não, nenhum sintoma") ||
+            optionText.includes("Não, nenhum problema adicional");        
         // Contêiner do Checkbox
         const container = document.createElement('div');
         container.className = 'flex items-center bg-gray-50 border border-gray-200 rounded-lg p-3 my-1 cursor-pointer hover:bg-gray-100 transition duration-100';
@@ -1981,7 +2034,16 @@ function calcularIdade(dataNascimentoString) {
 // calculateAllControlDates, renderCheckinTracker, displayQuestionWithButtons, 
 // userProfileData, userResponses, conversationStep, Q_ALTERNATIVA_SEM_COMORBIDADE,
 // personalizedQuestion, newSessionContainer (que deve ter o botão para o Chat Livre)
+// Se clicar SIM → abre o formulário
+conviteSimBtn.addEventListener("click", () => {
+    conviteModal.classList.add("hidden");
+    formModal.classList.remove("hidden");  // abrir formulário existente
+});
 
+// Se clicar NÃO → fecha o site
+conviteNaoBtn.addEventListener("click", () => {
+    window.close(); 
+});
 async function startInitialConversation(user) {
     chatContainer.innerHTML = ''; // <--- Limpa o chat
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
@@ -2021,15 +2083,18 @@ async function startInitialConversation(user) {
         return;
     }
 
-    if (!userProfileSnap.exists()) {
-        // CENA 1: PARTICIPANTE NOVO (Não tem cadastro principal)
-        loadingIndicator.classList.add('hidden'); // Remove loading
-        formModal.classList.remove('hidden');
-        messageInput.disabled = true;
-        sendBtn.disabled = true;
-        isSessionActive = false;
-        return;
-    }
+if (!userProfileSnap.exists()) {
+    loadingIndicator.classList.add('hidden');
+
+    // ➜ Em vez de abrir o form diretamente, abre o modal de convite
+    conviteModal.classList.remove("hidden");
+
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    isSessionActive = false;
+    return;
+}
+
 
     // Define userProfileData para o resto da função
     userProfileData = userProfileSnap.data();
@@ -2278,21 +2343,17 @@ async function startFreshSession(user) {
 // (Você precisará garantir que esta função exista no seu escopo)
 
 async function handleFormSubmission() {
-    // Nota: Removido o 'event.preventDefault()' pois o listener não o usa, 
-    // mas se o botão estiver dentro de um <form>, adicione-o.
 
     if (!currentUser) {
         showError("Erro: Usuário não autenticado.");
         return;
     }
 
-    // LISTA DE CAMPOS OBRIGATÓRIOS (mantida)
     const requiredFields = [
-        'dataNascimento', 'sexo', 'corRaca', 'escolaridade', 'contato', 'cep', 'endereco', 'numero',
+        'dataNascimento', 'sexo', 'corRaca', 'escolaridade', 'contato',
         'tipoMalaria', 'dataDiagnostico', 'unidadeAtendimento',
     ];
     
-    // Verifica se todos os campos estão preenchidos (mantido)
     const isFormValid = requiredFields.every(id => {
         const element = document.getElementById(id);
         if (element.tagName === 'SELECT') {
@@ -2306,38 +2367,29 @@ async function handleFormSubmission() {
         return;
     }
 
-    // =========================================================================
-    // --- 1. COLETA DE DADOS DINÂMICOS (ADAPTAÇÃO AQUI) ---
-    // =========================================================================
-
-    // 🔑 ADAPTAÇÃO DA MEDICAÇÃO: Coleta todos os checkboxes marcados (Array)
-    const medicacao = Array.from(document.querySelectorAll('input[name="medicacao"]:checked')).map(cb => {
-        return cb.value.trim();
-    });
+    // -----------------------------
+    // 1. Coleta
+    // -----------------------------
+    const medicacao = Array.from(document.querySelectorAll('input[name="medicacao"]:checked'))
+        .map(cb => cb.value.trim());
     
-    // 🔑 ADAPTAÇÃO DA MEDICAÇÃO: Coleta o texto livre do campo 'Outra medicação'
     const medicacaoOutraDescricao = document.getElementById('medicacaoOutraDescricao').value.trim();
-    
-    // Comorbidades: Coleta os valores do checkbox (Array)
-    const comorbidades = Array.from(document.querySelectorAll('input[name="comorbidade"]:checked')).map(cb => {
-        return cb.value.trim();
-    }); 
-    
-    // =========================================================================
-    // --- 2. OBJETO formData ATUALIZADO ---
-    // =========================================================================
+
+    const comorbidades = Array.from(document.querySelectorAll('input[name="comorbidade"]:checked'))
+        .map(cb => cb.value.trim());
+
+    // -----------------------------
+    // 2. Cria formData
+    // -----------------------------
     const formData = {
-        // Campos Pessoais (mantidos)
         nomeCompleto: document.getElementById('nomeCompleto').value,
-        dataNascimento: document.getElementById('dataNascimento').value, // YYYY-MM-DD
+        dataNascimento: document.getElementById('dataNascimento').value,
         sexo: document.getElementById('sexo').value,
         corRaca: document.getElementById('corRaca').value,
         escolaridade: document.getElementById('escolaridade').value,
         contato: document.getElementById('contato').value,
         cpf: document.getElementById('cpf').value,
 
-        
-        // Campos de Endereço (mantidos)
         cep: document.getElementById('cep').value,
         cidade: document.getElementById('cidade').value,
         estado: document.getElementById('estado').value,
@@ -2345,48 +2397,46 @@ async function handleFormSubmission() {
         numero: document.getElementById('numero').value,
         complemento: document.getElementById('complemento').value,
 
-        // Campos de Diagnóstico e Tratamento (mantidos)
         tipoMalaria: document.getElementById('tipoMalaria').value,
         dataDiagnostico: document.getElementById('dataDiagnostico').value,
         unidadeAtendimento: document.getElementById('unidadeAtendimento').value,
-        
-        // 🔑 ADAPTADO: Agora medicacao é um array (campo 'medicacao')
-        medicacao: medicacao, 
-        // 🔑 ADAPTADO: Campo de texto livre
-        medicacaoOutraDescricao: medicacaoOutraDescricao,
-        
-        recebeuOrientacoes: document.getElementById('recebeuOrientacoes').checked,
 
-        viajouAreaRisco: document.getElementById('viajouAreaRisco').checked,
+        medicacao,
+        medicacaoOutraDescricao,
 
-        // Comorbidades
-        comorbidades: comorbidades, 
+        recebeuOrientacoes: document.querySelector('input[name="recebeuOrientacoes"]:checked')?.value || null,
+        viajouAreaRisco: document.querySelector('input[name="viajouAreaRisco"]:checked')?.value || null,
 
-        consentido: false // Mantém o status inicial do consentimento
+        comorbidades,
+
+        consentido: false
     };
 
+    // -----------------------------
+    // 3. Validação das PERGUNTAS SIM/NÃO
+    // -----------------------------
+    if (!formData.recebeuOrientacoes || !formData.viajouAreaRisco) {
+        showError("Por favor, responda todas as perguntas do formulário antes de continuar.");
+        return;
+    }
+
+    // -----------------------------
+    // 4. Salva no Firestore
+    // -----------------------------
     try {
-        // --- ETAPA 1: SALVAR NO FIRESTORE (mantido) ---
         const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, {
             uid: currentUser.uid, 
-            email: currentUser.email, 
-            displayName: document.getElementById('nomeCompleto').value, 
-            createdAt: serverTimestamp(), 
+            email: currentUser.email,
+            displayName: formData.nomeCompleto,
+            createdAt: serverTimestamp(),
             ...formData
         });
-        
-        // Garante que o nome exibido na tela de chat está atualizado (mantido)
-        userNameElem.textContent = `Olá, ${formData.nomeCompleto || currentUser.email}!`; 
 
-        // ----------------------------------------------------------------------
-        // --- ETAPA 2: PREENCHER E EXIBIR O TCLE COM OS DADOS RECÉM-SALVOS ---
-        // ----------------------------------------------------------------------
-        
-        // Passamos o formData diretamente, sem a necessidade de um novo getDoc()
-        populateTcleWithData(formData); 
-        
-        // Oculta o modal de cadastro e exibe o TCLE
+        userNameElem.textContent = `Olá, ${formData.nomeCompleto || currentUser.email}!`;
+
+        populateTcleWithData(formData);
+
         formModal.classList.add('hidden');
         tcleModal.classList.remove('hidden');
 
