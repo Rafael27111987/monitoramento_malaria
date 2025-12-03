@@ -622,8 +622,7 @@ body {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, updateDoc, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+import { getFirestore, collection, addDoc, query, where, updateDoc, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 // Variaveis de configuracao do seu projeto, essas variaveis sao privadas, nunca as exponha.
 const firebaseConfig = {
     apiKey: "AIzaSyCEW-C1FavyFqjabMjmS-JVo2fLXHNt5Yg",
@@ -887,6 +886,15 @@ const RATING_QUESTION = {
         { label: "★★★★", value: "4", type: "rating-star", rating: 4 },
         { label: "★★★★★", value: "5", type: "rating-star", rating: 5 }
     ]
+};
+
+const Q_ALTERNATIVA_SEM_COMORBIDADE = {
+    text: "Você sentiu algum outro mal-estar ou desconforto hoje, diferente do que você vinha sentindo e que não foi mencionado nas perguntas anteriores?",
+    type: "select", 
+    options: [
+        "Sim", 
+        "Não",
+    ],
 };
 
 // Variável para rastrear o estado da conversa e dados do usuário
@@ -2044,6 +2052,7 @@ conviteSimBtn.addEventListener("click", () => {
 conviteNaoBtn.addEventListener("click", () => {
     window.close(); 
 });
+
 async function startInitialConversation(user) {
     chatContainer.innerHTML = ''; // <--- Limpa o chat
     const chatCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/chat_messages`);
@@ -2070,23 +2079,33 @@ async function startInitialConversation(user) {
 
     let userProfileSnap;
     let checkinTodaySnap;
-    
-    try {
-        [userProfileSnap, checkinTodaySnap] = await Promise.all([
-            getDoc(userProfileRef),
-            getDoc(checkinTodayRef) // Busca o documento de check-in de HOJE
-        ]);
-    } catch (error) {
-        console.error("Erro ao buscar dados iniciais:", error);
-        loadingIndicator.classList.add('hidden');
-        await addDoc(chatCollectionRef, { text: "❌ Erro ao iniciar a sessão. Tente novamente.", isUser: false, timestamp: serverTimestamp() });
-        return;
-    }
 
+try {
+    [userProfileSnap, checkinTodaySnap] = await Promise.all([
+        getDoc(userProfileRef),
+        getDoc(checkinTodayRef)
+    ]);
+
+    console.log("DEBUG: Documento sendo buscado em:",
+        `artifacts/${firebaseConfig.appId}/users/${user.uid}`);
+
+    console.log("DEBUG: UID atual:", user.uid);
+    console.log("DEBUG: appId atual:", firebaseConfig.appId);
+    console.log("DEBUG: SNAP:", userProfileSnap);
+    console.log("DEBUG: Documento encontrado?", userProfileSnap.exists());
+    console.log("DEBUG: Dados do documento:", userProfileSnap.data());
+
+} catch (error) {
+    console.error("🔥 ERRO DIRETO NO FIRESTORE:", error);
+    return;
+}
+
+
+// Documento do usuário existe?
 if (!userProfileSnap.exists()) {
-    loadingIndicator.classList.add('hidden');
 
-    // ➜ Em vez de abrir o form diretamente, abre o modal de convite
+    // Documento não existe → sempre exigir cadastro
+    loadingIndicator.classList.add('hidden');
     conviteModal.classList.remove("hidden");
 
     messageInput.disabled = true;
@@ -2095,22 +2114,99 @@ if (!userProfileSnap.exists()) {
     return;
 }
 
+// Documento existe
+userProfileData = userProfileSnap.data();
 
-    // Define userProfileData para o resto da função
-    userProfileData = userProfileSnap.data();
+// ----------------------------------------------------------------------
+// 1. VERIFICA SE O CADASTRO ESTÁ COMPLETO (COM DEBUG)
+// ----------------------------------------------------------------------
 
-    // ----------------------------------------------------------------------
-    // CENA 2: CHECAGEM DE CONSENTIMENTO E BLOQUEIO DE CHECK-IN
-    // ----------------------------------------------------------------------
-    if (!userProfileData.consentido) {
-        // 🚨 Checagem de Consentimento
-        loadingIndicator.classList.add('hidden');
-        tcleModal.classList.remove('hidden');
-        messageInput.disabled = true;
-        sendBtn.disabled = true;
-        isSessionActive = false;
-        return; 
-    }
+// campos que você considera obrigatórios para NÃO abrir o cadastro
+const camposObrigatorios = [
+    "nomeCompleto",
+    "cpf",
+    "dataNascimento",
+    "contato",
+    "endereco",
+    "cidade",
+    "estado",
+    "cep",
+    "tipoMalaria",
+    "dataDiagnostico"
+];
+
+// Garante que userProfileData existe antes de checar
+if (!userProfileData || typeof userProfileData !== 'object') {
+    console.warn("userProfileData ausente ou inválido:", userProfileData);
+    // Força abrir cadastro (comportamento atual)
+    loadingIndicator.classList.add('hidden');
+    conviteModal.classList.remove("hidden");
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    isSessionActive = false;
+    return;
+}
+
+// DEBUG: mostra todo o objeto para inspeção rápida
+console.log("DEBUG: userProfileData (inicio da verificação):", userProfileData);
+
+// Detecta campos faltantes / vazios
+const missingFields = camposObrigatorios.filter(field => {
+    const val = userProfileData[field];
+
+    // 1) inexistente ou null/undefined
+    if (val === undefined || val === null) return true;
+
+    // 2) string vazia ou apenas espaços
+    if (typeof val === 'string' && val.trim().length === 0) return true;
+
+    // 3) número zero ou NaN - considerar ausente (ajuste conforme necessidade)
+    if (typeof val === 'number' && isNaN(val)) return true;
+
+    // 4) arrays vazios (ex.: medicacao pode ser array não obrigatório)
+    if (Array.isArray(val) && val.length === 0) return true;
+
+    // caso contrário, considera preenchido
+    return false;
+});
+
+// DEBUG: imprime os campos que estão sendo considerados faltantes
+console.log("DEBUG: Campos obrigatórios faltantes:", missingFields);
+
+// Se houver algum campo faltando → abrir formulário (convite)
+if (missingFields.length > 0) {
+    console.warn("Abrindo cadastro porque faltam campos obrigatórios:", missingFields);
+    loadingIndicator.classList.add('hidden');
+    conviteModal.classList.remove("hidden");
+
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    isSessionActive = false;
+    return;
+}
+
+// Se chegou aqui, cadastro está completo → prossegue para checagem de consentimento
+
+// ----------------------------------------------------
+// 2. VERIFICAÇÃO DE CONSENTIMENTO (TCLE)
+// ----------------------------------------------------
+if (!userProfileData.consentido || userProfileData.consentido !== true) {
+    console.warn("TCLE pendente — redirecionando para formulário de consentimento.");
+
+    loadingIndicator.classList.add('hidden');
+
+    // Abre o modal do TCLE
+    const tcleModal = document.getElementById("tcle-modal");
+    if (tcleModal) tcleModal.classList.remove("hidden");
+
+    // Bloqueia o chat até consentir
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    isSessionActive = false;
+
+    return; // 🔥 Impede que siga para o chat/questionário
+}
+
 
     // 🚨 BLOQUEIO PRINCIPAL: VERIFICAÇÃO DO CHECK-IN DIÁRIO CONCLUÍDO
     if (checkinTodaySnap.exists()) {
@@ -2226,8 +2322,33 @@ Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, cliqu
         medicacaoNome = "Medicação não informada";
     }
 
-    // 🛑 REMOÇÃO COMPLETA DA LÓGICA DE COMORBIDADES (Dados e Personalização)
-    // Omitido: listaComorbidades, comorbidadePrincipal, temComorbidadeParaPerguntar.
+// COMORBIDADES (Mantido)
+    const comorbidadesData = userProfileData.comorbidades;
+    const comorbidadesArray = Array.isArray(comorbidadesData)
+        ? comorbidadesData
+        : comorbidadesData
+        ? [String(comorbidadesData)]
+        : [];
+    let listaComorbidades = '';
+    let comorbidadePrincipal = '';
+    const comorbidadesLimpas = comorbidadesArray
+        .map(c => typeof c === 'string' ? c.trim() : '')
+        .filter(c => 
+            c &&
+            c !== 'Nenhuma das opções acima' &&
+            c !== 'Nenhuma Comorbidade'
+        );
+    const temComorbidadeParaPerguntar = comorbidadesLimpas.length > 0;
+
+    if (temComorbidadeParaPerguntar) {
+        const listFormatter = new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' });
+        listaComorbidades = listFormatter.format(comorbidadesLimpas);
+        comorbidadePrincipal = listaComorbidades; 
+    } else {
+        listaComorbidades = "Nenhuma condição crônica pré-existente foi relatada.";
+        comorbidadePrincipal = "sua condição crônica"; 
+    }
+
     
     // Orientação Recebida
     const recebeuOrientacoes = userProfileData.recebeuOrientacoes;
@@ -2258,21 +2379,34 @@ Se precisar de ajuda, tiver dúvidas ou quiser iniciar uma conversa livre, cliqu
     
     // Personalização de Perguntas
     
+    const Q4_INDEX = 3; 
+    
+    if (!temComorbidadeParaPerguntar) {
+        questionsForCheckin[Q4_INDEX] = Q_ALTERNATIVA_SEM_COMORBIDADE; // Assumindo que Q_ALTERNATIVA_SEM_COMORBIDADE está definido
+    }
+    
     const personalizedDailyQuestions = questionsForCheckin.map((question, index) => {
+        // Lógica de numeração... (mantida)
         let q_text = question.text;
         
-        // Lógica de numeração... (garantindo que a numeração seja sequencial)
-        q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
+        if (index === Q4_INDEX && q_text.startsWith('4.')) {
+            
+        } else if (index === Q4_INDEX && !q_text.startsWith('4.')) {
+            q_text = `4. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
+        } else if (index !== Q4_INDEX && q_text.startsWith(`${index + 1}.`)) {
+            
+        } else {
+            q_text = `${index + 1}. ${q_text.replace(/^[0-9]+\./, '').trim()}`;
+        }
         // Fim da lógica de numeração
 
         // Assumindo que personalizeQuestion está definido globalmente
-        // Argumentos passados: tipoMalaria, listaSintomas, medicacaoNome, dataControle.
-        // O argumento 'comorbidadePrincipal' foi removido desta chamada.
         const personalizedQ = personalizeQuestion(
             { ...question, text: q_text },
             tipoMalaria, 
             listaSintomas, 
             medicacaoNome, 
+            comorbidadePrincipal, 
             dataControle
         );
         return personalizedQ;
@@ -2565,9 +2699,19 @@ tcleParticiparBtn.addEventListener('click', async () => {
         const userProfileRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
         await setDoc(userProfileRef, { consentido: true, consentimentoTimestamp: serverTimestamp() }, { merge: true });
 
-        // 5. FINALIZAÇÃO DA INTERAÇÃO
-        tcleModal.classList.add('hidden');
-        await startInitialConversation(currentUser);
+// 5. FINALIZAÇÃO DA INTERAÇÃO
+tcleModal.classList.add('hidden');
+
+// Força refetch do Firestore antes de chamar startInitial
+const userRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}`);
+const freshSnap = await getDoc(userRef);
+
+if (freshSnap.exists()) {
+    userProfileData = freshSnap.data(); // <-- garante que vem com consentido: true
+}
+
+await startInitialConversation(currentUser);
+
 
     } catch (error) {
         // Este catch pega erros tanto do PDF quanto do Firebase
@@ -2602,8 +2746,8 @@ onAuthStateChanged(auth, (user) => {
             chatScreen.classList.remove('hidden');
             chatScreen.classList.add('opacity-100');
             
-            // Força o reinício da sessão (apaga o histórico e inicia a 1ª pergunta/modal)
-            startFreshSession(user); 
+            // NOVO: Chama a lógica de vinculação antes de iniciar a sessão
+            linkAccountAndStartSession(user); 
             
             listenForMessages(user); 
         }, 500);
@@ -2773,6 +2917,98 @@ document.addEventListener('DOMContentLoaded', () => {
         cepInput.inputmode = 'numeric';
     }
 });
+
+// O APP_ID está hardcoded aqui para GARANTIR a correspondência com o app.py
+const FLASK_APP_ID = "meuappsaude"; 
+const COLLECTION_PATH = `artifacts/${FLASK_APP_ID}/users`;
+
+async function linkAccountAndStartSession(user) {
+    // Certifique-se de que a variável 'db' e 'serverTimestamp' estão disponíveis no escopo
+    if (typeof db === 'undefined') {
+        console.error("ERRO: A variável 'db' (Firestore Client) não está definida.");
+        loadingIndicator.classList.add('hidden');
+        return;
+    }
+    
+    loadingIndicator.classList.remove('hidden');
+
+    try {
+        // 1. Checagem do Perfil Google (se já migrou)
+        // Usa o NOVO UID do Google no caminho CONFIRMADO
+        const userProfileRef = doc(db, COLLECTION_PATH, user.uid);
+        const userProfileSnap = await getDoc(userProfileRef);
+
+        if (userProfileSnap.exists()) {
+            console.log(`✅ Perfil encontrado para o UID ${user.uid}. Iniciando sessão normal.`);
+            return startInitialConversation(user); 
+        }
+
+        // 2. Perfil não existe. Buscar por email no cadastro antigo.
+        if (user.email) {
+            // Normaliza o email para garantir que maiúsculas/minúsculas não causem erro
+            const normalizedEmail = user.email.toLowerCase().trim(); 
+
+            console.log(`Debug: Tentando buscar na coleção: ${COLLECTION_PATH}`);
+            console.log(`Buscando perfis por email para migração: ${normalizedEmail}`);
+
+            const usersCollectionRef = collection(db, COLLECTION_PATH);
+            
+            // 🚨 Esta query exige que o ÍNDICE 'email' esteja ATIVO!
+            const q = query(usersCollectionRef, 
+                            where("email", "==", normalizedEmail)
+            );
+            
+            const querySnapshot = await getDocs(q);
+
+            console.log(`Debug: Query retornou ${querySnapshot.docs.length} documento(s)`); 
+            
+            if (!querySnapshot.empty) {
+                // Encontrando o primeiro documento que não seja o UID atual (se houver algum erro)
+                const oldDoc = querySnapshot.docs[0]; // Pega o primeiro documento
+                
+                if (oldDoc) {
+                    const oldUid = oldDoc.id; 
+                    const oldData = oldDoc.data();
+
+                    console.log(`⚠️ SUCCESSO! Perfil antigo encontrado (UID: ${oldUid}). Realizando MIGRAÇÃO SILENCIOSA.`);
+
+                    // 3. Execução da Migração: Copiar dados antigos para o novo UID (Google)
+                    const newData = {
+                        ...oldData,
+                        consentido: false,       // 🔥 GARANTE SEMPRE FALSE APÓS MIGRAÇÃO
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || oldData.nomeCompleto,
+                        providerId: 'google.com',
+                        consentido: oldData.consentido ?? false,
+                        primeiroAcesso: false,
+                        updatedAt: serverTimestamp(),
+                    };
+                                        
+                    await setDoc(userProfileRef, newData); 
+                    
+                    // 4. Deletar o documento antigo (UID aleatório) para evitar duplicação
+                    await deleteDoc(doc(db, COLLECTION_PATH, oldUid));
+                    
+                    console.log(`✅ Dados migrados com sucesso para o novo UID: ${user.uid}.`);
+                    
+                    // 5. Iniciar o fluxo normal (que deve levar ao TCLE pois consentido: False)
+                    return startInitialConversation(user);
+                }
+            }
+        }
+
+        // 6. Novo usuário ou sem vínculo (continua para o formulário ou outro fluxo)
+        console.log("Usuário novo ou sem vínculo detectado. Iniciando fluxo de primeiro acesso.");
+        return startInitialConversation(user);
+
+    } catch (error) {
+        console.error("Erro durante a vinculação ou início de sessão:", error);
+        return startInitialConversation(user); 
+    } finally {
+        loadingIndicator.classList.add('hidden');
+    }
+}
 </script>
 </body>
 </html>
