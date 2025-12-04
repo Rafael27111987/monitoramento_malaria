@@ -2722,6 +2722,15 @@ await startInitialConversation(currentUser);
 
 googleSigninBtn.onclick = async () => {
     const provider = new GoogleAuthProvider();
+
+    // 🔥 ESSENCIAL — sem isso Google não retorna email e nome
+    provider.addScope("email");
+    provider.addScope("profile");
+    
+    provider.setCustomParameters({
+        prompt: "select_account"
+    });
+
     try {
         await signInWithPopup(auth, provider);
     } catch (error) {
@@ -2729,6 +2738,7 @@ googleSigninBtn.onclick = async () => {
         showError("Falha ao entrar com Google. Tente novamente.");
     }
 };
+
 
 
 onAuthStateChanged(auth, (user) => {
